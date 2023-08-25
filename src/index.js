@@ -103,7 +103,7 @@ class GameWindow {
 			tileDir: 0,
 		};
 
-		this.texturePaths = ['../images/wall1.png', '../images/floor.png', '../images/ceiling.png'];
+		this.texturePaths = ['../assets/wall1.png', '../assets/floor.png', '../assets/ceiling.png'];
 		this.textures = {};
 
 		this.userIsInTab = false;
