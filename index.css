@@ -1,0 +1,167 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+body {
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(40, 40, 40, 1);
+	overflow: hidden;
+}
+
+.container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+}
+
+#canvas {
+	position: relative;
+	width: 800px;
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	/* background: linear-gradient(0deg, #1f1f1f 60%, #001c3a00 0%); */
+	background-color: black;
+	box-shadow: 0.5rem 0.5rem 1.5rem 0 rgba(0, 0, 0, 0.5);
+	z-index: 2;
+	margin: 0rem;
+	aspect-ratio: 16/10;
+	display: block;
+}
+#canvas.fullscreen {
+	border: none;
+	box-shadow: none;
+}
+
+#debugCanvas {
+	position: relative;
+	width: 800px;
+	background-color: rgba(0, 0, 0, 1);
+	box-shadow: 0.5rem 0.5rem 1.5rem 0 rgba(0, 0, 0, 0.5);
+	z-index: 1;
+	aspect-ratio: 1/1;
+	display: block;
+}
+#debugCanvas.fullscreen {
+	display: none;
+}
+
+#fpsCounter {
+	position: absolute;
+	top: 0.5rem;
+	left: 1rem;
+	font-weight: 400;
+	color: transparent;
+}
+
+@media (min-aspect-ratio: 16/10) {
+	#canvas.fullscreen {
+		width: auto;
+		height: 100%;
+	}
+}
+
+@media (max-aspect-ratio: 16/10) {
+	#canvas.fullscreen {
+		width: 100%;
+		height: auto;
+	}
+}
+
+@media (min-aspect-ratio: 2/1) {
+	.container {
+		flex-flow: row nowrap;
+	}
+	#canvas,
+	#debugCanvas {
+		width: 1200px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 2500px) {
+	#canvas,
+	#debugCanvas {
+		width: 1100px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 2300px) {
+	#canvas,
+	#debugCanvas {
+		width: 1000px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 2100px) {
+	#canvas,
+	#debugCanvas {
+		width: 900px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 1900px) {
+	#canvas,
+	#debugCanvas {
+		width: 800px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 1650px) {
+	#canvas,
+	#debugCanvas {
+		width: 700px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 1465px) {
+	#canvas,
+	#debugCanvas {
+		width: 600px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 1315px) {
+	#canvas,
+	#debugCanvas {
+		width: 600px;
+	}
+}
+@media (min-aspect-ratio: 2/1) and (max-width: 1230px) {
+	#canvas,
+	#debugCanvas {
+		width: 500px;
+	}
+}
+
+@media (max-aspect-ratio: 2/1) {
+	#canvas,
+	#debugCanvas {
+		width: 800px;
+	}
+}
+@media (max-aspect-ratio: 2/1) and (max-height: 1030px) {
+	#canvas,
+	#debugCanvas {
+		width: 700px;
+	}
+}
+@media (max-aspect-ratio: 2/1) and (max-height: 900px) {
+	#canvas,
+	#debugCanvas {
+		width: 600px;
+	}
+}
+@media (max-aspect-ratio: 2/1) and (max-height: 775px) {
+	#canvas,
+	#debugCanvas {
+		width: 500px;
+	}
+}
+@media (max-aspect-ratio: 2/1) and (max-height: 650px) {
+	#canvas,
+	#debugCanvas {
+		width: 400px;
+	}
+}
