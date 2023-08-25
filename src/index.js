@@ -1,4 +1,4 @@
-import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
+import { degToRad, getIntersection } from '../utils/calc.js';
 import { map1 } from './maps.js';
 
 class GameWindow {
@@ -60,8 +60,8 @@ class GameWindow {
 
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
-		this.fPlayerX = 300;
-		this.fPlayerY = 200;
+		this.fPlayerX = 100;
+		this.fPlayerY = 100;
 		this.fPlayerAngle = 20;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
@@ -105,8 +105,6 @@ class GameWindow {
 
 		this.texturePaths = ['../public/wall1.png', '../public/floor.png', '../public/ceiling.png'];
 		this.textures = {};
-
-		this.wMultiplier = 1;
 
 		this.userIsInTab = false;
 
@@ -282,8 +280,6 @@ class GameWindow {
 			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
 			this.drawCeiling(Math.floor(wallTop), i, adjustedAngle);
 
-			// this.ctx.fillRect(wallX, wallTop, wallWidth, wallHeight);
-
 			let offset =
 				this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 2
 					? this.tileCollisionsX[i] % this.TILE_SIZE
@@ -308,28 +304,16 @@ class GameWindow {
 				offset2 = this.TILE_SIZE - offset2;
 			}
 
-			// offset *= this.wMultiplier;
-			// offset2 *= this.wMultiplier;
-
-			let curImg = null;
 			let textureBuffer = this.fWall1TextureBuffer;
 			let texturePixels = this.fWall1TexturePixels;
 			let brighnessLevel = 160 / dist;
-			// let sWidth = 0;
-			// let chunk2Offset = null;
 
 			dist = Math.floor(dist);
 			if (brighnessLevel > 1.5) brighnessLevel = 1.5;
 
 			if (this.tileDirs?.[i] === 1 || this.tileDirs?.[i] === 3) {
-				// curImg = this.textures.wall1;
 				brighnessLevel = brighnessLevel * 0.8;
 			}
-
-			// sWidth = offset <= offset2 ? offset2 - offset : curImg.width - offset + offset2;
-			// if (offset > offset2) {
-			// 	chunk2Offset = -(curImg.width - offset);
-			// }
 
 			this.drawWallSliceRectangleTinted(
 				i,
@@ -340,22 +324,6 @@ class GameWindow {
 				textureBuffer,
 				texturePixels
 			);
-
-			// this.ctx.drawImage(curImg, offset, 0, sWidth, curImg.height, wallX, wallTop, wallWidth + 1, wallHeight);
-
-			// if (chunk2Offset) {
-			// 	this.ctx.drawImage(
-			// 		curImg,
-			// 		chunk2Offset,
-			// 		0,
-			// 		sWidth,
-			// 		curImg.height,
-			// 		wallX,
-			// 		wallTop,
-			// 		wallWidth + 1,
-			// 		wallHeight
-			// 	);
-			// }
 
 			wallX += wallWidth;
 		}
@@ -559,7 +527,6 @@ class GameWindow {
 			this.fPlayerX += strafeX;
 			this.fPlayerY -= strafeY;
 		}
-		// console.log(this.frameRate);
 	};
 
 	update = () => {
@@ -679,8 +646,6 @@ class GameWindow {
 		this.onWallTextureLoaded();
 		this.onCeilingTextureLoaded();
 		this.onFloorTextureLoaded();
-
-		// this.wMultiplier = Math.abs(this.textures.wall1.width / this.TILE_SIZE);
 	};
 
 	init = async () => {
@@ -690,7 +655,6 @@ class GameWindow {
 		if (!this.DEBUG) {
 			this.canvas.classList.add('fullscreen');
 			this.debugCanvas.remove();
-			// this.debugCanvas.classList.add('fullscreen');
 		}
 
 		document.addEventListener('click', e => {
