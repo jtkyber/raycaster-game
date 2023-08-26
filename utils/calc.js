@@ -31,7 +31,7 @@ export function getIntersection(x, y, r, theta, x1, y1, x2, y2, p4) {
 	const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
 	const u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom;
 
-	if (t >= 0 && t <= 1 && u >= 0 && u <= uMax) {
+	if (t > 0 && t < 1 && u > 0 && u <= uMax) {
 		const px = x3 + u * (x4 - x3);
 		const py = y3 + u * (y4 - y3);
 		return [px, py];

@@ -1,4 +1,4 @@
-import { degToRad, getIntersection } from '../utils/calc.js';
+import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
 import maps from './maps.js';
 
 class GameWindow {
@@ -30,7 +30,7 @@ class GameWindow {
 
 		this.bytesPerPixel = 4;
 
-		this.frameRate = 60;
+		this.frameRate = 30;
 		this.speedMultiplier = this.frameRate / 60;
 		this.frameCount = 0;
 		this.framesCounted = 0;
@@ -64,7 +64,7 @@ class GameWindow {
 
 		this.map = maps[0].map;
 		// [mapNum, playerX, playerY]
-		this.mapDataToSet = [0, 100, 170];
+		this.mapDataToSet = [0, 100, 150];
 
 		this.debugCanvas;
 		this.debugCanvasWidth;
@@ -114,17 +114,14 @@ class GameWindow {
 		this.portalTileIndeces = [39, 409];
 		this.portalTileSides = [3, 0];
 
-		this.rayDistsFromPortal = null;
+		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutYVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
-
-		this.extraRay = {
-			angle: 0,
-			length: 0,
-			tileCollisionX: 0,
-			tileCollisionY: 0,
-			tileDir: 0,
-		};
+		this.portalOutCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutTypes = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutDirs = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.userIsInTab = false;
 
@@ -232,14 +229,23 @@ class GameWindow {
 
 	drawWallSliceRectangleTinted = (
 		x,
+		// Regular ray
 		rectTop,
 		height,
 		xOffset,
 		brighnessLevel,
 		textureBuffer,
-		texturePixels
+		texturePixels,
+		// Portal ray
+		rectTopPortal,
+		heightPortal,
+		xOffsetPortal,
+		brighnessLevelPortal,
+		textureBufferPortal,
+		texturePixelsPortal
 	) => {
 		x = Math.floor(x);
+
 		rectTop = Math.floor(rectTop);
 		xOffset = Math.floor(xOffset);
 
@@ -254,43 +260,141 @@ class GameWindow {
 		if (rectTop + heightToDraw > this.offscreenCanvasPixels.height)
 			heightToDraw = this.offscreenCanvasPixels.height - rectTop;
 
-		let yError = 0;
-
 		if (heightToDraw < 0) return;
 
-		while (true) {
-			yError += height;
+		//----------------------------------------------------------------------
 
-			const red = Math.floor(texturePixels[sourceIndex] * brighnessLevel);
-			const green = Math.floor(texturePixels[sourceIndex + 1] * brighnessLevel);
-			const blue = Math.floor(texturePixels[sourceIndex + 2] * brighnessLevel);
-			const alpha = Math.floor(texturePixels[sourceIndex + 3]);
+		let sourceIndexPortal = null;
+		let lastSourceIndexPortal = null;
+		let targetIndexPortal = null;
+		let heightToDrawPortal = null;
 
-			while (yError >= textureBuffer.width) {
-				yError -= textureBuffer.width;
-				this.offscreenCanvasPixels.data[targetIndex] = red;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
-				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+		if (rectTopPortal) {
+			rectTopPortal = Math.floor(rectTopPortal);
+			xOffsetPortal = Math.floor(xOffsetPortal);
 
+			sourceIndexPortal = this.bytesPerPixel * xOffsetPortal;
+			lastSourceIndexPortal =
+				sourceIndexPortal + textureBufferPortal.width * textureBufferPortal.height * this.bytesPerPixel;
+
+			targetIndexPortal =
+				this.offscreenCanvasPixels.width * this.bytesPerPixel * rectTopPortal + this.bytesPerPixel * x;
+
+			heightToDrawPortal = heightPortal;
+
+			if (rectTopPortal + heightToDrawPortal > this.offscreenCanvasPixels.height)
+				heightToDrawPortal = this.offscreenCanvasPixels.height - rectTopPortal;
+
+			if (heightToDrawPortal < 0) return;
+		}
+
+		let yError = 0;
+
+		if (sourceIndexPortal !== null) {
+			while (heightToDraw >= 1) {
 				heightToDraw--;
-				if (heightToDraw < 1) return;
+
+				this.offscreenCanvasPixels.data[targetIndex] = 0;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = 0;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = 0;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+
+				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
 			}
 
-			sourceIndex += this.bytesPerPixel * textureBuffer.width;
-			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+			while (true) {
+				yError += heightPortal;
+				const red = Math.floor(texturePixelsPortal[sourceIndexPortal] * brighnessLevelPortal);
+				const green = Math.floor(texturePixelsPortal[sourceIndexPortal + 1] * brighnessLevelPortal);
+				const blue = Math.floor(texturePixelsPortal[sourceIndexPortal + 2] * brighnessLevelPortal);
+				const alpha = Math.floor(texturePixelsPortal[sourceIndexPortal + 3]);
+
+				while (yError >= textureBufferPortal.width) {
+					yError -= textureBufferPortal.width;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+
+					heightToDrawPortal--;
+					if (heightToDrawPortal < 1) return;
+				}
+
+				sourceIndexPortal += this.bytesPerPixel * textureBufferPortal.width;
+				if (sourceIndexPortal > lastSourceIndexPortal) sourceIndexPortal = lastSourceIndexPortal;
+			}
+		} else {
+			while (true) {
+				yError += height;
+				const red = Math.floor(texturePixels[sourceIndex] * brighnessLevel);
+				const green = Math.floor(texturePixels[sourceIndex + 1] * brighnessLevel);
+				const blue = Math.floor(texturePixels[sourceIndex + 2] * brighnessLevel);
+				const alpha = Math.floor(texturePixels[sourceIndex + 3]);
+
+				while (yError >= textureBuffer.width) {
+					yError -= textureBuffer.width;
+					this.offscreenCanvasPixels.data[targetIndex] = red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+					targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+
+					heightToDraw--;
+					if (heightToDraw < 1) return;
+				}
+
+				sourceIndex += this.bytesPerPixel * textureBuffer.width;
+				if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+			}
 		}
 	};
 
 	draw3dWalls = () => {
-		let wallX = 0;
-
 		for (let i = 0; i < this.rayLengths.length; i++) {
 			let dist = this.rayLengths[i] / this.fFishTable[i];
 
+			// For possible portal ray --------------------------------------
+			let totalPortalRayDist =
+				this.totalPortalRayLengths[i] < Infinity ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
+			let portalWallHeight = 0;
+			let portalwallBottom = 0;
+			let portalWallTop = 0;
+			let portalWallOffset = 0;
+			let portalTextureBuffer = null;
+			let portalTexturePixels = null;
+			let portalBrightness = 0;
+
+			if (totalPortalRayDist) {
+				portalWallHeight = (this.TILE_SIZE / totalPortalRayDist) * this.fPlayerDistanceToProjectionPlane;
+				portalwallBottom = this.PROJECTIONPLANEHEIGHT / 2 + portalWallHeight * 0.5;
+				portalWallTop = this.PROJECTIONPLANEHEIGHT - portalwallBottom;
+
+				portalWallOffset =
+					this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 2
+						? this.portalOutCollisionsX[i] % this.TILE_SIZE
+						: this.portalOutCollisionsY[i] % this.TILE_SIZE;
+
+				if (this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 1)
+					portalWallOffset = this.TILE_SIZE - portalWallOffset;
+
+				portalTextureBuffer = this.fWall1TextureBufferList[this.portalOutTypes?.[i] - 1];
+				portalTexturePixels = this.fWall1TexturePixelsList[this.portalOutTypes?.[i] - 1];
+
+				portalBrightness = 160 / totalPortalRayDist;
+
+				totalPortalRayDist = Math.floor(totalPortalRayDist);
+
+				if (portalBrightness > 1.2) portalBrightness = 1.2;
+
+				if (this.portalOutDirs?.[i] === 1 || this.portalOutDirs?.[i] === 3) {
+					portalBrightness = portalBrightness * 0.8;
+				}
+			}
+			// ---------------------------------------------------------------
+
 			const wallHeight = (this.TILE_SIZE / dist) * this.fPlayerDistanceToProjectionPlane;
-			const wallWidth = this.PROJECTIONPLANEWIDTH / this.rayAngles.length;
 			const wallBottom = this.PROJECTIONPLANEHEIGHT / 2 + wallHeight * 0.5;
 			const wallTop = this.PROJECTIONPLANEHEIGHT - wallBottom;
 
@@ -305,24 +409,7 @@ class GameWindow {
 					? this.tileCollisionsX[i] % this.TILE_SIZE
 					: this.tileCollisionsY[i] % this.TILE_SIZE;
 
-			let offset2;
-
-			if (i === this.rayLengths.length - 1) {
-				offset2 =
-					this.extraRay.tileDir === 0 || this.extraRay.tileDir === 2
-						? this.extraRay.tileCollisionX % this.TILE_SIZE
-						: this.extraRay.tileCollisionY % this.TILE_SIZE;
-			} else {
-				offset2 =
-					this.tileDirs?.[i + 1] === 0 || this.tileDirs?.[i + 1] === 2
-						? this.tileCollisionsX[i + 1] % this.TILE_SIZE
-						: this.tileCollisionsY[i + 1] % this.TILE_SIZE;
-			}
-
-			if (this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 1) {
-				offset = this.TILE_SIZE - offset;
-				offset2 = this.TILE_SIZE - offset2;
-			}
+			if (this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 1) offset = this.TILE_SIZE - offset;
 
 			let textureBuffer = this.fWall1TextureBufferList[this.tileTypes?.[i] - 1];
 			let texturePixels = this.fWall1TexturePixelsList[this.tileTypes?.[i] - 1];
@@ -338,15 +425,21 @@ class GameWindow {
 
 			this.drawWallSliceRectangleTinted(
 				i,
+				// Regular Ray
 				wallTop,
 				wallHeight + 1,
 				offset,
 				brighnessLevel,
 				textureBuffer,
-				texturePixels
+				texturePixels,
+				// Portal Ray
+				portalWallTop,
+				portalWallHeight + 1,
+				portalWallOffset,
+				portalBrightness,
+				portalTextureBuffer,
+				portalTexturePixels
 			);
-
-			wallX += wallWidth;
 		}
 	};
 
@@ -375,7 +468,7 @@ class GameWindow {
 		}
 	};
 
-	getIntersectionOfTile = (row, col, theta) => {
+	getIntersectionOfTile = (x, y, row, col, theta) => {
 		const x1 = col * this.TILE_SIZE;
 		const y1 = row * this.TILE_SIZE;
 
@@ -425,10 +518,10 @@ class GameWindow {
 					break;
 			}
 
-			const intersection = getIntersection(this.fPlayerX, this.fPlayerY, 1, theta, tX1, tY1, tX2, tY2);
+			const intersection = getIntersection(x, y, 1, theta, tX1, tY1, tX2, tY2);
 			if (intersection?.[0]) {
-				const dx = Math.abs(this.fPlayerX - intersection[0]);
-				const dy = Math.abs(this.fPlayerY - intersection[1]);
+				const dx = Math.abs(x - intersection[0]);
+				const dy = Math.abs(y - intersection[1]);
 				const d = Math.sqrt(dx * dx + dy * dy);
 				record = Math.min(d, record);
 				if (d <= record) {
@@ -452,7 +545,8 @@ class GameWindow {
 		portalIntersectInY,
 		portalIndexOut,
 		portalTileSideOut,
-		portalTileSideIn
+		portalTileSideIn,
+		rayInAng
 	) => {
 		if (portalIndexOut) {
 			let offset;
@@ -494,15 +588,75 @@ class GameWindow {
 					break;
 			}
 
-			this.debugCtx.fillStyle = 'blue';
-			this.debugCtx.beginPath();
-			this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * Math.PI);
-			this.debugCtx.fill();
+			const tileSideDiff = portalTileSideIn - portalTileSideOut;
+			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
+			let rayOutAng;
 
-			this.debugCtx.fillStyle = 'orangeRed';
-			this.debugCtx.beginPath();
-			this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * Math.PI);
-			this.debugCtx.fill();
+			if (tileSideDiff === 0) rayOutAng = rayInAng + Math.PI;
+			else if (Math.abs(tileSideDiff) === 1) {
+				rayOutAng = rayInAng + (Math.PI / 2) * tileSideDiffSign;
+			} else if (Math.abs(tileSideDiff) === 2) {
+				rayOutAng = rayInAng;
+			} else if (Math.abs(tileSideDiff) === 3) {
+				rayOutAng = rayInAng - (Math.PI / 2) * tileSideDiffSign;
+			}
+
+			let portal2RayRecord = Infinity;
+			let portal2RayClosest = null;
+			let tileTypeTemp = 0;
+			let tileSideDirTemp = 0;
+
+			for (let row = 0; row < this.mapRows; row++) {
+				for (let col = 0; col < this.mapCols; col++) {
+					const tile = this.map[row * this.mapCols + col];
+					if (tile === 0) continue;
+
+					const tileIntersection = this.getIntersectionOfTile(
+						this.portalOutXVals[i],
+						this.portalOutYVals[i],
+						row,
+						col,
+						rayOutAng
+					);
+
+					if (tileIntersection.record < portal2RayRecord) {
+						portal2RayRecord = tileIntersection.record;
+						portal2RayClosest = tileIntersection.closest;
+
+						tileTypeTemp = tile;
+						tileSideDirTemp = tileIntersection.dir;
+					}
+				}
+			}
+
+			if (portal2RayClosest) {
+				this.totalPortalRayLengths[i] = this.rayLengths[i] + portal2RayRecord;
+				this.portalOutCollisionsX[i] = portal2RayClosest[0];
+				this.portalOutCollisionsY[i] = portal2RayClosest[1];
+				this.portalOutTypes[i] = tileTypeTemp;
+				this.portalOutDirs[i] = tileSideDirTemp;
+				this.portalOutAngs[i] = rayOutAng;
+
+				if (this.DEBUG) {
+					this.debugCtx.fillStyle = 'blue';
+					this.debugCtx.beginPath();
+					this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * Math.PI);
+					this.debugCtx.fill();
+
+					this.debugCtx.fillStyle = 'orangeRed';
+					this.debugCtx.beginPath();
+					this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * Math.PI);
+					this.debugCtx.fill();
+
+					this.debugCtx.strokeStyle =
+						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
+					this.debugCtx.beginPath();
+					this.debugCtx.moveTo(this.portalOutXVals[i], this.portalOutYVals[i]);
+					this.debugCtx.lineTo(portal2RayClosest[0], portal2RayClosest[1]);
+					this.debugCtx.lineWidth = 1;
+					this.debugCtx.stroke();
+				}
+			} else this.totalPortalRayLengths[i] = Infinity;
 		}
 	};
 
@@ -510,15 +664,9 @@ class GameWindow {
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
 
-		for (let i = 0; i < this.rayAngles.length + 1; i++) {
-			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
-			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
-
-			if (i === this.rayAngles.length) {
-				adjustedAngle = this.extraRay.angle + degToRad(this.fPlayerAngle);
-			} else {
-				adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
-			}
+		for (let i = 0; i < this.rayAngles.length; i++) {
+			let adjustedAngle;
+			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 
 			let closest = null;
 			let record = Infinity;
@@ -529,7 +677,13 @@ class GameWindow {
 					const tile = this.map[row * this.mapCols + col];
 					if (tile === 0) continue;
 
-					const tileIntersection = this.getIntersectionOfTile(row, col, adjustedAngle);
+					const tileIntersection = this.getIntersectionOfTile(
+						this.fPlayerX,
+						this.fPlayerY,
+						row,
+						col,
+						adjustedAngle
+					);
 
 					if (tileIntersection.record < record) {
 						tileIndex = row * this.mapCols + col;
@@ -543,42 +697,37 @@ class GameWindow {
 			}
 
 			if (closest) {
-				if (i === this.rayAngles.length) {
-					this.extraRay.length = record;
-					this.extraRay.tileCollisionX = closest[0];
-					this.extraRay.tileCollisionY = closest[1];
-					this.extraRay.tileDir = tileSideDirTemp;
-				} else {
-					this.rayLengths[i] = record;
-					this.tileCollisionsX[i] = closest[0];
-					this.tileCollisionsY[i] = closest[1];
-					this.tileTypes[i] = tileTypeTemp;
-					this.tileDirs[i] = tileSideDirTemp;
+				this.rayLengths[i] = record;
+				this.tileCollisionsX[i] = closest[0];
+				this.tileCollisionsY[i] = closest[1];
+				this.tileTypes[i] = tileTypeTemp;
+				this.tileDirs[i] = tileSideDirTemp;
 
-					if (this.portalTileIndeces?.[0] === tileIndex) {
-						if (this.portalTileSides?.[0] === tileSideDirTemp) {
-							this.getRayFromPortal(
-								i,
-								closest[0],
-								closest[1],
-								this.portalTileIndeces?.[1],
-								this.portalTileSides[1],
-								tileSideDirTemp
-							);
-						}
-					} else if (this.portalTileIndeces?.[1] === tileIndex) {
-						if (this.portalTileSides?.[1] === tileSideDirTemp) {
-							this.getRayFromPortal(
-								i,
-								closest[0],
-								closest[1],
-								this.portalTileIndeces?.[0],
-								this.portalTileSides[0],
-								tileSideDirTemp
-							);
-						}
-					}
-				}
+				if (this.portalTileIndeces?.[0] === tileIndex) {
+					if (this.portalTileSides?.[0] === tileSideDirTemp) {
+						this.getRayFromPortal(
+							i,
+							closest[0],
+							closest[1],
+							this.portalTileIndeces?.[1],
+							this.portalTileSides[1],
+							tileSideDirTemp,
+							adjustedAngle
+						);
+					} else this.totalPortalRayLengths[i] = Infinity;
+				} else if (this.portalTileIndeces?.[1] === tileIndex) {
+					if (this.portalTileSides?.[1] === tileSideDirTemp) {
+						this.getRayFromPortal(
+							i,
+							closest[0],
+							closest[1],
+							this.portalTileIndeces?.[0],
+							this.portalTileSides[0],
+							tileSideDirTemp,
+							adjustedAngle
+						);
+					} else this.totalPortalRayLengths[i] = Infinity;
+				} else this.totalPortalRayLengths[i] = Infinity;
 
 				if (this.DEBUG) {
 					this.debugCtx.strokeStyle =
@@ -589,12 +738,7 @@ class GameWindow {
 					this.debugCtx.lineWidth = 1;
 					this.debugCtx.stroke();
 				}
-			} else {
-				if (i === this.rayAngles.length) this.extraRay.length = Infinity;
-				else {
-					this.rayLengths[i] = Infinity;
-				}
-			}
+			} else this.rayLengths[i] = Infinity;
 		}
 	};
 
@@ -780,8 +924,6 @@ class GameWindow {
 			const radian = (i * Math.PI) / (this.PROJECTIONPLANEWIDTH * 3);
 			this.fFishTable[i + this.PROJECTIONPLANEWIDTH / 2] = 1 / Math.cos(radian);
 		}
-
-		this.extraRay.angle = (ang - this.fPlayerFov / 2) * (Math.PI / 180);
 	};
 
 	preloadTextures = async img => {
