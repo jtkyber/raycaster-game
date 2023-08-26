@@ -1,5 +1,5 @@
 import { degToRad, getIntersection } from '../utils/calc.js';
-import { map1 } from './maps.js';
+import maps from './maps.js';
 
 class GameWindow {
 	constructor() {
@@ -11,7 +11,7 @@ class GameWindow {
 		this.offscreenCanvas = document.createElement('canvas');
 		this.offscreenCanvas.width = canvas.width;
 		this.offscreenCanvas.height = canvas.height;
-		this.offscreenCanvasContext = this.offscreenCanvas.getContext('2d');
+		this.offscreenCanvasContext = this.offscreenCanvas.getContext('2d', { alpha: false });
 		this.offscreenCanvasPixels = this.offscreenCanvasContext.getImageData(
 			0,
 			0,
@@ -19,8 +19,8 @@ class GameWindow {
 			this.canvasWidth
 		);
 
-		this.fWall1TextureBuffer;
-		this.fWall1TexturePixels;
+		this.fWall1TextureBufferList;
+		this.fWall1TexturePixelsList;
 
 		this.fFloorTextureBuffer;
 		this.fFloorTexturePixels;
@@ -39,33 +39,47 @@ class GameWindow {
 		this.then = 0;
 		this.elapsed = 0;
 
+		this.texturePaths = [
+			// Walls
+			'src/assets/wall1.png',
+			'src/assets/wall2.png',
+			// Floors
+			'src/assets/floor1.png',
+			'src/assets/floor2.png',
+			// Ceilings
+			'src/assets/ceiling1.png',
+			'src/assets/ceiling2.png',
+		];
+		this.textures = {};
+
 		this.TILE_SIZE = 64;
 		this.WALL_HEIGHT = 64;
-		this.MAP_COLS = 32;
-		this.MAP_ROWS = 32;
-		this.MAP_WIDTH = this.TILE_SIZE * this.MAP_COLS;
-		this.MAP_HEIGHT = this.TILE_SIZE * this.MAP_ROWS;
 
-		this.map1 = map1;
+		this.mapCols = maps[0].map[0].length;
+		this.mapRows = maps[0].map.length;
+		this.mapWidth = this.TILE_SIZE * this.mapCols;
+		this.mapHeight = this.TILE_SIZE * this.mapRows;
 
-		this.debugCanvas = document.getElementById('debugCanvas');
-		this.debugCanvas.width = this.MAP_WIDTH;
-		this.debugCanvas.height = this.MAP_HEIGHT;
-		this.debugCanvasWidth = this.debugCanvas.width;
-		this.debugCanvasHeight = this.debugCanvas.height;
-		this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
+		this.map = maps[0].map;
+		// [mapNum, playerX, playerY]
+		this.mapDataToSet = [0, 100, 100];
+
+		this.debugCanvas;
+		this.debugCanvasWidth;
+		this.debugCanvasHeight;
+		this.debugCtx;
 
 		this.PROJECTIONPLANEWIDTH = this.canvasWidth;
 		this.PROJECTIONPLANEHEIGHT = this.canvasHeight;
 
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
-		this.fPlayerX = 100;
-		this.fPlayerY = 100;
+		this.fPlayerX = this.mapDataToSet[1];
+		this.fPlayerY = this.mapDataToSet[2];
 		this.fPlayerAngle = 20;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
-		this.fPlayerSpeed = 5 / this.speedMultiplier;
+		this.fPlayerSpeed = 4 / this.speedMultiplier;
 		this.fPlayerDistanceToProjectionPlane = Math.floor(
 			this.PROJECTIONPLANEWIDTH / 2 / Math.tan(degToRad(this.fPlayerFov) / 2)
 		);
@@ -102,9 +116,6 @@ class GameWindow {
 			tileCollisionY: 0,
 			tileDir: 0,
 		};
-
-		this.texturePaths = ['src/assets/wall1.png', 'src/assets/floor.png', 'src/assets/ceiling.png'];
-		this.textures = {};
 
 		this.userIsInTab = false;
 
@@ -152,7 +163,7 @@ class GameWindow {
 			const cellX = Math.floor(xEnd / this.TILE_SIZE);
 			const cellY = Math.floor(yEnd / this.TILE_SIZE);
 
-			if (cellX < this.MAP_WIDTH && cellY < this.MAP_HEIGHT && cellX >= 0 && cellY >= 0) {
+			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
 				const sourceIndex = this.getSourceIndex(xEnd, yEnd, this.fFloorTextureBuffer);
 
 				const brighnessLevel = 200 / diagDist;
@@ -191,7 +202,7 @@ class GameWindow {
 			const cellX = Math.floor(xEnd / this.TILE_SIZE);
 			const cellY = Math.floor(yEnd / this.TILE_SIZE);
 
-			if (cellX < this.MAP_WIDTH && cellY < this.MAP_HEIGHT && cellX >= 0 && cellY >= 0) {
+			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
 				const sourceIndex = this.getSourceIndex(xEnd, yEnd, this.fFloorTextureBuffer);
 
 				const brighnessLevel = 200 / diagDist;
@@ -303,9 +314,11 @@ class GameWindow {
 				offset = this.TILE_SIZE - offset;
 				offset2 = this.TILE_SIZE - offset2;
 			}
+			// console.log(this.fWall1TextureBufferList);
 
-			let textureBuffer = this.fWall1TextureBuffer;
-			let texturePixels = this.fWall1TexturePixels;
+			let textureBuffer = this.fWall1TextureBufferList[this.tileTypes?.[i] - 1];
+			let texturePixels = this.fWall1TexturePixelsList[this.tileTypes?.[i] - 1];
+
 			let brighnessLevel = 160 / dist;
 
 			dist = Math.floor(dist);
@@ -331,9 +344,9 @@ class GameWindow {
 
 	draw2dWalls = () => {
 		let count = 0;
-		for (let i = 0; i < this.MAP_ROWS; i++) {
-			for (let j = 0; j < this.MAP_COLS; j++) {
-				const tile = this.map1[i * this.MAP_COLS + j];
+		for (let i = 0; i < this.mapRows; i++) {
+			for (let j = 0; j < this.mapCols; j++) {
+				const tile = this.map[i * this.mapCols + j];
 
 				switch (tile) {
 					case 0:
@@ -441,9 +454,9 @@ class GameWindow {
 
 			let closest = null;
 			let record = Infinity;
-			for (let row = 0; row < this.MAP_ROWS; row++) {
-				for (let col = 0; col < this.MAP_COLS; col++) {
-					const tile = this.map1[row * this.MAP_COLS + col];
+			for (let row = 0; row < this.mapRows; row++) {
+				for (let col = 0; col < this.mapCols; col++) {
+					const tile = this.map[row * this.mapCols + col];
 					if (tile === 0) continue;
 
 					const tileIntersection = this.getIntersectionOfTile(row, col, adjustedAngle);
@@ -459,13 +472,15 @@ class GameWindow {
 			}
 
 			if (closest) {
-				this.debugCtx.strokeStyle =
-					i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
-				this.debugCtx.beginPath();
-				this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
-				this.debugCtx.lineTo(closest[0], closest[1]);
-				this.debugCtx.lineWidth = 1;
-				this.debugCtx.stroke();
+				if (this.DEBUG) {
+					this.debugCtx.strokeStyle =
+						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
+					this.debugCtx.beginPath();
+					this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
+					this.debugCtx.lineTo(closest[0], closest[1]);
+					this.debugCtx.lineWidth = 1;
+					this.debugCtx.stroke();
+				}
 
 				if (i === this.rayAngles.length) {
 					this.extraRay.length = record;
@@ -484,13 +499,6 @@ class GameWindow {
 				else this.extraRay.length = Infinity;
 			}
 		}
-	};
-
-	drawFps = () => {
-		const fontSize = this.PROJECTIONPLANEHEIGHT / 24;
-		this.ctx.font = `${fontSize}px arial`;
-		this.ctx.fillStyle = this.framesCounted < this.frameRate ? 'red' : 'green';
-		this.ctx.fillText(this.framesCounted, 10, fontSize);
 	};
 
 	rotate = () => {
@@ -529,6 +537,89 @@ class GameWindow {
 		}
 	};
 
+	onWallTextureLoaded = imgNames => {
+		this.fWall1TextureBufferList = new Array(imgNames.length);
+		this.fWall1TexturePixelsList = new Array(imgNames.length);
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fWall1TextureBufferList[i] = document.createElement('canvas');
+			this.fWall1TextureBufferList[i].width = img.width;
+			this.fWall1TextureBufferList[i].height = img.height;
+			this.fWall1TextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+			const imgData = this.fWall1TextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(0, 0, this.fWall1TextureBufferList[i].width, this.fWall1TextureBufferList[i].height);
+			this.fWall1TexturePixelsList[i] = imgData.data;
+		}
+	};
+
+	onCeilingTextureLoaded = imgName => {
+		const img = this.textures[imgName];
+		this.fCeilingTextureBuffer = document.createElement('canvas');
+		this.fCeilingTextureBuffer.width = img.width;
+		this.fCeilingTextureBuffer.height = img.height;
+		this.fCeilingTextureBuffer.getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+		const imgData = this.fCeilingTextureBuffer
+			.getContext('2d', { alpha: false })
+			.getImageData(0, 0, this.fCeilingTextureBuffer.width, this.fCeilingTextureBuffer.height);
+		this.fCeilingTexturePixels = imgData.data;
+	};
+
+	onFloorTextureLoaded = imgName => {
+		const img = this.textures[imgName];
+		this.fFloorTextureBuffer = document.createElement('canvas');
+		this.fFloorTextureBuffer.width = img.width;
+		this.fFloorTextureBuffer.height = img.height;
+		this.fFloorTextureBuffer.getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+		const imgData = this.fFloorTextureBuffer
+			.getContext('2d', { alpha: false })
+			.getImageData(0, 0, this.fFloorTextureBuffer.width, this.fFloorTextureBuffer.height);
+		this.fFloorTexturePixels = imgData.data;
+	};
+
+	setNewMapData = () => {
+		const i = this.mapDataToSet[0];
+		this.onWallTextureLoaded(maps[i].wallTextures);
+		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
+		this.onFloorTextureLoaded(maps[i].floorTexture);
+		this.map = new Uint8Array(maps[i].map.flat());
+		this.mapCols = maps[i].map[0].length;
+		this.mapRows = maps[i].map.length;
+		this.mapWidth = this.TILE_SIZE * this.mapCols;
+		this.mapHeight = this.TILE_SIZE * this.mapRows;
+		this.fPlayerX = this.mapDataToSet[1];
+		this.fPlayerY = this.mapDataToSet[2];
+
+		if (this.DEBUG && this.debugCanvas) {
+			this.debugCanvas.width = this.mapWidth;
+			this.debugCanvas.height = this.mapHeight;
+			this.debugCanvasWidth = this.debugCanvas.width;
+			this.debugCanvasHeight = this.debugCanvas.height;
+			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
+
+			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
+		}
+	};
+
+	drawFps = () => {
+		const fontSize = this.PROJECTIONPLANEHEIGHT / 28;
+		const xOffset = this.PROJECTIONPLANEWIDTH / 90;
+		const yOffset = this.PROJECTIONPLANEHEIGHT / 90;
+
+		this.ctx.font = `600 ${fontSize}px arial`;
+		this.ctx.fontWeight = 800;
+		this.ctx.fillStyle = this.framesCounted < this.frameRate ? 'red' : 'green';
+		this.ctx.shadowColor = 'black';
+		this.ctx.shadowBlur = 4;
+		this.ctx.textAlign = 'left';
+		this.ctx.textBaseline = 'top';
+		this.ctx.fillText(this.framesCounted, xOffset, yOffset);
+		this.ctx.shadowBlur = 0;
+	};
+
 	update = () => {
 		this.animationFrameId = requestAnimationFrame(this.update);
 		this.now = Date.now();
@@ -546,18 +637,27 @@ class GameWindow {
 			this.then = this.now - (this.elapsed % (1000 / this.frameRate));
 
 			this.offscreenCanvasContext.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-			this.debugCtx.clearRect(0, 0, this.debugCanvasWidth, this.debugCanvasHeight);
+			if (this.DEBUG && this.debugCtx)
+				this.debugCtx.clearRect(0, 0, this.debugCanvasWidth, this.debugCanvasHeight);
 			this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+			if (this.mapDataToSet[0]) {
+				this.setNewMapData();
+				this.mapDataToSet = [];
+			}
+
 			this.move();
-			this.draw2dWalls();
+			if (this.DEBUG) this.draw2dWalls();
 			this.raycaster();
 			this.draw3dWalls();
 			this.ctx.putImageData(this.offscreenCanvasPixels, 0, 0);
 
-			this.debugCtx.fillStyle = `rgba(0,255,0,1)`;
-			this.debugCtx.beginPath();
-			this.debugCtx.ellipse(this.fPlayerX, this.fPlayerY, 4, 4, 0, 0, 2 * Math.PI);
-			this.debugCtx.fill();
+			if (this.DEBUG && this.debugCtx) {
+				this.debugCtx.fillStyle = `rgba(0,255,0,1)`;
+				this.debugCtx.beginPath();
+				this.debugCtx.ellipse(this.fPlayerX, this.fPlayerY, 4, 4, 0, 0, 2 * Math.PI);
+				this.debugCtx.fill();
+			}
 
 			this.drawFps();
 		}
@@ -587,43 +687,7 @@ class GameWindow {
 		this.extraRay.angle = (ang - this.fPlayerFov / 2) * (Math.PI / 180);
 	};
 
-	onWallTextureLoaded = () => {
-		this.fWall1TextureBuffer = document.createElement('canvas');
-		this.fWall1TextureBuffer.width = this.textures.wall1.width;
-		this.fWall1TextureBuffer.height = this.textures.wall1.height;
-		this.fWall1TextureBuffer.getContext('2d').drawImage(this.textures.wall1, 0, 0);
-
-		const imgData = this.fWall1TextureBuffer
-			.getContext('2d')
-			.getImageData(0, 0, this.fWall1TextureBuffer.width, this.fWall1TextureBuffer.height);
-		this.fWall1TexturePixels = imgData.data;
-	};
-
-	onCeilingTextureLoaded = () => {
-		this.fCeilingTextureBuffer = document.createElement('canvas');
-		this.fCeilingTextureBuffer.width = this.textures.ceiling.width;
-		this.fCeilingTextureBuffer.height = this.textures.ceiling.height;
-		this.fCeilingTextureBuffer.getContext('2d').drawImage(this.textures.ceiling, 0, 0);
-
-		const imgData = this.fCeilingTextureBuffer
-			.getContext('2d')
-			.getImageData(0, 0, this.fCeilingTextureBuffer.width, this.fCeilingTextureBuffer.height);
-		this.fCeilingTexturePixels = imgData.data;
-	};
-
-	onFloorTextureLoaded = () => {
-		this.fFloorTextureBuffer = document.createElement('canvas');
-		this.fFloorTextureBuffer.width = this.textures.floor.width;
-		this.fFloorTextureBuffer.height = this.textures.floor.height;
-		this.fFloorTextureBuffer.getContext('2d').drawImage(this.textures.floor, 0, 0);
-
-		const imgData = this.fFloorTextureBuffer
-			.getContext('2d')
-			.getImageData(0, 0, this.fFloorTextureBuffer.width, this.fFloorTextureBuffer.height);
-		this.fFloorTexturePixels = imgData.data;
-	};
-
-	preloadTextures = async () => {
+	preloadTextures = async img => {
 		const preloadImages = () => {
 			const promises = this.texturePaths.map(path => {
 				return new Promise((resolve, reject) => {
@@ -643,9 +707,7 @@ class GameWindow {
 		const imgArraytemp = await preloadImages();
 		this.textures = Object.fromEntries(imgArraytemp);
 
-		this.onWallTextureLoaded();
-		this.onCeilingTextureLoaded();
-		this.onFloorTextureLoaded();
+		this.setNewMapData();
 	};
 
 	init = async () => {
@@ -654,7 +716,17 @@ class GameWindow {
 
 		if (!this.DEBUG) {
 			this.canvas.classList.add('fullscreen');
-			this.debugCanvas.remove();
+		} else {
+			const container = document.querySelector('.container');
+			const newCanvas = document.createElement('canvas');
+			newCanvas.id = 'debugCanvas';
+			this.debugCanvas = newCanvas;
+			this.debugCanvas.width = this.mapWidth;
+			this.debugCanvas.height = this.mapHeight;
+			this.debugCanvasWidth = this.debugCanvas.width;
+			this.debugCanvasHeight = this.debugCanvas.height;
+			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
+			container.appendChild(newCanvas);
 		}
 
 		document.addEventListener('click', e => {
