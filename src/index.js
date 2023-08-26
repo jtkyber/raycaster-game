@@ -30,7 +30,7 @@ class GameWindow {
 
 		this.bytesPerPixel = 4;
 
-		this.frameRate = 30;
+		this.frameRate = 60;
 		this.speedMultiplier = this.frameRate / 60;
 		this.frameCount = 0;
 		this.framesCounted = 0;
@@ -43,6 +43,8 @@ class GameWindow {
 			// Walls
 			'src/assets/wall1.png',
 			'src/assets/wall2.png',
+			'src/assets/doubleDoor.png',
+			'src/assets/doubleDoor2.png',
 			// Floors
 			'src/assets/floor1.png',
 			'src/assets/floor2.png',
@@ -62,7 +64,7 @@ class GameWindow {
 
 		this.map = maps[0].map;
 		// [mapNum, playerX, playerY]
-		this.mapDataToSet = [0, 100, 100];
+		this.mapDataToSet = [0, 100, 170];
 
 		this.debugCanvas;
 		this.debugCanvasWidth;
@@ -76,7 +78,7 @@ class GameWindow {
 
 		this.fPlayerX = this.mapDataToSet[1];
 		this.fPlayerY = this.mapDataToSet[2];
-		this.fPlayerAngle = 20;
+		this.fPlayerAngle = 350;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
 		this.fPlayerSpeed = 4 / this.speedMultiplier;
@@ -109,6 +111,13 @@ class GameWindow {
 		this.tileTypes = null;
 		this.tileDirs = null;
 
+		this.portalTileIndeces = [39, 409];
+		this.portalTileSides = [3, 0];
+
+		this.rayDistsFromPortal = null;
+		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutYVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
+
 		this.extraRay = {
 			angle: 0,
 			length: 0,
@@ -119,7 +128,7 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = false;
+		this.DEBUG = true;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -314,7 +323,6 @@ class GameWindow {
 				offset = this.TILE_SIZE - offset;
 				offset2 = this.TILE_SIZE - offset2;
 			}
-			// console.log(this.fWall1TextureBufferList);
 
 			let textureBuffer = this.fWall1TextureBufferList[this.tileTypes?.[i] - 1];
 			let texturePixels = this.fWall1TexturePixelsList[this.tileTypes?.[i] - 1];
@@ -322,7 +330,7 @@ class GameWindow {
 			let brighnessLevel = 160 / dist;
 
 			dist = Math.floor(dist);
-			if (brighnessLevel > 1.5) brighnessLevel = 1.5;
+			if (brighnessLevel > 1.2) brighnessLevel = 1.2;
 
 			if (this.tileDirs?.[i] === 1 || this.tileDirs?.[i] === 3) {
 				brighnessLevel = brighnessLevel * 0.8;
@@ -438,6 +446,66 @@ class GameWindow {
 		};
 	};
 
+	getRayFromPortal = (
+		i,
+		portalIntersectInX,
+		portalIntersectInY,
+		portalIndexOut,
+		portalTileSideOut,
+		portalTileSideIn
+	) => {
+		if (portalIndexOut) {
+			let offset;
+
+			switch (portalTileSideIn) {
+				case 0:
+					offset = this.TILE_SIZE - (portalIntersectInX % this.TILE_SIZE);
+					break;
+				case 1:
+					offset = this.TILE_SIZE - (portalIntersectInY % this.TILE_SIZE);
+					break;
+				case 2:
+					offset = portalIntersectInX % this.TILE_SIZE;
+					break;
+				case 3:
+					offset = portalIntersectInY % this.TILE_SIZE;
+					break;
+			}
+
+			const xStart = this.TILE_SIZE * (portalIndexOut % this.mapCols) - 1;
+			const yStart = this.TILE_SIZE * Math.floor(portalIndexOut / this.mapCols);
+
+			switch (portalTileSideOut) {
+				case 0:
+					this.portalOutXVals[i] = xStart + offset;
+					this.portalOutYVals[i] = yStart;
+					break;
+				case 1:
+					this.portalOutXVals[i] = xStart + this.TILE_SIZE;
+					this.portalOutYVals[i] = yStart + offset;
+					break;
+				case 2:
+					this.portalOutXVals[i] = xStart + this.TILE_SIZE - offset;
+					this.portalOutYVals[i] = yStart + this.TILE_SIZE;
+					break;
+				case 3:
+					this.portalOutXVals[i] = xStart;
+					this.portalOutYVals[i] = yStart + this.TILE_SIZE - offset;
+					break;
+			}
+
+			this.debugCtx.fillStyle = 'blue';
+			this.debugCtx.beginPath();
+			this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * Math.PI);
+			this.debugCtx.fill();
+
+			this.debugCtx.fillStyle = 'orangeRed';
+			this.debugCtx.beginPath();
+			this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * Math.PI);
+			this.debugCtx.fill();
+		}
+	};
+
 	raycaster = () => {
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
@@ -454,6 +522,8 @@ class GameWindow {
 
 			let closest = null;
 			let record = Infinity;
+
+			let tileIndex = null;
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
 					const tile = this.map[row * this.mapCols + col];
@@ -462,6 +532,7 @@ class GameWindow {
 					const tileIntersection = this.getIntersectionOfTile(row, col, adjustedAngle);
 
 					if (tileIntersection.record < record) {
+						tileIndex = row * this.mapCols + col;
 						record = tileIntersection.record;
 						closest = tileIntersection.closest;
 
@@ -472,16 +543,6 @@ class GameWindow {
 			}
 
 			if (closest) {
-				if (this.DEBUG) {
-					this.debugCtx.strokeStyle =
-						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
-					this.debugCtx.beginPath();
-					this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
-					this.debugCtx.lineTo(closest[0], closest[1]);
-					this.debugCtx.lineWidth = 1;
-					this.debugCtx.stroke();
-				}
-
 				if (i === this.rayAngles.length) {
 					this.extraRay.length = record;
 					this.extraRay.tileCollisionX = closest[0];
@@ -493,10 +554,46 @@ class GameWindow {
 					this.tileCollisionsY[i] = closest[1];
 					this.tileTypes[i] = tileTypeTemp;
 					this.tileDirs[i] = tileSideDirTemp;
+
+					if (this.portalTileIndeces?.[0] === tileIndex) {
+						if (this.portalTileSides?.[0] === tileSideDirTemp) {
+							this.getRayFromPortal(
+								i,
+								closest[0],
+								closest[1],
+								this.portalTileIndeces?.[1],
+								this.portalTileSides[1],
+								tileSideDirTemp
+							);
+						}
+					} else if (this.portalTileIndeces?.[1] === tileIndex) {
+						if (this.portalTileSides?.[1] === tileSideDirTemp) {
+							this.getRayFromPortal(
+								i,
+								closest[0],
+								closest[1],
+								this.portalTileIndeces?.[0],
+								this.portalTileSides[0],
+								tileSideDirTemp
+							);
+						}
+					}
+				}
+
+				if (this.DEBUG) {
+					this.debugCtx.strokeStyle =
+						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
+					this.debugCtx.beginPath();
+					this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
+					this.debugCtx.lineTo(closest[0], closest[1]);
+					this.debugCtx.lineWidth = 1;
+					this.debugCtx.stroke();
 				}
 			} else {
-				if (i === this.rayAngles.length) this.rayLengths[i] = Infinity;
-				else this.extraRay.length = Infinity;
+				if (i === this.rayAngles.length) this.extraRay.length = Infinity;
+				else {
+					this.rayLengths[i] = Infinity;
+				}
 			}
 		}
 	};
