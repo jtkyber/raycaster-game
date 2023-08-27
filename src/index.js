@@ -31,6 +31,7 @@ class GameWindow {
 		this.bytesPerPixel = 4;
 
 		this.frameRate = 30;
+		// this.frameRate = 0.1;
 		this.speedMultiplier = this.frameRate / 60;
 		this.frameCount = 0;
 		this.framesCounted = 0;
@@ -111,8 +112,12 @@ class GameWindow {
 		this.tileTypes = null;
 		this.tileDirs = null;
 
+		// this.portalTileIndeces = [39, 409];
+		// this.portalTileSides = [3, 0];
 		this.portalTileIndeces = [39, 409];
 		this.portalTileSides = [3, 0];
+		// this.portalTileIndeces = [181, 353];
+		// this.portalTileSides = [0, 3];
 
 		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
@@ -149,11 +154,15 @@ class GameWindow {
 		}
 	};
 
-	drawCeiling = (wallTop, castColumn, rayAng) => {
+	drawCeiling = (wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal) => {
 		let targetIndex =
 			wallTop * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
-		for (let row = wallTop; row >= 0; row--) {
+		let targetIndexPortal =
+			wallTopPortal * (this.offscreenCanvasPixels.width * this.bytesPerPixel) +
+			this.bytesPerPixel * castColumn;
+
+		for (let row = wallTopPortal || wallTop; row >= 0; row--) {
 			const ratio = (this.WALL_HEIGHT - this.fPlayerHeight) / (this.fProjectionPlaneYCenter - row);
 
 			const diagDist = Math.floor(
@@ -169,8 +178,54 @@ class GameWindow {
 			const cellX = Math.floor(xEnd / this.TILE_SIZE);
 			const cellY = Math.floor(yEnd / this.TILE_SIZE);
 
-			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
-				const sourceIndex = this.getSourceIndex(xEnd, yEnd, this.fFloorTextureBuffer);
+			//----------------------------------------------------------------------------------
+
+			let xEndPortal;
+			let yEndPortal;
+			let cellXPortal;
+			let cellYPortal;
+
+			if (wallTopPortal) {
+				xEndPortal = Math.floor(diagDist * Math.cos(rayAngPortal));
+				yEndPortal = Math.floor(diagDist * Math.sin(rayAngPortal));
+
+				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
+				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
+
+				cellXPortal = Math.floor(xEndPortal / this.TILE_SIZE);
+				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
+			}
+
+			if (wallTopPortal && row > wallTop) {
+				if (
+					true ||
+					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
+				) {
+					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
+					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
+
+					const sourceIndex =
+						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
+
+					const brighnessLevel = 200 / diagDist;
+					const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * brighnessLevel);
+					const green = Math.floor(this.fCeilingTexturePixels[sourceIndex + 1] * brighnessLevel);
+					const blue = Math.floor(this.fCeilingTexturePixels[sourceIndex + 2] * brighnessLevel);
+					const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
+
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+
+					targetIndexPortal -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				}
+			} else if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
+				const tileRow = Math.floor(xEnd % this.TILE_SIZE);
+				const tileCol = Math.floor(yEnd % this.TILE_SIZE);
+
+				const sourceIndex =
+					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
 				const brighnessLevel = 200 / diagDist;
 				const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * brighnessLevel);
@@ -188,16 +243,18 @@ class GameWindow {
 		}
 	};
 
-	drawFloor = (wallBottom, castColumn, rayAng) => {
+	drawFloor = (wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal) => {
 		let targetIndex =
 			wallBottom * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
-		for (let row = wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
+		let targetIndexPortal =
+			wallBottomPortal * (this.offscreenCanvasPixels.width * this.bytesPerPixel) +
+			this.bytesPerPixel * castColumn;
+
+		for (let row = wallBottomPortal || wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
 			const ratio = this.fPlayerHeight / (row - this.fProjectionPlaneYCenter);
 
-			const diagDist = Math.floor(
-				this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]
-			);
+			let diagDist = Math.floor(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
 
 			let xEnd = Math.floor(diagDist * Math.cos(rayAng));
 			let yEnd = Math.floor(diagDist * Math.sin(rayAng));
@@ -205,11 +262,59 @@ class GameWindow {
 			xEnd += this.fPlayerX;
 			yEnd += this.fPlayerY;
 
-			const cellX = Math.floor(xEnd / this.TILE_SIZE);
-			const cellY = Math.floor(yEnd / this.TILE_SIZE);
+			let cellX = Math.floor(xEnd / this.TILE_SIZE);
+			let cellY = Math.floor(yEnd / this.TILE_SIZE);
 
-			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
-				const sourceIndex = this.getSourceIndex(xEnd, yEnd, this.fFloorTextureBuffer);
+			//-------------------------------------------------------------------------
+
+			let xEndPortal;
+			let yEndPortal;
+			let cellXPortal;
+			let cellYPortal;
+
+			if (wallBottomPortal) {
+				xEndPortal = Math.floor(diagDist * Math.cos(rayAngPortal));
+				yEndPortal = Math.floor(diagDist * Math.sin(rayAngPortal));
+
+				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
+				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
+
+				cellXPortal = Math.floor(xEndPortal / this.TILE_SIZE);
+				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
+			}
+
+			if (wallBottomPortal && row < wallBottom) {
+				if (
+					cellXPortal < this.mapCols &&
+					cellYPortal < this.mapRows &&
+					cellXPortal >= 0 &&
+					cellYPortal >= 0
+				) {
+					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
+					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
+
+					const sourceIndex =
+						tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
+
+					const brighnessLevel = 200 / diagDist;
+					const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * brighnessLevel);
+					const green = Math.floor(this.fFloorTexturePixels[sourceIndex + 1] * brighnessLevel);
+					const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * brighnessLevel);
+					const alpha = Math.floor(this.fFloorTexturePixels[sourceIndex + 3]);
+
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+
+					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				}
+			} else if (cellX < this.mapCols && cellY < this.mapRows && cellX >= 0 && cellY >= 0) {
+				const tileRow = Math.floor(xEnd % this.TILE_SIZE);
+				const tileCol = Math.floor(yEnd % this.TILE_SIZE);
+
+				const sourceIndex =
+					tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
 				const brighnessLevel = 200 / diagDist;
 				const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * brighnessLevel);
@@ -291,18 +396,6 @@ class GameWindow {
 		let yError = 0;
 
 		if (sourceIndexPortal !== null) {
-			while (heightToDraw >= 1) {
-				heightToDraw--;
-
-				this.offscreenCanvasPixels.data[targetIndex] = 0;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = 0;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = 0;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-
-				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
-				if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
-			}
-
 			while (true) {
 				yError += heightPortal;
 				const red = Math.floor(texturePixelsPortal[sourceIndexPortal] * brighnessLevelPortal);
@@ -359,7 +452,7 @@ class GameWindow {
 			let totalPortalRayDist =
 				this.totalPortalRayLengths[i] < Infinity ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
 			let portalWallHeight = 0;
-			let portalwallBottom = 0;
+			let portalWallBottom = null;
 			let portalWallTop = 0;
 			let portalWallOffset = 0;
 			let portalTextureBuffer = null;
@@ -368,8 +461,8 @@ class GameWindow {
 
 			if (totalPortalRayDist) {
 				portalWallHeight = (this.TILE_SIZE / totalPortalRayDist) * this.fPlayerDistanceToProjectionPlane;
-				portalwallBottom = this.PROJECTIONPLANEHEIGHT / 2 + portalWallHeight * 0.5;
-				portalWallTop = this.PROJECTIONPLANEHEIGHT - portalwallBottom;
+				portalWallBottom = this.PROJECTIONPLANEHEIGHT / 2 + portalWallHeight * 0.5;
+				portalWallTop = this.PROJECTIONPLANEHEIGHT - portalWallBottom;
 
 				portalWallOffset =
 					this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 2
@@ -391,6 +484,7 @@ class GameWindow {
 				if (this.portalOutDirs?.[i] === 1 || this.portalOutDirs?.[i] === 3) {
 					portalBrightness = portalBrightness * 0.8;
 				}
+				// if (this.portalOutAngs[i]) console.log(dist, totalPortalRayDist);
 			}
 			// ---------------------------------------------------------------
 
@@ -401,8 +495,20 @@ class GameWindow {
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
 
-			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
-			this.drawCeiling(Math.floor(wallTop), i, adjustedAngle);
+			this.drawFloor(
+				Math.floor(wallBottom),
+				i,
+				adjustedAngle,
+				Math.floor(portalWallBottom),
+				this.portalOutAngs[i]
+			);
+			this.drawCeiling(
+				Math.floor(wallTop),
+				i,
+				adjustedAngle,
+				Math.floor(portalWallTop),
+				this.portalOutAngs[i]
+			);
 
 			let offset =
 				this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 2
@@ -588,6 +694,19 @@ class GameWindow {
 					break;
 			}
 
+			if (
+				(portalTileSideOut === 1 || portalTileSideOut === 3) &&
+				this.portalOutXVals[i] % this.TILE_SIZE !== 0
+			) {
+				this.portalOutXVals[i] += 1;
+			} else if (
+				(portalTileSideOut === 0 || portalTileSideOut === 2) &&
+				this.portalOutYVals[i] % this.TILE_SIZE !== 0
+			) {
+				this.portalOutYVals[i] += 1;
+			}
+			// console.log(this.portalOutXVals[i]);
+
 			const tileSideDiff = portalTileSideIn - portalTileSideOut;
 			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
 			let rayOutAng;
@@ -703,30 +822,29 @@ class GameWindow {
 				this.tileTypes[i] = tileTypeTemp;
 				this.tileDirs[i] = tileSideDirTemp;
 
-				if (this.portalTileIndeces?.[0] === tileIndex) {
-					if (this.portalTileSides?.[0] === tileSideDirTemp) {
-						this.getRayFromPortal(
-							i,
-							closest[0],
-							closest[1],
-							this.portalTileIndeces?.[1],
-							this.portalTileSides[1],
-							tileSideDirTemp,
-							adjustedAngle
-						);
-					} else this.totalPortalRayLengths[i] = Infinity;
-				} else if (this.portalTileIndeces?.[1] === tileIndex) {
-					if (this.portalTileSides?.[1] === tileSideDirTemp) {
-						this.getRayFromPortal(
-							i,
-							closest[0],
-							closest[1],
-							this.portalTileIndeces?.[0],
-							this.portalTileSides[0],
-							tileSideDirTemp,
-							adjustedAngle
-						);
-					} else this.totalPortalRayLengths[i] = Infinity;
+				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
+					this.getRayFromPortal(
+						i,
+						closest[0],
+						closest[1],
+						this.portalTileIndeces?.[1],
+						this.portalTileSides[1],
+						tileSideDirTemp,
+						adjustedAngle
+					);
+				} else if (
+					this.portalTileIndeces?.[1] === tileIndex &&
+					this.portalTileSides?.[1] === tileSideDirTemp
+				) {
+					this.getRayFromPortal(
+						i,
+						closest[0],
+						closest[1],
+						this.portalTileIndeces?.[0],
+						this.portalTileSides[0],
+						tileSideDirTemp,
+						adjustedAngle
+					);
 				} else this.totalPortalRayLengths[i] = Infinity;
 
 				if (this.DEBUG) {
