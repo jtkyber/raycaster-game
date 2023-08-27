@@ -44,23 +44,10 @@ body {
 
 #debugCanvas {
 	position: relative;
-	/* width: 800px; */
 	background-color: rgba(0, 0, 0, 1);
 	box-shadow: 0.5rem 0.5rem 1.5rem 0 rgba(0, 0, 0, 0.5);
 	z-index: 1;
-	/* aspect-ratio: 1/1; */
 	display: block;
-}
-#debugCanvas.fullscreen {
-	display: none;
-}
-
-#fpsCounter {
-	position: absolute;
-	top: 0.5rem;
-	left: 1rem;
-	font-weight: 400;
-	color: transparent;
 }
 
 @media (min-aspect-ratio: 16/9) {
