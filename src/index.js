@@ -80,6 +80,7 @@ class GameWindow {
 		this.fPlayerX = this.mapDataToSet[1];
 		this.fPlayerY = this.mapDataToSet[2];
 		this.fPlayerAngle = 350;
+		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
 		this.fPlayerSpeed = 4 / this.speedMultiplier;
@@ -130,7 +131,7 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = true;
+		this.DEBUG = false;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -484,7 +485,6 @@ class GameWindow {
 				if (this.portalOutDirs?.[i] === 1 || this.portalOutDirs?.[i] === 3) {
 					portalBrightness = portalBrightness * 0.8;
 				}
-				// if (this.portalOutAngs[i]) console.log(dist, totalPortalRayDist);
 			}
 			// ---------------------------------------------------------------
 
@@ -705,7 +705,6 @@ class GameWindow {
 			) {
 				this.portalOutYVals[i] += 1;
 			}
-			// console.log(this.portalOutXVals[i]);
 
 			const tileSideDiff = portalTileSideIn - portalTileSideOut;
 			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
@@ -868,6 +867,116 @@ class GameWindow {
 		}
 	};
 
+	setMoveDir = () => {
+		if (this.fKeyForward && !this.fKeyRight && !this.fKeyLeft) {
+			// forward
+			this.fPlayerMoveDir = this.fPlayerAngle;
+		} else if (this.fKeyBack && !this.fKeyRight && !this.fKeyLeft) {
+			// backwards
+			this.fPlayerMoveDir = this.fPlayerAngle + 180;
+		} else if (this.fKeyRight && !this.fKeyForward && !this.fKeyBack) {
+			// right
+			this.fPlayerMoveDir = this.fPlayerAngle + 90;
+		} else if (this.fKeyLeft && !this.fKeyForward && !this.fKeyBack) {
+			// left
+			this.fPlayerMoveDir = this.fPlayerAngle - 90;
+		} else if (this.fKeyForward && this.fKeyRight) {
+			// forward-right
+			this.fPlayerMoveDir = this.fPlayerAngle + 45;
+		} else if (this.fKeyForward && this.fKeyLeft) {
+			// forward-left
+			this.fPlayerMoveDir = this.fPlayerAngle - 45;
+		} else if (this.fKeyBack && this.fKeyRight) {
+			// backwards-right
+			this.fPlayerMoveDir = this.fPlayerAngle + 135;
+		} else if (this.fKeyBack && this.fKeyLeft) {
+			// backwards-left
+			this.fPlayerMoveDir = this.fPlayerAngle - 135;
+		}
+	};
+
+	getXspeed = () => this.fPlayerSpeed * Math.cos(degToRad(this.fPlayerMoveDir));
+
+	getYspeed = () => this.fPlayerSpeed * Math.sin(degToRad(this.fPlayerMoveDir));
+
+	playerTooCloseToWall = (row, col) => {
+		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
+
+		const tileMidX = col * this.TILE_SIZE + this.TILE_SIZE / 2;
+		const tileMidY = row * this.TILE_SIZE + this.TILE_SIZE / 2;
+
+		const dx = this.fPlayerX - tileMidX;
+		const dy = this.fPlayerY - tileMidY;
+		const d = Math.sqrt(dx * dx + dy * dy);
+
+		if (d <= minDist) return [dx, dy];
+		return;
+	};
+
+	handlePortalCollision = portalNum => {
+		const portalNumOut = portalNum === 0 ? 1 : 0;
+		const xStartOut = this.TILE_SIZE * (this.portalTileIndeces[portalNumOut] % this.mapCols);
+		const yStartOut = this.TILE_SIZE * Math.floor(this.portalTileIndeces[portalNumOut] / this.mapCols);
+
+		let offset;
+		let newPlayerX = null;
+		let newPlayerY = null;
+		switch (this.portalTileSides[portalNum]) {
+			case 0:
+				offset = this.TILE_SIZE - (this.fPlayerX % this.TILE_SIZE);
+				break;
+			case 1:
+				offset = this.TILE_SIZE - (this.fPlayerY % this.TILE_SIZE);
+				break;
+			case 2:
+				offset = this.fPlayerX % this.TILE_SIZE;
+				break;
+			case 3:
+				offset = this.fPlayerY % this.TILE_SIZE;
+				break;
+		}
+
+		switch (this.portalTileSides[portalNumOut]) {
+			case 0:
+				newPlayerX = xStartOut + offset;
+				newPlayerY = yStartOut;
+				break;
+			case 1:
+				newPlayerX = xStartOut + this.TILE_SIZE;
+				newPlayerY = yStartOut + offset;
+				break;
+			case 2:
+				newPlayerX = xStartOut + this.TILE_SIZE - offset;
+				newPlayerY = yStartOut + this.TILE_SIZE;
+				break;
+			case 3:
+				newPlayerX = xStartOut;
+				newPlayerY = yStartOut + this.TILE_SIZE - offset;
+				break;
+		}
+
+		if (newPlayerX && newPlayerY) {
+			this.fPlayerX = newPlayerX;
+			this.fPlayerY = newPlayerY;
+
+			const tileSideDiff = this.portalTileSides[portalNum] - this.portalTileSides[portalNumOut];
+			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
+			let portalInAng = degToRad(this.fPlayerAngle);
+			let portalOutAng;
+
+			if (tileSideDiff === 0) portalOutAng = portalInAng + Math.PI;
+			else if (Math.abs(tileSideDiff) === 1) {
+				portalOutAng = portalInAng + (Math.PI / 2) * tileSideDiffSign;
+			} else if (Math.abs(tileSideDiff) === 2) {
+				portalOutAng = portalInAng;
+			} else if (Math.abs(tileSideDiff) === 3) {
+				portalOutAng = portalInAng - (Math.PI / 2) * tileSideDiffSign;
+			}
+
+			this.fPlayerAngle = radToDeg(portalOutAng);
+		}
+	};
+
 	move = () => {
 		this.rotate();
 
@@ -878,6 +987,81 @@ class GameWindow {
 		const angStrafe = ang + Math.PI / 2;
 		const strafeX = (this.fPlayerSpeed * Math.cos(Math.PI / 2 - angStrafe)) / 2;
 		const strafeY = (this.fPlayerSpeed * Math.cos(angStrafe)) / 2;
+
+		const playerTileCol = Math.floor(this.fPlayerX / this.TILE_SIZE);
+		const playerTileRow = Math.floor(this.fPlayerY / this.TILE_SIZE);
+
+		this.setMoveDir();
+		const moveDir = convertDeg0To360(this.fPlayerMoveDir);
+		let newPlayerX = null;
+		let newPlayerY = null;
+
+		if (this.fKeyForward || this.fKeyBack || this.fKeyLeft || this.fKeyRight) {
+			for (let row = 0; row < this.mapRows; row++) {
+				loop1: for (let col = 0; col < this.mapCols; col++) {
+					const tileIndex = row * this.mapCols + col;
+					const tile = this.map[tileIndex];
+					if (tile === 0 || (row === playerTileRow && col === playerTileCol)) continue;
+
+					if (Math.abs(col - playerTileCol) <= 1 && Math.abs(row - playerTileRow) <= 1) {
+						const closeDistToTile = this.playerTooCloseToWall(row, col);
+
+						if (closeDistToTile) {
+							const angleToWallCenter = radToDeg(
+								Math.atan2(Math.abs(closeDistToTile[1]), Math.abs(closeDistToTile[0]))
+							);
+
+							if (angleToWallCenter >= 0 && angleToWallCenter < 45) {
+								// On left or right of wall
+								const playerWallTileDiffCol = playerTileCol - col;
+								if (playerWallTileDiffCol > 0 && (moveDir > 270 || moveDir < 90)) break loop1;
+								else if (playerWallTileDiffCol < 0 && moveDir < 270 && moveDir > 90) break loop1;
+								const intersectSide = playerWallTileDiffCol > 0 ? 1 : 3;
+								if (tileIndex === this.portalTileIndeces[0]) {
+									if (this.portalTileSides[0] === intersectSide) {
+										this.handlePortalCollision(0);
+										return;
+									}
+								} else if (tileIndex === this.portalTileIndeces[1]) {
+									if (this.portalTileSides[1] === intersectSide) {
+										this.handlePortalCollision(1);
+										return;
+									}
+								}
+								newPlayerY = this.fPlayerY + this.getYspeed();
+							} else if (angleToWallCenter >= 45 && angleToWallCenter < 90) {
+								// On top or bottom of wall
+								const playerWallTileDiffRow = playerTileRow - row;
+								if (playerWallTileDiffRow > 0 && moveDir > 0 && moveDir < 180) break loop1;
+								else if (playerWallTileDiffRow < 0 && moveDir > 180 && moveDir < 360) break loop1;
+								const intersectSide = playerWallTileDiffRow > 0 ? 2 : 0;
+								if (tileIndex === this.portalTileIndeces[0]) {
+									if (this.portalTileSides[0] === intersectSide) {
+										this.handlePortalCollision(0);
+										return;
+									}
+								} else if (tileIndex === this.portalTileIndeces[1]) {
+									if (this.portalTileSides[1] === intersectSide) {
+										this.handlePortalCollision(1);
+										return;
+									}
+								}
+								newPlayerX = this.fPlayerX + this.getXspeed();
+							}
+						}
+					}
+				}
+			}
+
+			if (newPlayerX && newPlayerY) return;
+			else if (newPlayerX) {
+				this.fPlayerX = newPlayerX;
+				return;
+			} else if (newPlayerY) {
+				this.fPlayerY = newPlayerY;
+				return;
+			}
+		}
 
 		if (this.fKeyForward) {
 			this.fPlayerX += moveX;
@@ -894,6 +1078,8 @@ class GameWindow {
 			this.fPlayerX += strafeX;
 			this.fPlayerY -= strafeY;
 		}
+
+		this.setMoveDir();
 	};
 
 	onWallTextureLoaded = imgNames => {
