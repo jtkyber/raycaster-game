@@ -131,7 +131,7 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = true;
+		this.DEBUG = false;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -426,10 +426,11 @@ class GameWindow {
 		}
 
 		const circleCenter = this.TILE_SIZE / 2;
-		const dx = Math.abs(circleCenter - xOffset);
-		const radius = circleCenter - 2;
-		const effectRadius = circleCenter;
-		// const effectRadius = circleCenter - Math.random();
+		const dx = circleCenter - xOffset;
+		const radiusY = circleCenter - 2;
+		const radiusX = radiusY - 4;
+		const effectRadiusY = radiusY + 2;
+		const effectRadiusX = radiusX + 2;
 		const effectRed = portalNum === 0 ? 0 : 255;
 		const effectGreen = portalNum === 0 ? 0 : 0;
 		const effectBlue = portalNum === 0 ? 255 : 0;
@@ -442,13 +443,15 @@ class GameWindow {
 			const alpha = Math.floor(texturePixels[sourceIndex + 3]);
 
 			const yOffset = sourceIndex / (this.bytesPerPixel * textureBuffer.width);
-			const dy = Math.abs(circleCenter - yOffset);
-			const d = Math.sqrt(dx * dx + dy * dy);
+			const dy = circleCenter - yOffset;
+			const inEllipse = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1;
+			const inEffectEllipse =
+				(dx * dx) / (effectRadiusX * effectRadiusX) + (dy * dy) / (effectRadiusY * effectRadiusY) <= 1;
 
 			while (yError >= textureBuffer.width) {
 				yError -= textureBuffer.width;
-				if (sourceIndexPortal && d > radius) {
-					if (sourceIndexPortal && d < effectRadius) {
+				if (sourceIndexPortal && !inEllipse) {
+					if (sourceIndexPortal && inEffectEllipse) {
 						this.offscreenCanvasPixels.data[targetIndex] = effectRed * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 1] = effectGreen * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 2] = effectBlue * brighnessLevel;
