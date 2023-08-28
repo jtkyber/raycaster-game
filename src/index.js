@@ -132,7 +132,7 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = true;
+		this.DEBUG = false;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -429,11 +429,11 @@ class GameWindow {
 		const circleCenter = this.TILE_SIZE / 2;
 		const dx = circleCenter - xOffset;
 		const radiusY = circleCenter - 2;
-		const radiusX = radiusY - 4;
+		const radiusX = radiusY - 6;
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
 		const effectRed = portalNum === 0 ? 0 : 255;
-		const effectGreen = portalNum === 0 ? 0 : 0;
+		const effectGreen = portalNum === 0 ? 70 : 70;
 		const effectBlue = portalNum === 0 ? 255 : 0;
 
 		while (true) {
