@@ -132,7 +132,7 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = false;
+		this.DEBUG = true;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -156,7 +156,7 @@ class GameWindow {
 		}
 	};
 
-	drawCeiling = (wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal) => {
+	drawCeiling = (wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) => {
 		let targetIndex =
 			wallTop * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
@@ -203,6 +203,10 @@ class GameWindow {
 					true ||
 					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
 				) {
+					const effectRed = portalNum === 0 ? 0 : 255;
+					const effectGreen = portalNum === 0 ? 70 : 70;
+					const effectBlue = portalNum === 0 ? 255 : 0;
+
 					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
 					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
 
@@ -215,9 +219,9 @@ class GameWindow {
 					const blue = Math.floor(this.fCeilingTexturePixels[sourceIndex + 2] * brighnessLevel);
 					const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
 					targetIndexPortal -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
@@ -245,7 +249,7 @@ class GameWindow {
 		}
 	};
 
-	drawFloor = (wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal) => {
+	drawFloor = (wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) => {
 		let targetIndex =
 			wallBottom * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
@@ -292,6 +296,10 @@ class GameWindow {
 					cellXPortal >= 0 &&
 					cellYPortal >= 0
 				) {
+					const effectRed = portalNum === 0 ? 0 : 255;
+					const effectGreen = portalNum === 0 ? 70 : 70;
+					const effectBlue = portalNum === 0 ? 255 : 0;
+
 					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
 					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
 
@@ -304,9 +312,9 @@ class GameWindow {
 					const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * brighnessLevel);
 					const alpha = Math.floor(this.fFloorTexturePixels[sourceIndex + 3]);
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
 					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
@@ -398,6 +406,10 @@ class GameWindow {
 
 		let yError = 0;
 
+		const effectRed = portalNum === 0 ? 0 : 255;
+		const effectGreen = portalNum === 0 ? 70 : 70;
+		const effectBlue = portalNum === 0 ? 255 : 0;
+
 		if (sourceIndexPortal !== null) {
 			loop1: while (true) {
 				yError += heightPortal;
@@ -408,9 +420,9 @@ class GameWindow {
 
 				while (yError >= textureBufferPortal.width) {
 					yError -= textureBufferPortal.width;
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
 
@@ -429,12 +441,9 @@ class GameWindow {
 		const circleCenter = this.TILE_SIZE / 2;
 		const dx = circleCenter - xOffset;
 		const radiusY = circleCenter - 2;
-		const radiusX = radiusY - 6;
+		const radiusX = radiusY * 0.7;
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
-		const effectRed = portalNum === 0 ? 0 : 255;
-		const effectGreen = portalNum === 0 ? 70 : 70;
-		const effectBlue = portalNum === 0 ? 255 : 0;
 
 		while (true) {
 			yError += height;
@@ -560,14 +569,16 @@ class GameWindow {
 				i,
 				adjustedAngle,
 				Math.floor(portalWallBottom),
-				this.portalOutAngs[i]
+				this.portalOutAngs[i],
+				portalNum
 			);
 			this.drawCeiling(
 				Math.floor(wallTop),
 				i,
 				adjustedAngle,
 				Math.floor(portalWallTop),
-				this.portalOutAngs[i]
+				this.portalOutAngs[i],
+				portalNum
 			);
 
 			let offset =
