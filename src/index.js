@@ -114,9 +114,10 @@ class GameWindow {
 		this.tileDirs = null;
 		this.tileIndeces = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
-		// this.portalTileIndeces = [36, null];
-		this.portalTileIndeces = new Uint16Array([36, 409]);
-		this.portalTileSides = new Uint16Array([3, 0]);
+		this.portalTileIndeces = new Uint16Array([null, null]);
+		this.portalTileSides = new Uint16Array([null, null]);
+		// this.portalTileIndeces = new Uint16Array([36, 409]);
+		// this.portalTileSides = new Udwwdint16Array([3, 0]);
 		// this.portalTileIndeces = [181, 353];
 		// this.portalTileSides = [0, 3];
 		this.portalColors = [
@@ -139,12 +140,6 @@ class GameWindow {
 
 		this.DEBUG = false;
 	}
-
-	getSourceIndex = (x, y, textureBuffer) => {
-		const tileRow = Math.floor(x % this.TILE_SIZE);
-		const tileCol = Math.floor(y % this.TILE_SIZE);
-		return tileRow * textureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
-	};
 
 	drawFillRectangle = (x, y, width, height, red, green, blue, alpha) => {
 		const bytesPerPixel = 4;
@@ -1453,7 +1448,6 @@ class GameWindow {
 		}
 
 		document.addEventListener('mousedown', e => {
-			this.evenFlag = 'leftClick';
 			if (!this.userIsInTab && !this.DEBUG) {
 				this.userIsInTab = true;
 
@@ -1464,6 +1458,7 @@ class GameWindow {
 				this.canvas.requestPointerLock({
 					unadjustedMovement: true,
 				});
+				return;
 			}
 
 			if (e.button === 0) this.evenFlag = 'leftClick';
