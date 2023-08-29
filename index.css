@@ -28,8 +28,8 @@ body {
 #canvas {
 	position: relative;
 	border: 1px solid rgba(255, 255, 255, 0.4);
-	max-width: 1280px;
-	max-height: 720px;
+	max-width: 1024px;
+	max-height: 576px;
 	/* background: linear-gradient(0deg, #1f1f1f 60%, #001c3a00 0%); */
 	background-color: black;
 	box-shadow: 0.5rem 0.5rem 1.5rem 0 rgba(0, 0, 0, 0.5);
