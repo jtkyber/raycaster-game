@@ -140,8 +140,9 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.evenFlag = '';
+		this.eventFlag = '';
 
+		this.reticleOnWall = false;
 		this.DEBUG = false;
 	}
 
@@ -260,12 +261,13 @@ class GameWindow {
 			this.bytesPerPixel * castColumn;
 
 		for (let row = wallBottomPortal || wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
-			const ratio = this.fPlayerHeight / (row - this.fProjectionPlaneYCenter);
+			const straightDistance =
+				(this.fPlayerHeight / (row - this.fProjectionPlaneYCenter)) * this.fPlayerDistanceToProjectionPlane;
 
-			let diagDist = Math.floor(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
+			let actualDistance = straightDistance * this.fFishTable[castColumn];
 
-			let xEnd = Math.floor(diagDist * Math.cos(rayAng));
-			let yEnd = Math.floor(diagDist * Math.sin(rayAng));
+			let xEnd = Math.floor(actualDistance * Math.cos(rayAng));
+			let yEnd = Math.floor(actualDistance * Math.sin(rayAng));
 
 			xEnd += this.fPlayerX;
 			yEnd += this.fPlayerY;
@@ -281,8 +283,8 @@ class GameWindow {
 			let cellYPortal;
 
 			if (wallBottomPortal) {
-				xEndPortal = Math.floor(diagDist * Math.cos(rayAngPortal));
-				yEndPortal = Math.floor(diagDist * Math.sin(rayAngPortal));
+				xEndPortal = Math.floor(actualDistance * Math.cos(rayAngPortal));
+				yEndPortal = Math.floor(actualDistance * Math.sin(rayAngPortal));
 
 				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
 				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
@@ -304,7 +306,7 @@ class GameWindow {
 					const sourceIndex =
 						tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-					const brighnessLevel = 200 / diagDist;
+					const brighnessLevel = 200 / actualDistance;
 					const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * brighnessLevel);
 					const green = Math.floor(this.fFloorTexturePixels[sourceIndex + 1] * brighnessLevel);
 					const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * brighnessLevel);
@@ -326,7 +328,7 @@ class GameWindow {
 				const sourceIndex =
 					tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const brighnessLevel = 200 / diagDist;
+				const brighnessLevel = 200 / actualDistance;
 				const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * brighnessLevel);
 				const green = Math.floor(this.fFloorTexturePixels[sourceIndex + 1] * brighnessLevel);
 				const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * brighnessLevel);
@@ -529,8 +531,8 @@ class GameWindow {
 					portalNum = 1;
 
 				portalWallHeight = (this.TILE_SIZE / totalPortalRayDist) * this.fPlayerDistanceToProjectionPlane;
-				portalWallBottom = this.PROJECTIONPLANEHEIGHT / 2 + portalWallHeight * 0.5;
-				portalWallTop = this.PROJECTIONPLANEHEIGHT - portalWallBottom;
+				portalWallBottom = this.fProjectionPlaneYCenter + portalWallHeight * 0.5;
+				portalWallTop = this.fProjectionPlaneYCenter - portalWallHeight * 0.5;
 
 				portalWallOffset =
 					this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 2
@@ -564,11 +566,18 @@ class GameWindow {
 			// ---------------------------------------------------------------
 
 			const wallHeight = (this.TILE_SIZE / dist) * this.fPlayerDistanceToProjectionPlane;
-			const wallBottom = this.PROJECTIONPLANEHEIGHT / 2 + wallHeight * 0.5;
-			const wallTop = this.PROJECTIONPLANEHEIGHT - wallBottom;
+			const wallBottom = this.fProjectionPlaneYCenter + wallHeight * 0.5;
+			const wallTop = this.fProjectionPlaneYCenter - wallHeight * 0.5;
 
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
+
+			if (
+				i === this.PROJECTIONPLANEWIDTH / 2 &&
+				Math.abs(this.fProjectionPlaneYCenter - this.PROJECTIONPLANEHEIGHT / 2) <= wallHeight / 2
+			) {
+				this.reticleOnWall = true;
+			} else if (i === this.PROJECTIONPLANEWIDTH / 2) this.reticleOnWall = false;
 
 			this.drawFloor(
 				Math.floor(wallBottom),
@@ -1261,6 +1270,7 @@ class GameWindow {
 	};
 
 	handlePortalShot = portalNum => {
+		if (!this.reticleOnWall) return;
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
 		let tileIndex = 0;
@@ -1379,12 +1389,12 @@ class GameWindow {
 				this.mapDataToSet = [];
 			}
 
-			if (this.evenFlag === 'leftClick') {
+			if (this.eventFlag === 'leftClick') {
 				this.handlePortalShot(0);
-			} else if (this.evenFlag === 'rightClick') {
+			} else if (this.eventFlag === 'rightClick') {
 				this.handlePortalShot(1);
 			}
-			this.evenFlag = '';
+			this.eventFlag = '';
 
 			if (this.portalSizeMultipliers[0] < 1) this.portalSizeMultipliers[0] += 0.1;
 			if (this.portalSizeMultipliers[1] < 1) this.portalSizeMultipliers[1] += 0.1;
@@ -1493,8 +1503,8 @@ class GameWindow {
 				return;
 			}
 
-			if (e.button === 0) this.evenFlag = 'leftClick';
-			else if (e.button === 2) this.evenFlag = 'rightClick';
+			if (e.button === 0) this.eventFlag = 'leftClick';
+			else if (e.button === 2) this.eventFlag = 'rightClick';
 		});
 
 		document.addEventListener('contextmenu', e => e.preventDefault());
@@ -1503,6 +1513,7 @@ class GameWindow {
 			if (!this.userIsInTab) return;
 			if (!this.DEBUG) {
 				this.fPlayerAngle += e.movementX / 20;
+				this.fProjectionPlaneYCenter -= e.movementY / 4;
 			}
 		});
 
