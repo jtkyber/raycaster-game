@@ -1468,12 +1468,14 @@ class GameWindow {
 		document.addEventListener('contextmenu', e => e.preventDefault());
 
 		document.addEventListener('mousemove', e => {
+			if (!this.userIsInTab) return;
 			if (!this.DEBUG) {
 				this.fPlayerAngle += e.movementX / 20;
 			}
 		});
 
 		document.addEventListener('keydown', e => {
+			if (!this.userIsInTab) return;
 			if (e.code === 'KeyW') {
 				this.fKeyForward = true;
 				this.fKeyBack = false;
@@ -1498,6 +1500,7 @@ class GameWindow {
 		});
 
 		document.addEventListener('keyup', e => {
+			if (!this.userIsInTab) return;
 			if (e.code === 'KeyW') {
 				this.fKeyForward = false;
 			} else if (e.code === 'KeyS') {
