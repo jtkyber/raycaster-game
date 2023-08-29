@@ -119,15 +119,11 @@ class GameWindow {
 
 		this.portalTileIndeces = new Uint16Array([null, null]);
 		this.portalTileSides = new Uint16Array([null, null]);
-		// this.portalTileIndeces = new Uint16Array([36, 409]);
-		// this.portalTileSides = new Uint16Array([3, 0]);
-		// this.portalTileIndeces = [181, 353];
-		// this.portalTileSides = [0, 3];
+		this.portalSizeMultipliers = new Float32Array([1, 1]);
 		this.portalColors = [
 			[0, 101, 255],
 			[255, 93, 0],
 		];
-		this.portalSizeMultipliers = new Float32Array([1, 1]);
 
 		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
@@ -138,11 +134,22 @@ class GameWindow {
 		this.portalOutDirs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
-		this.userIsInTab = false;
-
 		this.eventFlag = '';
 
+		this.userIsInTab = false;
 		this.reticleOnWall = false;
+		this.isJumping = false;
+		this.jumpSpeedStart = 5;
+		this.jumpSpeed = this.jumpSpeedStart;
+		this.gravityValue = 0.6;
+
+		this.isCrouching = false;
+		this.isStanding = false;
+		this.crouchAmt = 10;
+		this.crouchSpeedStart = 4;
+		this.crouchSpeed = this.crouchSpeedStart;
+		this.crouchGravity = 0.3;
+
 		this.DEBUG = false;
 	}
 
@@ -530,9 +537,11 @@ class GameWindow {
 				)
 					portalNum = 1;
 
-				portalWallHeight = (this.TILE_SIZE / totalPortalRayDist) * this.fPlayerDistanceToProjectionPlane;
-				portalWallBottom = this.fProjectionPlaneYCenter + portalWallHeight * 0.5;
-				portalWallTop = this.fProjectionPlaneYCenter - portalWallHeight * 0.5;
+				const ratio = this.fPlayerDistanceToProjectionPlane / totalPortalRayDist;
+				const scale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / totalPortalRayDist;
+				portalWallBottom = ratio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+				portalWallTop = portalWallBottom - scale;
+				portalWallHeight = portalWallBottom - portalWallTop;
 
 				portalWallOffset =
 					this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 2
@@ -565,16 +574,23 @@ class GameWindow {
 			}
 			// ---------------------------------------------------------------
 
-			const wallHeight = (this.TILE_SIZE / dist) * this.fPlayerDistanceToProjectionPlane;
-			const wallBottom = this.fProjectionPlaneYCenter + wallHeight * 0.5;
-			const wallTop = this.fProjectionPlaneYCenter - wallHeight * 0.5;
+			// const wallHeight = (this.TILE_SIZE / dist) * this.fPlayerDistanceToProjectionPlane;
+			// const wallBottom = this.fProjectionPlaneYCenter + wallHeight * 0.5;
+			// const wallTop = this.fProjectionPlaneYCenter - wallHeight * 0.5;
+
+			const ratio = this.fPlayerDistanceToProjectionPlane / dist;
+			const scale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / dist;
+			const wallBottom = ratio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+			const wallTop = wallBottom - scale;
+			const wallHeight = wallBottom - wallTop;
 
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
 
 			if (
 				i === this.PROJECTIONPLANEWIDTH / 2 &&
-				Math.abs(this.fProjectionPlaneYCenter - this.PROJECTIONPLANEHEIGHT / 2) <= wallHeight / 2
+				wallTop <= this.PROJECTIONPLANEHEIGHT / 2 &&
+				wallBottom >= this.PROJECTIONPLANEHEIGHT / 2
 			) {
 				this.reticleOnWall = true;
 			} else if (i === this.PROJECTIONPLANEWIDTH / 2) this.reticleOnWall = false;
@@ -1363,6 +1379,38 @@ class GameWindow {
 		);
 	};
 
+	jump = () => {
+		this.fPlayerHeight += this.jumpSpeed;
+		this.jumpSpeed -= this.gravityValue;
+
+		if (this.fPlayerHeight <= this.TILE_SIZE / 2) {
+			this.jumpSpeed = this.jumpSpeedStart;
+			this.fPlayerHeight = this.TILE_SIZE / 2;
+			this.isJumping = false;
+		}
+	};
+
+	crouch = () => {
+		this.fPlayerHeight -= this.crouchSpeed;
+		this.crouchSpeed -= this.crouchGravity;
+
+		if (this.fPlayerHeight <= this.TILE_SIZE / 2 - this.crouchAmt) {
+			this.crouchSpeed = this.crouchSpeedStart;
+			this.fPlayerHeight = this.TILE_SIZE / 2 - this.crouchAmt;
+		}
+	};
+
+	stand = () => {
+		this.fPlayerHeight += this.crouchSpeed;
+		this.crouchSpeed -= this.crouchGravity;
+
+		if (this.fPlayerHeight >= this.TILE_SIZE / 2) {
+			this.crouchSpeed = this.crouchSpeedStart;
+			this.fPlayerHeight = this.TILE_SIZE / 2;
+			this.isStanding = false;
+		}
+	};
+
 	update = () => {
 		this.animationFrameId = requestAnimationFrame(this.update);
 		this.now = Date.now();
@@ -1395,6 +1443,10 @@ class GameWindow {
 				this.handlePortalShot(1);
 			}
 			this.eventFlag = '';
+
+			if (this.isJumping) this.jump();
+			if (this.isCrouching) this.crouch();
+			if (this.isStanding) this.stand();
 
 			if (this.portalSizeMultipliers[0] < 1) this.portalSizeMultipliers[0] += 0.1;
 			if (this.portalSizeMultipliers[1] < 1) this.portalSizeMultipliers[1] += 0.1;
@@ -1541,6 +1593,11 @@ class GameWindow {
 					this.fKeyLeft = false;
 				}
 			}
+
+			if (e.code === 'Space' && !this.isJumping && !this.isCrouching && !this.isStanding)
+				this.isJumping = true;
+
+			if (e.code === 'ShiftLeft' && !this.isCrouching && !this.isJumping) this.isCrouching = true;
 		});
 
 		document.addEventListener('keyup', e => {
@@ -1557,6 +1614,11 @@ class GameWindow {
 			} else if (e.code === 'KeyD') {
 				if (this.DEBUG) this.fRotationDir = '';
 				else this.fKeyRight = false;
+			}
+
+			if (e.code === 'ShiftLeft' && this.isCrouching) {
+				this.isCrouching = false;
+				this.isStanding = true;
 			}
 		});
 
