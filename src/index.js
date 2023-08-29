@@ -134,8 +134,6 @@ class GameWindow {
 		this.portalOutDirs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
-		this.eventFlag = '';
-
 		this.userIsInTab = false;
 		this.reticleOnWall = false;
 		this.isJumping = false;
@@ -1380,6 +1378,7 @@ class GameWindow {
 	};
 
 	jump = () => {
+		if (this.isCrouching || this.isStanding) return;
 		this.fPlayerHeight += this.jumpSpeed;
 		this.jumpSpeed -= this.gravityValue;
 
@@ -1391,6 +1390,7 @@ class GameWindow {
 	};
 
 	crouch = () => {
+		if (this.isJumping || this.isStanding) return;
 		this.fPlayerHeight -= this.crouchSpeed;
 		this.crouchSpeed -= this.crouchGravity;
 
@@ -1401,6 +1401,7 @@ class GameWindow {
 	};
 
 	stand = () => {
+		if (this.isJumping || this.isJumping) return;
 		this.fPlayerHeight += this.crouchSpeed;
 		this.crouchSpeed -= this.crouchGravity;
 
@@ -1436,13 +1437,6 @@ class GameWindow {
 				this.setNewMapData();
 				this.mapDataToSet = [];
 			}
-
-			if (this.eventFlag === 'leftClick') {
-				this.handlePortalShot(0);
-			} else if (this.eventFlag === 'rightClick') {
-				this.handlePortalShot(1);
-			}
-			this.eventFlag = '';
 
 			if (this.isJumping) this.jump();
 			if (this.isCrouching) this.crouch();
@@ -1555,8 +1549,8 @@ class GameWindow {
 				return;
 			}
 
-			if (e.button === 0) this.eventFlag = 'leftClick';
-			else if (e.button === 2) this.eventFlag = 'rightClick';
+			if (e.button === 0) this.handlePortalShot(0);
+			else if (e.button === 2) this.handlePortalShot(1);
 		});
 
 		document.addEventListener('contextmenu', e => e.preventDefault());
@@ -1616,10 +1610,15 @@ class GameWindow {
 				else this.fKeyRight = false;
 			}
 
-			if (e.code === 'ShiftLeft' && this.isCrouching) {
+			if (e.code === 'ShiftLeft') {
 				this.isCrouching = false;
 				this.isStanding = true;
 			}
+		});
+
+		window.addEventListener('beforeunload', e => {
+			e.preventDefault();
+			return (e.returnValue = 'Exit Tab?');
 		});
 
 		this.animationFrameId = requestAnimationFrame(this.update);
@@ -1628,3 +1627,6 @@ class GameWindow {
 
 const gameWindow = new GameWindow();
 gameWindow.init();
+// window.addEventListener('beforeunload', e => {
+// 	return 'Exit Tab?';
+// });
