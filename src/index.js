@@ -43,6 +43,8 @@ class GameWindow {
 		this.texturePaths = [
 			// Walls
 			'src/assets/wall1.png',
+			'src/assets/wall1nice.png',
+			'src/assets/wall1job.png',
 			'src/assets/wall2.png',
 			'src/assets/doubleDoor.png',
 			'src/assets/doubleDoor2.png',
@@ -65,7 +67,7 @@ class GameWindow {
 
 		this.map = maps[0].map;
 		// [mapNum, playerX, playerY]
-		this.mapDataToSet = [0, 100, 150];
+		this.mapDataToSet = [0, 480, 1100];
 
 		this.debugCanvas;
 		this.debugCanvasWidth;
@@ -79,7 +81,7 @@ class GameWindow {
 
 		this.fPlayerX = this.mapDataToSet[1];
 		this.fPlayerY = this.mapDataToSet[2];
-		this.fPlayerAngle = 350;
+		this.fPlayerAngle = 90;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
@@ -117,13 +119,14 @@ class GameWindow {
 		this.portalTileIndeces = new Uint16Array([null, null]);
 		this.portalTileSides = new Uint16Array([null, null]);
 		// this.portalTileIndeces = new Uint16Array([36, 409]);
-		// this.portalTileSides = new Udwwdint16Array([3, 0]);
+		// this.portalTileSides = new Uint16Array([3, 0]);
 		// this.portalTileIndeces = [181, 353];
 		// this.portalTileSides = [0, 3];
 		this.portalColors = [
 			[0, 101, 255],
 			[255, 93, 0],
 		];
+		this.portalSizeMultipliers = new Float32Array([1, 1]);
 
 		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
@@ -434,7 +437,7 @@ class GameWindow {
 
 		const circleCenter = this.TILE_SIZE / 2;
 		const dx = circleCenter - xOffset;
-		const radiusY = circleCenter - 2;
+		const radiusY = (circleCenter - 2) * (this.portalSizeMultipliers[portalNum] || 1);
 		const radiusX = radiusY * 0.7;
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
@@ -638,7 +641,7 @@ class GameWindow {
 						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 						break;
 					case 2:
-						this.debugCtx.fillStyle = 'rgb(100, 100, 100)';
+						this.debugCtx.fillStyle = 'rgb(150, 150, 150)';
 						this.debugCtx.beginPath();
 						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 						break;
@@ -1230,14 +1233,11 @@ class GameWindow {
 		const yOffset = this.PROJECTIONPLANEHEIGHT / 90;
 
 		this.ctx.font = `600 ${fontSize}px arial`;
-		this.ctx.fontWeight = 800;
 		this.ctx.fillStyle = this.framesCounted < this.frameRate ? 'red' : 'green';
-		this.ctx.shadowColor = 'black';
-		this.ctx.shadowBlur = 4;
+		this.ctx.strokeStyle = 'black';
 		this.ctx.textAlign = 'left';
 		this.ctx.textBaseline = 'top';
 		this.ctx.fillText(this.framesCounted, xOffset, yOffset);
-		this.ctx.shadowBlur = 0;
 	};
 
 	handlePortalShot = portalNum => {
@@ -1250,7 +1250,7 @@ class GameWindow {
 		for (let row = 0; row < this.mapRows; row++) {
 			for (let col = 0; col < this.mapCols; col++) {
 				const tile = this.map[row * this.mapCols + col];
-				if (tile === 0) continue;
+				if (tile === 0 || tile === 2) continue;
 
 				const tileIntersection = this.getIntersectionOfTile(
 					this.fPlayerX,
@@ -1280,6 +1280,7 @@ class GameWindow {
 			}
 			this.portalTileIndeces[portalNum] = tileIndex;
 			this.portalTileSides[portalNum] = tileSideDirTemp;
+			this.portalSizeMultipliers[portalNum] = 0;
 		}
 	};
 
@@ -1364,6 +1365,9 @@ class GameWindow {
 				this.handlePortalShot(1);
 			}
 			this.evenFlag = '';
+
+			if (this.portalSizeMultipliers[0] < 1) this.portalSizeMultipliers[0] += 0.1;
+			if (this.portalSizeMultipliers[1] < 1) this.portalSizeMultipliers[1] += 0.1;
 
 			this.move();
 			if (this.DEBUG) this.draw2dWalls();
@@ -1475,7 +1479,7 @@ class GameWindow {
 		});
 
 		document.addEventListener('keydown', e => {
-			if (!this.userIsInTab) return;
+			if (!this.userIsInTab && !this.DEBUG) return;
 			if (e.code === 'KeyW') {
 				this.fKeyForward = true;
 				this.fKeyBack = false;
@@ -1500,7 +1504,7 @@ class GameWindow {
 		});
 
 		document.addEventListener('keyup', e => {
-			if (!this.userIsInTab) return;
+			if (!this.userIsInTab && !this.DEBUG) return;
 			if (e.code === 'KeyW') {
 				this.fKeyForward = false;
 			} else if (e.code === 'KeyS') {
