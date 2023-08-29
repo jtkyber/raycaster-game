@@ -43,9 +43,10 @@ class GameWindow {
 		this.texturePaths = [
 			// Walls
 			'src/assets/wall1.png',
-			'src/assets/wall1nice.png',
-			'src/assets/wall1job.png',
 			'src/assets/wall2.png',
+			'src/assets/wall3.png',
+			'src/assets/wall3nice.png',
+			'src/assets/wall3job.png',
 			'src/assets/doubleDoor.png',
 			'src/assets/doubleDoor2.png',
 			// Floors
@@ -67,7 +68,7 @@ class GameWindow {
 
 		this.map = maps[0].map;
 		// [mapNum, playerX, playerY]
-		this.mapDataToSet = [0, 480, 1100];
+		this.mapDataToSet = [0, 100, 100];
 
 		this.debugCanvas;
 		this.debugCanvasWidth;
@@ -81,7 +82,7 @@ class GameWindow {
 
 		this.fPlayerX = this.mapDataToSet[1];
 		this.fPlayerY = this.mapDataToSet[2];
-		this.fPlayerAngle = 90;
+		this.fPlayerAngle = 5;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
@@ -636,15 +637,34 @@ class GameWindow {
 					case 0:
 						break;
 					case 1:
-						this.debugCtx.fillStyle = 'rgb(100, 100, 100)';
+						this.debugCtx.fillStyle = 'rgb(50, 50, 50)';
 						this.debugCtx.beginPath();
 						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 						break;
 					case 2:
+						this.debugCtx.fillStyle = 'rgb(100, 100, 100)';
+						this.debugCtx.beginPath();
+						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+						break;
+					case 3:
 						this.debugCtx.fillStyle = 'rgb(150, 150, 150)';
 						this.debugCtx.beginPath();
 						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 						break;
+					case 4:
+						this.debugCtx.fillStyle = 'rgb(200, 200, 200)';
+						this.debugCtx.beginPath();
+						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+						break;
+					case 5:
+						this.debugCtx.fillStyle = 'rgb(240, 240, 240)';
+						this.debugCtx.beginPath();
+						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+						break;
+					default:
+						this.debugCtx.fillStyle = 'rgb(100, 100, 100)';
+						this.debugCtx.beginPath();
+						this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 				}
 				count++;
 			}
@@ -1451,10 +1471,18 @@ class GameWindow {
 			container.appendChild(newCanvas);
 		}
 
+		document.addEventListener(
+			'pointerlockchange',
+			() => {
+				if (document.pointerLockElement === canvas) {
+					this.userIsInTab = true;
+				} else this.userIsInTab = false;
+			},
+			false
+		);
+
 		document.addEventListener('mousedown', e => {
 			if (!this.userIsInTab && !this.DEBUG) {
-				this.userIsInTab = true;
-
 				this.canvas.requestPointerLock =
 					this.canvas.requestPointerLock ||
 					this.canvas.mozRequestPointerLock ||
@@ -1480,6 +1508,7 @@ class GameWindow {
 
 		document.addEventListener('keydown', e => {
 			if (!this.userIsInTab && !this.DEBUG) return;
+
 			if (e.code === 'KeyW') {
 				this.fKeyForward = true;
 				this.fKeyBack = false;
