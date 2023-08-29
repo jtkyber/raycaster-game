@@ -112,14 +112,17 @@ class GameWindow {
 		this.tileCollisionsY = null;
 		this.tileTypes = null;
 		this.tileDirs = null;
+		this.tileIndeces = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
-		// this.portalTileIndeces = [39, 409];
-		// this.portalTileSides = [3, 0];
 		// this.portalTileIndeces = [36, null];
-		this.portalTileIndeces = [36, 409];
-		this.portalTileSides = [3, 0];
+		this.portalTileIndeces = new Uint16Array([36, 409]);
+		this.portalTileSides = new Uint16Array([3, 0]);
 		// this.portalTileIndeces = [181, 353];
 		// this.portalTileSides = [0, 3];
+		this.portalColors = [
+			[0, 101, 255],
+			[255, 93, 0],
+		];
 
 		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
@@ -132,7 +135,9 @@ class GameWindow {
 
 		this.userIsInTab = false;
 
-		this.DEBUG = true;
+		this.evenFlag = '';
+
+		this.DEBUG = false;
 	}
 
 	getSourceIndex = (x, y, textureBuffer) => {
@@ -143,7 +148,7 @@ class GameWindow {
 
 	drawFillRectangle = (x, y, width, height, red, green, blue, alpha) => {
 		const bytesPerPixel = 4;
-		const targetIndex = bytesPerPixel * this.offscreenCanvasPixels.width * y + bytesPerPixel * x;
+		let targetIndex = bytesPerPixel * this.offscreenCanvasPixels.width * y + bytesPerPixel * x;
 		for (let h = 0; h < height; h++) {
 			for (let w = 0; w < width; w++) {
 				this.offscreenCanvasPixels.data[targetIndex] = red;
@@ -198,15 +203,11 @@ class GameWindow {
 				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
 			}
 
-			if (wallTopPortal && row > wallTop) {
+			if (portalNum !== null && wallTopPortal && row > wallTop) {
 				if (
 					true ||
 					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
 				) {
-					const effectRed = portalNum === 0 ? 0 : 255;
-					const effectGreen = portalNum === 0 ? 70 : 70;
-					const effectBlue = portalNum === 0 ? 255 : 0;
-
 					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
 					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
 
@@ -219,9 +220,11 @@ class GameWindow {
 					const blue = Math.floor(this.fCeilingTexturePixels[sourceIndex + 2] * brighnessLevel);
 					const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
+						green + this.portalColors[portalNum][1] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
+						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
 					targetIndexPortal -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
@@ -289,17 +292,13 @@ class GameWindow {
 				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
 			}
 
-			if (wallBottomPortal && row < wallBottom) {
+			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
 				if (
 					cellXPortal < this.mapCols &&
 					cellYPortal < this.mapRows &&
 					cellXPortal >= 0 &&
 					cellYPortal >= 0
 				) {
-					const effectRed = portalNum === 0 ? 0 : 255;
-					const effectGreen = portalNum === 0 ? 70 : 70;
-					const effectBlue = portalNum === 0 ? 255 : 0;
-
 					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
 					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
 
@@ -312,9 +311,11 @@ class GameWindow {
 					const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * brighnessLevel);
 					const alpha = Math.floor(this.fFloorTexturePixels[sourceIndex + 3]);
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
+						green + this.portalColors[portalNum][1] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
+						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
 					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
@@ -406,11 +407,7 @@ class GameWindow {
 
 		let yError = 0;
 
-		const effectRed = portalNum === 0 ? 0 : 255;
-		const effectGreen = portalNum === 0 ? 70 : 70;
-		const effectBlue = portalNum === 0 ? 255 : 0;
-
-		if (sourceIndexPortal !== null) {
+		if (sourceIndexPortal !== null && portalNum !== null) {
 			loop1: while (true) {
 				yError += heightPortal;
 				const red = Math.floor(texturePixelsPortal[sourceIndexPortal] * brighnessLevelPortal);
@@ -420,9 +417,11 @@ class GameWindow {
 
 				while (yError >= textureBufferPortal.width) {
 					yError -= textureBufferPortal.width;
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + effectRed * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = green + effectGreen * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = blue + effectBlue * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
+						green + this.portalColors[portalNum][1] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
+						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
 
@@ -460,11 +459,13 @@ class GameWindow {
 
 			while (yError >= textureBuffer.width) {
 				yError -= textureBuffer.width;
-				if (sourceIndexPortal && !inEllipse) {
+				if (sourceIndexPortal && portalNum !== null && !inEllipse) {
 					if (inEffectEllipse) {
-						this.offscreenCanvasPixels.data[targetIndex] = effectRed * brighnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = effectGreen * brighnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = effectBlue * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex + 1] =
+							this.portalColors[portalNum][1] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex + 2] =
+							this.portalColors[portalNum][2] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						this.offscreenCanvasPixels.data[targetIndex] = red;
@@ -474,9 +475,11 @@ class GameWindow {
 					}
 				} else if (!sourceIndexPortal && portalNum !== null) {
 					if (inEffectEllipse) {
-						this.offscreenCanvasPixels.data[targetIndex] = effectRed * brighnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = effectGreen * brighnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = effectBlue * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex + 1] =
+							this.portalColors[portalNum][1] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex + 2] =
+							this.portalColors[portalNum][2] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						this.offscreenCanvasPixels.data[targetIndex] = red;
@@ -510,7 +513,7 @@ class GameWindow {
 				this.totalPortalRayLengths[i] < Infinity ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
 			let portalWallHeight = null;
 			let portalWallBottom = null;
-			let portalWallTop = 0;
+			let portalWallTop = null;
 			let portalWallOffset = 0;
 			let portalTextureBuffer = null;
 			let portalTexturePixels = null;
@@ -518,8 +521,13 @@ class GameWindow {
 			let portalNum = null;
 
 			if (totalPortalRayDist) {
-				if (this.portalTileSides[0] === this.tileDirs[i]) portalNum = 0;
-				else if (this.portalTileSides[1] === this.tileDirs[i]) portalNum = 1;
+				if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileDirs[i])
+					portalNum = 0;
+				else if (
+					this.portalTileIndeces[1] === this.tileIndeces[i] &&
+					this.portalTileSides[1] === this.tileDirs[i]
+				)
+					portalNum = 1;
 
 				portalWallHeight = (this.TILE_SIZE / totalPortalRayDist) * this.fPlayerDistanceToProjectionPlane;
 				portalWallBottom = this.PROJECTIONPLANEHEIGHT / 2 + portalWallHeight * 0.5;
@@ -546,13 +554,12 @@ class GameWindow {
 					portalBrightness = portalBrightness * 0.8;
 				}
 			} else {
-				const tileCol = Math.floor(this.tileCollisionsX[i] / this.TILE_SIZE);
-				const tileRow = Math.floor(this.tileCollisionsY[i] / this.TILE_SIZE);
-				const tileIndex = tileRow * this.mapCols + tileCol;
-
-				if (this.portalTileIndeces[0] === tileIndex && this.portalTileSides[0] === this.tileDirs[i])
+				if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileDirs[i])
 					portalNum = 0;
-				else if (this.portalTileIndeces[1] === tileIndex && this.portalTileSides[1] === this.tileDirs[i])
+				else if (
+					this.portalTileIndeces[1] === this.tileIndeces[i] &&
+					this.portalTileSides[1] === this.tileDirs[i]
+				)
 					portalNum = 1;
 			}
 			// ---------------------------------------------------------------
@@ -892,6 +899,7 @@ class GameWindow {
 				this.tileCollisionsY[i] = closest[1];
 				this.tileTypes[i] = tileTypeTemp;
 				this.tileDirs[i] = tileSideDirTemp;
+				this.tileIndeces[i] = tileIndex;
 
 				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
 					this.setRayFromPortal(
@@ -1088,17 +1096,17 @@ class GameWindow {
 								const playerWallTileDiffCol = playerTileCol - col;
 								if (playerWallTileDiffCol > 0 && (moveDir > 270 || moveDir < 90)) break loop1;
 								else if (playerWallTileDiffCol < 0 && moveDir < 270 && moveDir > 90) break loop1;
+
 								const intersectSide = playerWallTileDiffCol > 0 ? 1 : 3;
-								if (tileIndex === this.portalTileIndeces[0]) {
-									if (this.portalTileSides[0] === intersectSide) {
-										this.handlePortalCollision(0);
-										return;
-									}
-								} else if (tileIndex === this.portalTileIndeces[1]) {
-									if (this.portalTileSides[1] === intersectSide) {
-										this.handlePortalCollision(1);
-										return;
-									}
+								if (tileIndex === this.portalTileIndeces[0] && this.portalTileSides[0] === intersectSide) {
+									this.handlePortalCollision(0);
+									return;
+								} else if (
+									tileIndex === this.portalTileIndeces[1] &&
+									this.portalTileSides[1] === intersectSide
+								) {
+									this.handlePortalCollision(1);
+									return;
 								}
 								newPlayerY = this.fPlayerY + this.getYspeed();
 							} else if (angleToWallCenter >= 45 && angleToWallCenter < 90) {
@@ -1106,17 +1114,17 @@ class GameWindow {
 								const playerWallTileDiffRow = playerTileRow - row;
 								if (playerWallTileDiffRow > 0 && moveDir > 0 && moveDir < 180) break loop1;
 								else if (playerWallTileDiffRow < 0 && moveDir > 180 && moveDir < 360) break loop1;
+
 								const intersectSide = playerWallTileDiffRow > 0 ? 2 : 0;
-								if (tileIndex === this.portalTileIndeces[0]) {
-									if (this.portalTileSides[0] === intersectSide) {
-										this.handlePortalCollision(0);
-										return;
-									}
-								} else if (tileIndex === this.portalTileIndeces[1]) {
-									if (this.portalTileSides[1] === intersectSide) {
-										this.handlePortalCollision(1);
-										return;
-									}
+								if (tileIndex === this.portalTileIndeces[0] && this.portalTileSides[0] === intersectSide) {
+									this.handlePortalCollision(0);
+									return;
+								} else if (
+									tileIndex === this.portalTileIndeces[1] &&
+									this.portalTileSides[1] === intersectSide
+								) {
+									this.handlePortalCollision(1);
+									return;
 								}
 								newPlayerX = this.fPlayerX + this.getXspeed();
 							}
@@ -1237,6 +1245,98 @@ class GameWindow {
 		this.ctx.shadowBlur = 0;
 	};
 
+	handlePortalShot = portalNum => {
+		let tileTypeTemp = 0;
+		let tileSideDirTemp = 0;
+		let tileIndex = 0;
+		let closest = null;
+		let record = Infinity;
+
+		for (let row = 0; row < this.mapRows; row++) {
+			for (let col = 0; col < this.mapCols; col++) {
+				const tile = this.map[row * this.mapCols + col];
+				if (tile === 0) continue;
+
+				const tileIntersection = this.getIntersectionOfTile(
+					this.fPlayerX,
+					this.fPlayerY,
+					row,
+					col,
+					degToRad(this.fPlayerAngle)
+				);
+
+				if (tileIntersection.record < record) {
+					tileIndex = row * this.mapCols + col;
+					record = tileIntersection.record;
+					closest = tileIntersection.closest;
+
+					tileTypeTemp = tile;
+					tileSideDirTemp = tileIntersection.dir;
+				}
+			}
+		}
+
+		if (closest) {
+			if (
+				(this.portalTileIndeces[0] === tileIndex && this.portalTileSides[0] === tileSideDirTemp) ||
+				(this.portalTileIndeces[1] === tileIndex && this.portalTileSides[1] === tileSideDirTemp)
+			) {
+				return;
+			}
+			this.portalTileIndeces[portalNum] = tileIndex;
+			this.portalTileSides[portalNum] = tileSideDirTemp;
+		}
+	};
+
+	drawReticle = () => {
+		const thickness = 1;
+		const length = 3;
+
+		this.drawFillRectangle(
+			this.PROJECTIONPLANEWIDTH / 2 - length + 1,
+			this.PROJECTIONPLANEHEIGHT / 2,
+			length - 1,
+			thickness,
+			255,
+			255,
+			255,
+			255
+		);
+
+		this.drawFillRectangle(
+			this.PROJECTIONPLANEWIDTH / 2,
+			this.PROJECTIONPLANEHEIGHT / 2 - length + 1,
+			thickness,
+			length - 1,
+			255,
+			255,
+			255,
+			255
+		);
+
+		this.drawFillRectangle(
+			this.PROJECTIONPLANEWIDTH / 2,
+			this.PROJECTIONPLANEHEIGHT / 2,
+			length,
+			thickness,
+			255,
+			255,
+			255,
+			255
+		);
+
+		this.drawFillRectangle(
+			this.PROJECTIONPLANEWIDTH / 2,
+			this.PROJECTIONPLANEHEIGHT / 2,
+			thickness,
+			length,
+			255,
+			255,
+			255,
+			255
+		);
+	};
+
 	update = () => {
 		this.animationFrameId = requestAnimationFrame(this.update);
 		this.now = Date.now();
@@ -1263,10 +1363,18 @@ class GameWindow {
 				this.mapDataToSet = [];
 			}
 
+			if (this.evenFlag === 'leftClick') {
+				this.handlePortalShot(0);
+			} else if (this.evenFlag === 'rightClick') {
+				this.handlePortalShot(1);
+			}
+			this.evenFlag = '';
+
 			this.move();
 			if (this.DEBUG) this.draw2dWalls();
 			this.raycaster();
 			this.draw3dWalls();
+			this.drawReticle();
 			this.ctx.putImageData(this.offscreenCanvasPixels, 0, 0);
 
 			if (this.DEBUG && this.debugCtx) {
@@ -1344,7 +1452,8 @@ class GameWindow {
 			container.appendChild(newCanvas);
 		}
 
-		document.addEventListener('click', e => {
+		document.addEventListener('mousedown', e => {
+			this.evenFlag = 'leftClick';
 			if (!this.userIsInTab && !this.DEBUG) {
 				this.userIsInTab = true;
 
@@ -1356,7 +1465,12 @@ class GameWindow {
 					unadjustedMovement: true,
 				});
 			}
+
+			if (e.button === 0) this.evenFlag = 'leftClick';
+			else if (e.button === 2) this.evenFlag = 'rightClick';
 		});
+
+		document.addEventListener('contextmenu', e => e.preventDefault());
 
 		document.addEventListener('mousemove', e => {
 			if (!this.DEBUG) {
