@@ -54,6 +54,11 @@ const maps = [
                 row: 3,
                 col: 5,
                 side: 0,
+            },
+            {
+                row: 3,
+                col: 7,
+                side: 0,
             }
         ]
     },

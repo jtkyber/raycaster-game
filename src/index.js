@@ -64,6 +64,7 @@ class GameWindow {
 			'src/assets/painting2.png',
 			'src/assets/painting3.png',
 			'src/assets/painting4.png',
+			'src/assets/painting5.png',
 		];
 		this.textures = {};
 
@@ -423,9 +424,31 @@ class GameWindow {
 			if (heightToDrawPortal < 0) return;
 		}
 
+		let red;
+		let green;
+		let blue;
+		let alpha;
+
 		let yError = 0;
 
 		if (sourceIndexPortal !== null && portalNum !== null) {
+			//------------Draw paintings inside portal---------------
+			let paintingSourceTop = null;
+			let paintingSourceBottom = null;
+			let paintingSourceLeft = null;
+			let paintingSourceRight = null;
+
+			let sourceIndexPainting = null;
+
+			if (textureBufferPainting) {
+				paintingSourceTop = textureBuffer.height / 2 - textureBufferPainting.height / 2;
+				paintingSourceBottom = textureBuffer.height / 2 + textureBufferPainting.height / 2;
+				paintingSourceLeft = textureBuffer.width / 2 - textureBufferPainting.width / 2;
+				paintingSourceRight = textureBuffer.width / 2 + textureBufferPainting.width / 2;
+
+				sourceIndexPainting = this.bytesPerPixel * (xOffset - paintingSourceLeft);
+			}
+
 			loop1: while (true) {
 				yError += heightPortal;
 				const red = Math.floor(texturePixelsPortal[sourceIndexPortal] * brighnessLevelPortal);
@@ -462,11 +485,6 @@ class GameWindow {
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
 
-		let red;
-		let green;
-		let blue;
-		let alpha;
-
 		let sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 
 		let paintingSourceTop = null;
@@ -495,6 +513,7 @@ class GameWindow {
 				xOffset > paintingSourceLeft &&
 				xOffset < paintingSourceRight
 			) {
+				// Painting on column and within size of painting source
 				red = Math.floor(texturePixelsPainting[sourceIndexPainting] * brighnessLevel);
 				green = Math.floor(texturePixelsPainting[sourceIndexPainting + 1] * brighnessLevel);
 				blue = Math.floor(texturePixelsPainting[sourceIndexPainting + 2] * brighnessLevel);
@@ -516,8 +535,10 @@ class GameWindow {
 
 			while (yError >= textureBuffer.width) {
 				yError -= textureBuffer.width;
-				if (sourceIndexPortal && portalNum !== null && !inEllipse) {
+				if (sourceIndexPortal !== null && portalNum !== null && !inEllipse) {
+					// Portal on column but source index is not within portal ellipse
 					if (inEffectEllipse) {
+						// source index is within portal effect ellipse but outside of portal ellipse
 						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 1] =
 							this.portalColors[portalNum][1] * brighnessLevel;
@@ -525,13 +546,16 @@ class GameWindow {
 							this.portalColors[portalNum][2] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
+						// Fill area outside of effect ellipse with wall texture
 						this.offscreenCanvasPixels.data[targetIndex] = red;
 						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 					}
 				} else if (!sourceIndexPortal && portalNum !== null) {
+					// Closed portal
 					if (inEffectEllipse) {
+						// Use solid colors to fill inside of effect ellipse
 						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 1] =
 							this.portalColors[portalNum][1] * brighnessLevel;
@@ -539,12 +563,14 @@ class GameWindow {
 							this.portalColors[portalNum][2] * brighnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
+						// Fill area outside of effect ellipse with wall texture
 						this.offscreenCanvasPixels.data[targetIndex] = red;
 						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 					}
 				} else if (!sourceIndexPortal) {
+					// No portal exists on column
 					this.offscreenCanvasPixels.data[targetIndex] = red;
 					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
@@ -639,13 +665,15 @@ class GameWindow {
 			let textureBufferPainting = null;
 			let texturePixelsPainting = null;
 
+			//-------------Add separate texture buffer/pixels for painting inside of portal--------------
+			let textureBufferPaintingPortal = null;
+			let texturePixelsPaintingPortal = null;
+
 			loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
 				const tileIndex = this.fPaintingDetails[j].row * this.mapCols + this.fPaintingDetails[j].col;
 				if (tileIndex === this.tileIndeces[i] && this.fPaintingDetails[j].side === this.tileSides[i]) {
 					textureBufferPainting = this.fPaintingTextureBufferList[j];
 					texturePixelsPainting = this.fPaintingTexturePixelsList[j];
-
-					break loop;
 				}
 			}
 
