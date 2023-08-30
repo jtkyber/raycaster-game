@@ -37,7 +37,25 @@ const maps = [
         ],
         wallTextures: ['wall1', 'doubleDoor', 'wall3nice', 'wall3job', 'wall3'],
         floorTexture: 'floor1',
-        ceilingTexture: 'ceiling1'
+        ceilingTexture: 'ceiling1',
+        paintings: ['painting1', 'painting3', 'painting4'],
+        paintingDetails: [
+            {
+                row: 12,
+                col: 0,
+                side: 1,
+            },
+            {
+                row: 31,
+                col: 28,
+                side: 0,
+            },
+            {
+                row: 3,
+                col: 5,
+                side: 0,
+            }
+        ]
     },
     {
         map: [
@@ -64,7 +82,9 @@ const maps = [
         ],
         wallTextures: ['wall2', 'doubleDoor2'],
         floorTexture: 'floor2',
-        ceilingTexture: 'ceiling2'
+        ceilingTexture: 'ceiling2',
+        paintings: [],
+        paintingDetails: []
     }
 ]
 

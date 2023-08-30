@@ -19,8 +19,12 @@ class GameWindow {
 			this.canvasWidth
 		);
 
-		this.fWall1TextureBufferList;
-		this.fWall1TexturePixelsList;
+		this.fWallTextureBufferList;
+		this.fWallTexturePixelsList;
+
+		this.fPaintingTextureBufferList;
+		this.fPaintingTexturePixelsList;
+		this.fPaintingDetails;
 
 		this.fFloorTextureBuffer;
 		this.fFloorTexturePixels;
@@ -55,6 +59,11 @@ class GameWindow {
 			// Ceilings
 			'src/assets/ceiling1.png',
 			'src/assets/ceiling2.png',
+			// Paintings
+			'src/assets/painting1.png',
+			'src/assets/painting2.png',
+			'src/assets/painting3.png',
+			'src/assets/painting4.png',
 		];
 		this.textures = {};
 
@@ -114,7 +123,7 @@ class GameWindow {
 		this.tileCollisionsX = null;
 		this.tileCollisionsY = null;
 		this.tileTypes = null;
-		this.tileDirs = null;
+		this.tileSides = null;
 		this.tileIndeces = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.portalTileIndeces = new Uint16Array([null, null]);
@@ -149,6 +158,7 @@ class GameWindow {
 		this.crouchGravity = 0.3;
 
 		this.DEBUG = false;
+		this.preventPageReloadDialog = true;
 	}
 
 	drawFillRectangle = (x, y, width, height, red, green, blue, alpha) => {
@@ -358,6 +368,8 @@ class GameWindow {
 		brighnessLevel,
 		textureBuffer,
 		texturePixels,
+		textureBufferPainting,
+		texturePixelsPainting,
 		// Portal ray
 		rectTopPortal,
 		heightPortal,
@@ -450,12 +462,51 @@ class GameWindow {
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
 
+		let red;
+		let green;
+		let blue;
+		let alpha;
+
+		let sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
+
+		let paintingSourceTop = null;
+		let paintingSourceBottom = null;
+		let paintingSourceLeft = null;
+		let paintingSourceRight = null;
+
+		let sourceIndexPainting = null;
+
+		if (textureBufferPainting) {
+			paintingSourceTop = textureBuffer.height / 2 - textureBufferPainting.height / 2;
+			paintingSourceBottom = textureBuffer.height / 2 + textureBufferPainting.height / 2;
+			paintingSourceLeft = textureBuffer.width / 2 - textureBufferPainting.width / 2;
+			paintingSourceRight = textureBuffer.width / 2 + textureBufferPainting.width / 2;
+
+			sourceIndexPainting = this.bytesPerPixel * (xOffset - paintingSourceLeft);
+		}
+
 		while (true) {
 			yError += height;
-			const red = Math.floor(texturePixels[sourceIndex] * brighnessLevel);
-			const green = Math.floor(texturePixels[sourceIndex + 1] * brighnessLevel);
-			const blue = Math.floor(texturePixels[sourceIndex + 2] * brighnessLevel);
-			const alpha = Math.floor(texturePixels[sourceIndex + 3]);
+
+			if (
+				textureBufferPainting &&
+				sourceRow > paintingSourceTop &&
+				sourceRow < paintingSourceBottom &&
+				xOffset > paintingSourceLeft &&
+				xOffset < paintingSourceRight
+			) {
+				red = Math.floor(texturePixelsPainting[sourceIndexPainting] * brighnessLevel);
+				green = Math.floor(texturePixelsPainting[sourceIndexPainting + 1] * brighnessLevel);
+				blue = Math.floor(texturePixelsPainting[sourceIndexPainting + 2] * brighnessLevel);
+				alpha = Math.floor(texturePixelsPainting[sourceIndexPainting + 3]);
+
+				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
+			} else {
+				red = Math.floor(texturePixels[sourceIndex] * brighnessLevel);
+				green = Math.floor(texturePixels[sourceIndex + 1] * brighnessLevel);
+				blue = Math.floor(texturePixels[sourceIndex + 2] * brighnessLevel);
+				alpha = Math.floor(texturePixels[sourceIndex + 3]);
+			}
 
 			const yOffset = sourceIndex / (this.bytesPerPixel * textureBuffer.width);
 			const dy = circleCenter - yOffset;
@@ -507,6 +558,7 @@ class GameWindow {
 
 			sourceIndex += this.bytesPerPixel * textureBuffer.width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+			sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 		}
 	};
 
@@ -527,11 +579,14 @@ class GameWindow {
 			let portalNum = null;
 
 			if (totalPortalRayDist) {
-				if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileDirs[i])
+				if (
+					this.portalTileIndeces[0] === this.tileIndeces[i] &&
+					this.portalTileSides[0] === this.tileSides[i]
+				)
 					portalNum = 0;
 				else if (
 					this.portalTileIndeces[1] === this.tileIndeces[i] &&
-					this.portalTileSides[1] === this.tileDirs[i]
+					this.portalTileSides[1] === this.tileSides[i]
 				)
 					portalNum = 1;
 
@@ -549,8 +604,8 @@ class GameWindow {
 				if (this.portalOutDirs?.[i] === 0 || this.portalOutDirs?.[i] === 1)
 					portalWallOffset = this.TILE_SIZE - portalWallOffset;
 
-				portalTextureBuffer = this.fWall1TextureBufferList[this.portalOutTypes?.[i] - 1];
-				portalTexturePixels = this.fWall1TexturePixelsList[this.portalOutTypes?.[i] - 1];
+				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i] - 1];
+				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i] - 1];
 
 				portalBrightness = 160 / totalPortalRayDist;
 
@@ -562,25 +617,37 @@ class GameWindow {
 					portalBrightness = portalBrightness * 0.8;
 				}
 			} else {
-				if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileDirs[i])
+				if (
+					this.portalTileIndeces[0] === this.tileIndeces[i] &&
+					this.portalTileSides[0] === this.tileSides[i]
+				)
 					portalNum = 0;
 				else if (
 					this.portalTileIndeces[1] === this.tileIndeces[i] &&
-					this.portalTileSides[1] === this.tileDirs[i]
+					this.portalTileSides[1] === this.tileSides[i]
 				)
 					portalNum = 1;
 			}
 			// ---------------------------------------------------------------
-
-			// const wallHeight = (this.TILE_SIZE / dist) * this.fPlayerDistanceToProjectionPlane;
-			// const wallBottom = this.fProjectionPlaneYCenter + wallHeight * 0.5;
-			// const wallTop = this.fProjectionPlaneYCenter - wallHeight * 0.5;
 
 			const ratio = this.fPlayerDistanceToProjectionPlane / dist;
 			const scale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / dist;
 			const wallBottom = ratio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
 			const wallTop = wallBottom - scale;
 			const wallHeight = wallBottom - wallTop;
+
+			let textureBufferPainting = null;
+			let texturePixelsPainting = null;
+
+			loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
+				const tileIndex = this.fPaintingDetails[j].row * this.mapCols + this.fPaintingDetails[j].col;
+				if (tileIndex === this.tileIndeces[i] && this.fPaintingDetails[j].side === this.tileSides[i]) {
+					textureBufferPainting = this.fPaintingTextureBufferList[j];
+					texturePixelsPainting = this.fPaintingTexturePixelsList[j];
+
+					break loop;
+				}
+			}
 
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
@@ -611,21 +678,21 @@ class GameWindow {
 			);
 
 			let offset =
-				this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 2
+				this.tileSides?.[i] === 0 || this.tileSides?.[i] === 2
 					? this.tileCollisionsX[i] % this.TILE_SIZE
 					: this.tileCollisionsY[i] % this.TILE_SIZE;
 
-			if (this.tileDirs?.[i] === 0 || this.tileDirs?.[i] === 1) offset = this.TILE_SIZE - offset;
+			if (this.tileSides?.[i] === 0 || this.tileSides?.[i] === 1) offset = this.TILE_SIZE - offset;
 
-			let textureBuffer = this.fWall1TextureBufferList[this.tileTypes?.[i] - 1];
-			let texturePixels = this.fWall1TexturePixelsList[this.tileTypes?.[i] - 1];
+			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i] - 1];
+			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i] - 1];
 
 			let brighnessLevel = 160 / dist;
 
 			dist = Math.floor(dist);
 			if (brighnessLevel > 1.2) brighnessLevel = 1.2;
 
-			if (this.tileDirs?.[i] === 1 || this.tileDirs?.[i] === 3) {
+			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) {
 				brighnessLevel = brighnessLevel * 0.8;
 			}
 
@@ -638,6 +705,8 @@ class GameWindow {
 				brighnessLevel,
 				textureBuffer,
 				texturePixels,
+				textureBufferPainting,
+				texturePixelsPainting,
 				// Portal Ray
 				portalWallTop,
 				portalWallHeight + 1,
@@ -939,7 +1008,7 @@ class GameWindow {
 				this.tileCollisionsX[i] = closest[0];
 				this.tileCollisionsY[i] = closest[1];
 				this.tileTypes[i] = tileTypeTemp;
-				this.tileDirs[i] = tileSideDirTemp;
+				this.tileSides[i] = tileSideDirTemp;
 				this.tileIndeces[i] = tileIndex;
 
 				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
@@ -1204,19 +1273,19 @@ class GameWindow {
 	};
 
 	onWallTextureLoaded = imgNames => {
-		this.fWall1TextureBufferList = new Array(imgNames.length);
-		this.fWall1TexturePixelsList = new Array(imgNames.length);
+		this.fWallTextureBufferList = new Array(imgNames.length);
+		this.fWallTexturePixelsList = new Array(imgNames.length);
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
-			this.fWall1TextureBufferList[i] = document.createElement('canvas');
-			this.fWall1TextureBufferList[i].width = img.width;
-			this.fWall1TextureBufferList[i].height = img.height;
-			this.fWall1TextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+			this.fWallTextureBufferList[i] = document.createElement('canvas');
+			this.fWallTextureBufferList[i].width = img.width;
+			this.fWallTextureBufferList[i].height = img.height;
+			this.fWallTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
-			const imgData = this.fWall1TextureBufferList[i]
+			const imgData = this.fWallTextureBufferList[i]
 				.getContext('2d', { alpha: false })
-				.getImageData(0, 0, this.fWall1TextureBufferList[i].width, this.fWall1TextureBufferList[i].height);
-			this.fWall1TexturePixelsList[i] = imgData.data;
+				.getImageData(0, 0, this.fWallTextureBufferList[i].width, this.fWallTextureBufferList[i].height);
+			this.fWallTexturePixelsList[i] = imgData.data;
 		}
 	};
 
@@ -1246,11 +1315,39 @@ class GameWindow {
 		this.fFloorTexturePixels = imgData.data;
 	};
 
+	onPaintingTextureLoaded = imgNames => {
+		this.fPaintingTextureBufferList = new Array(imgNames.length);
+		this.fPaintingTexturePixelsList = new Array(imgNames.length);
+
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fPaintingTextureBufferList[i] = document.createElement('canvas');
+			this.fPaintingTextureBufferList[i].width = img.width;
+			this.fPaintingTextureBufferList[i].height = img.height;
+			this.fPaintingTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+			const imgData = this.fPaintingTextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(
+					0,
+					0,
+					this.fPaintingTextureBufferList[i].width,
+					this.fPaintingTextureBufferList[i].height
+				);
+			this.fPaintingTexturePixelsList[i] = imgData.data;
+		}
+	};
+
 	setNewMapData = () => {
 		const i = this.mapDataToSet[0];
+
 		this.onWallTextureLoaded(maps[i].wallTextures);
+		this.onPaintingTextureLoaded(maps[i].paintings);
+		this.fPaintingDetails = maps[i].paintingDetails;
+
 		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
 		this.onFloorTextureLoaded(maps[i].floorTexture);
+
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapCols = maps[i].map[0].length;
 		this.mapRows = maps[i].map.length;
@@ -1472,7 +1569,7 @@ class GameWindow {
 		this.tileCollisionsX = new Float32Array(rayCount);
 		this.tileCollisionsY = new Float32Array(rayCount);
 		this.tileTypes = new Float32Array(rayCount);
-		this.tileDirs = new Float32Array(rayCount);
+		this.tileSides = new Float32Array(rayCount);
 
 		for (let i = 0; i < this.rayAngles.length; i++) {
 			this.rayAngles[i] = degToRad(ang - this.fPlayerFov / 2);
@@ -1538,6 +1635,7 @@ class GameWindow {
 		);
 
 		document.addEventListener('mousedown', e => {
+			// if (this.DEBUG) return;
 			if (!this.userIsInTab && !this.DEBUG) {
 				this.canvas.requestPointerLock =
 					this.canvas.requestPointerLock ||
@@ -1617,6 +1715,7 @@ class GameWindow {
 		});
 
 		window.addEventListener('beforeunload', e => {
+			if (this.preventPageReloadDialog) return;
 			e.preventDefault();
 			return (e.returnValue = 'Exit Tab?');
 		});
@@ -1627,6 +1726,3 @@ class GameWindow {
 
 const gameWindow = new GameWindow();
 gameWindow.init();
-// window.addEventListener('beforeunload', e => {
-// 	return 'Exit Tab?';
-// });
