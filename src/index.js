@@ -188,10 +188,10 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 	}
 
-	getSidesToCheck = quadrant => {
+	getSidesToCheck(quadrant) {
 		switch (quadrant) {
 			case 0:
 				return [0, 3];
@@ -202,9 +202,9 @@ class GameWindow {
 			case 3:
 				return [2, 3];
 		}
-	};
+	}
 
-	drawFillRectangle = (x, y, width, height, red, green, blue, alpha) => {
+	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
 		const bytesPerPixel = 4;
 		let targetIndex = bytesPerPixel * this.offscreenCanvasPixels.width * y + bytesPerPixel * x;
 		for (let h = 0; h < height; h++) {
@@ -217,9 +217,9 @@ class GameWindow {
 			}
 			targetIndex += bytesPerPixel * (this.offscreenCanvasPixels.width - width);
 		}
-	};
+	}
 
-	drawCeiling = (wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) => {
+	drawCeiling(wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) {
 		let targetIndex =
 			wallTop * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
@@ -317,9 +317,9 @@ class GameWindow {
 				targetIndex -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
 			}
 		}
-	};
+	}
 
-	drawFloor = (wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) => {
+	drawFloor(wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) {
 		let targetIndex =
 			wallBottom * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
@@ -415,9 +415,9 @@ class GameWindow {
 				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
 			}
 		}
-	};
+	}
 
-	drawWallSliceRectangleTinted = (
+	drawWallSliceRectangleTinted(
 		x,
 		// Regular ray
 		rectTop,
@@ -438,7 +438,7 @@ class GameWindow {
 		textureBufferPortal,
 		texturePixelsPortal,
 		portalNum
-	) => {
+	) {
 		x = Math.floor(x);
 
 		rectTop = Math.floor(rectTop);
@@ -683,9 +683,9 @@ class GameWindow {
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
 			sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 		}
-	};
+	}
 
-	draw3dWalls = () => {
+	draw3dWalls() {
 		for (let i = 0; i < this.rayLengths.length; i++) {
 			let dist = this.rayLengths[i] / this.fFishTable[i];
 
@@ -861,9 +861,9 @@ class GameWindow {
 				portalNum
 			);
 		}
-	};
+	}
 
-	draw2dWalls = () => {
+	draw2dWalls() {
 		let count = 0;
 		for (let i = 0; i < this.mapRows; i++) {
 			for (let j = 0; j < this.mapCols; j++) {
@@ -875,9 +875,9 @@ class GameWindow {
 				count++;
 			}
 		}
-	};
+	}
 
-	getIntersectionOfTile = (x, y, row, col, theta, sides = [0, 1, 2, 3]) => {
+	getIntersectionOfTile(x, y, row, col, theta, sides = [0, 1, 2, 3]) {
 		const x1 = col * this.TILE_SIZE;
 		const y1 = row * this.TILE_SIZE;
 
@@ -946,9 +946,9 @@ class GameWindow {
 			closest,
 			dir,
 		};
-	};
+	}
 
-	setRayFromPortal = (
+	setRayFromPortal(
 		i,
 		portalIntersectInX,
 		portalIntersectInY,
@@ -956,7 +956,7 @@ class GameWindow {
 		portalTileSideOut,
 		portalTileSideIn,
 		rayInAng
-	) => {
+	) {
 		if (portalIndexOut) {
 			let offset;
 
@@ -1085,24 +1085,9 @@ class GameWindow {
 				}
 			} else this.totalPortalRayLengths[i] = Infinity;
 		}
-	};
+	}
 
-	// tileIsOutOfView = (row, col, rayQuadrant) => {
-	// 	const x1 = col * this.TILE_SIZE;
-	// 	const y1 = row * this.TILE_SIZE;
-
-	// 	const xMid = x1 + this.TILE_SIZE / 2;
-	// 	const yMid = y1 + this.TILE_SIZE / 2;
-
-	// 	let angleToTileCenter = Math.atan2(yMid - this.fPlayerY, xMid - this.fPlayerX);
-	// 	if (angleToTileCenter < 0) angleToTileCenter += Math.PI * 2;
-	// 	const tileQuadrant = Math.floor(angleToTileCenter / (Math.PI / 2));
-	// 	if (Math.abs(rayQuadrant - tileQuadrant) === 2) return true;
-
-	// 	return false;
-	// };
-
-	raycaster = () => {
+	raycaster() {
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
 
@@ -1187,17 +1172,17 @@ class GameWindow {
 				}
 			} else this.rayLengths[i] = Infinity;
 		}
-	};
+	}
 
-	rotate = () => {
+	rotate() {
 		if (this.fRotationDir === 'left') {
 			this.fPlayerAngle -= 4;
 		} else if (this.fRotationDir === 'right') {
 			this.fPlayerAngle += 4;
 		}
-	};
+	}
 
-	setMoveDir = () => {
+	setMoveDir() {
 		if (this.fKeyForward && !this.fKeyRight && !this.fKeyLeft) {
 			// forward
 			this.fPlayerMoveDir = this.fPlayerAngle;
@@ -1223,13 +1208,13 @@ class GameWindow {
 			// backwards-left
 			this.fPlayerMoveDir = this.fPlayerAngle - 135;
 		}
-	};
+	}
 
 	getXspeed = () => this.fPlayerSpeed * Math.cos(degToRad(this.fPlayerMoveDir));
 
 	getYspeed = () => this.fPlayerSpeed * Math.sin(degToRad(this.fPlayerMoveDir));
 
-	playerTooCloseToWall = (row, col) => {
+	playerTooCloseToWall(row, col) {
 		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
 
 		const tileMidX = col * this.TILE_SIZE + this.TILE_SIZE / 2;
@@ -1241,9 +1226,9 @@ class GameWindow {
 
 		if (d <= minDist) return [dx, dy];
 		return;
-	};
+	}
 
-	handlePortalCollision = portalNum => {
+	handlePortalCollision(portalNum) {
 		const portalNumOut = portalNum === 0 ? 1 : 0;
 		const xStartOut = this.TILE_SIZE * (this.portalTileIndeces[portalNumOut] % this.mapCols);
 		const yStartOut = this.TILE_SIZE * Math.floor(this.portalTileIndeces[portalNumOut] / this.mapCols);
@@ -1305,9 +1290,9 @@ class GameWindow {
 
 			this.fPlayerAngle = radToDeg(portalOutAng);
 		}
-	};
+	}
 
-	move = () => {
+	move() {
 		if (this.levelTransition) return;
 		this.rotate();
 
@@ -1411,9 +1396,9 @@ class GameWindow {
 		}
 
 		this.setMoveDir();
-	};
+	}
 
-	onWallTextureLoaded = imgNames => {
+	onWallTextureLoaded(imgNames) {
 		this.fWallTextureBufferList = new Array(imgNames.length);
 		this.fWallTexturePixelsList = new Array(imgNames.length);
 		for (let i = 0; i < imgNames.length; i++) {
@@ -1428,9 +1413,9 @@ class GameWindow {
 				.getImageData(0, 0, this.fWallTextureBufferList[i].width, this.fWallTextureBufferList[i].height);
 			this.fWallTexturePixelsList[i] = imgData.data;
 		}
-	};
+	}
 
-	onCeilingTextureLoaded = imgName => {
+	onCeilingTextureLoaded(imgName) {
 		const img = this.textures[imgName];
 		this.fCeilingTextureBuffer = document.createElement('canvas');
 		this.fCeilingTextureBuffer.width = img.width;
@@ -1441,9 +1426,9 @@ class GameWindow {
 			.getContext('2d', { alpha: false })
 			.getImageData(0, 0, this.fCeilingTextureBuffer.width, this.fCeilingTextureBuffer.height);
 		this.fCeilingTexturePixels = imgData.data;
-	};
+	}
 
-	onFloorTextureLoaded = imgName => {
+	onFloorTextureLoaded(imgName) {
 		const img = this.textures[imgName];
 		this.fFloorTextureBuffer = document.createElement('canvas');
 		this.fFloorTextureBuffer.width = img.width;
@@ -1454,9 +1439,9 @@ class GameWindow {
 			.getContext('2d', { alpha: false })
 			.getImageData(0, 0, this.fFloorTextureBuffer.width, this.fFloorTextureBuffer.height);
 		this.fFloorTexturePixels = imgData.data;
-	};
+	}
 
-	onPaintingTextureLoaded = imgNames => {
+	onPaintingTextureLoaded(imgNames) {
 		this.fPaintingTextureBufferList = new Array(imgNames.length);
 		this.fPaintingTexturePixelsList = new Array(imgNames.length);
 
@@ -1477,9 +1462,9 @@ class GameWindow {
 				);
 			this.fPaintingTexturePixelsList[i] = imgData.data;
 		}
-	};
+	}
 
-	setNewMapData = (i = this.mapNum) => {
+	setNewMapData(i = this.mapNum) {
 		this.onWallTextureLoaded(maps[i].wallTextures);
 		this.onPaintingTextureLoaded(maps[i].paintings);
 		this.fPaintingDetails = maps[i].paintingDetails;
@@ -1507,9 +1492,9 @@ class GameWindow {
 
 			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
 		}
-	};
+	}
 
-	openDoor = () => {
+	openDoor() {
 		if (!this.reticleOnWall) return;
 		let tileTypeTemp = 0;
 		let tileIndex = 0;
@@ -1595,9 +1580,9 @@ class GameWindow {
 				}
 			}, 50);
 		}
-	};
+	}
 
-	drawFps = () => {
+	drawFps() {
 		const fontSize = this.PROJECTIONPLANEHEIGHT / 28;
 		const xOffset = this.PROJECTIONPLANEWIDTH / 90;
 		const yOffset = this.PROJECTIONPLANEHEIGHT / 90;
@@ -1608,9 +1593,9 @@ class GameWindow {
 		this.ctx.textAlign = 'left';
 		this.ctx.textBaseline = 'top';
 		this.ctx.fillText(this.framesCounted, xOffset, yOffset);
-	};
+	}
 
-	handlePortalShot = portalNum => {
+	handlePortalShot(portalNum) {
 		if (!this.reticleOnWall) return;
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
@@ -1661,9 +1646,9 @@ class GameWindow {
 			this.portalTileSides[portalNum] = tileSideDirTemp;
 			this.portalSizeMultipliers[portalNum] = 0;
 		}
-	};
+	}
 
-	drawReticle = () => {
+	drawReticle() {
 		const thickness = 1;
 		const length = 3;
 
@@ -1710,9 +1695,9 @@ class GameWindow {
 			255,
 			255
 		);
-	};
+	}
 
-	jump = () => {
+	jump() {
 		if (this.isCrouching || this.isStanding) return;
 		this.fPlayerHeight += this.jumpSpeed;
 		this.jumpSpeed -= this.gravityValue;
@@ -1722,9 +1707,9 @@ class GameWindow {
 			this.fPlayerHeight = this.TILE_SIZE / 2;
 			this.isJumping = false;
 		}
-	};
+	}
 
-	crouch = () => {
+	crouch() {
 		if (this.isJumping || this.isStanding) return;
 		this.fPlayerHeight -= this.crouchSpeed;
 		this.crouchSpeed -= this.crouchGravity;
@@ -1733,9 +1718,9 @@ class GameWindow {
 			this.crouchSpeed = this.crouchSpeedStart;
 			this.fPlayerHeight = this.TILE_SIZE / 2 - this.crouchAmt;
 		}
-	};
+	}
 
-	stand = () => {
+	stand() {
 		if (this.isJumping || this.isJumping) return;
 		this.fPlayerHeight += this.crouchSpeed;
 		this.crouchSpeed -= this.crouchGravity;
@@ -1745,9 +1730,9 @@ class GameWindow {
 			this.fPlayerHeight = this.TILE_SIZE / 2;
 			this.isStanding = false;
 		}
-	};
+	}
 
-	fade = () => {
+	fade() {
 		if (this.levelTransition) {
 			if (this.levelTransitionFadeAmt < 1) this.levelTransitionFadeAmt += 0.05;
 			else this.levelTransition = false;
@@ -1758,10 +1743,10 @@ class GameWindow {
 			this.ctx.fillStyle = `rgba(0, 0, 0, ${this.levelTransitionFadeAmt})`;
 			this.ctx.fillRect(0, 0, this.PROJECTIONPLANEWIDTH, this.PROJECTIONPLANEHEIGHT);
 		}
-	};
+	}
 
-	update = () => {
-		this.animationFrameId = requestAnimationFrame(this.update);
+	update() {
+		this.animationFrameId = requestAnimationFrame(this.update.bind(this));
 		this.now = Date.now();
 		this.elapsed = this.now - this.then;
 
@@ -1805,9 +1790,9 @@ class GameWindow {
 
 			this.drawFps();
 		}
-	};
+	}
 
-	setAngles = () => {
+	setAngles() {
 		const rayInc = this.fPlayerFov / this.PROJECTIONPLANEWIDTH;
 		let ang = 0;
 
@@ -1820,9 +1805,9 @@ class GameWindow {
 			const radian = (i * Math.PI) / (this.PROJECTIONPLANEWIDTH * 3);
 			this.fFishTable[i + this.PROJECTIONPLANEWIDTH / 2] = 1 / Math.cos(radian);
 		}
-	};
+	}
 
-	preloadTextures = async () => {
+	async preloadTextures() {
 		const preloadImages = () => {
 			const promises = this.texturePaths.map(path => {
 				return new Promise((resolve, reject) => {
@@ -1843,9 +1828,9 @@ class GameWindow {
 		this.textures = Object.fromEntries(imgArraytemp);
 
 		this.setNewMapData();
-	};
+	}
 
-	init = async () => {
+	async init() {
 		await this.preloadTextures();
 		this.setAngles();
 
@@ -1968,8 +1953,8 @@ class GameWindow {
 			return (e.returnValue = 'Exit Tab?');
 		});
 
-		this.animationFrameId = requestAnimationFrame(this.update);
-	};
+		this.animationFrameId = requestAnimationFrame(this.update.bind(this));
+	}
 }
 
 const gameWindow = new GameWindow();
