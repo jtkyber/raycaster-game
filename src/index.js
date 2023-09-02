@@ -49,6 +49,7 @@ class GameWindow {
 			'src/assets/wall1.png',
 			'src/assets/wall1Dark.png',
 			'src/assets/wall2.png',
+			'src/assets/wall2Chipped.png',
 			'src/assets/wall3.png',
 			'src/assets/wall3nice.png',
 			'src/assets/wall3job.png',
@@ -76,6 +77,14 @@ class GameWindow {
 			'src/assets/painting6two.png',
 			'src/assets/painting7one.png',
 			'src/assets/painting7two.png',
+			'src/assets/painting8.png',
+			'src/assets/painting9.png',
+			'src/assets/painting10.png',
+			'src/assets/painting11.png',
+			'src/assets/painting12.png',
+			'src/assets/painting13.png',
+			'src/assets/painting14.png',
+			'src/assets/painting15.png',
 		];
 		this.textures = {};
 
@@ -87,7 +96,7 @@ class GameWindow {
 		this.mapWidth = this.TILE_SIZE * this.mapCols;
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
 
-		this.mapNum = 1;
+		this.mapNum = 0;
 		this.map = maps[this.mapNum].map;
 
 		this.debugCanvas;
@@ -1299,6 +1308,7 @@ class GameWindow {
 	};
 
 	move = () => {
+		if (this.levelTransition) return;
 		this.rotate();
 
 		const ang = degToRad(this.fPlayerAngle + 90);

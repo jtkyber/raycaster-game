@@ -146,8 +146,54 @@ const maps = [
         },
         floorTexture: 'floor1',
         ceilingTexture: 'ceiling1',
-        paintings: [],
-        paintingDetails: []
+        paintings: ['painting1', 'painting8', 'painting9', 'painting10', 'painting11', 'painting12', 'painting13', 'painting14', 'painting15'],
+        paintingDetails: [
+            {
+                row: 5,
+                col: 5,
+                side: 2
+            },
+            {
+                row: 7,
+                col: 10,
+                side: 0
+            },
+            {
+                row: 5,
+                col: 15,
+                side: 2
+            },
+            {
+                row: 7,
+                col: 20,
+                side: 0
+            },
+            {
+                row: 12,
+                col: 3,
+                side: 0
+            },
+            {
+                row: 0,
+                col: 8,
+                side: 2
+            },
+            {
+                row: 12,
+                col: 13,
+                side: 0
+            },
+            {
+                row: 0,
+                col: 18,
+                side: 2
+            },
+            {
+                row: 12,
+                col: 22,
+                side: 0
+            },
+        ]
     },
     {
         map: [
@@ -172,7 +218,7 @@ const maps = [
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         ],
-        wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open', 'doubleDoor2Closed'],
+        wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open', 'wall2Chipped'],
         doorMap: {
             1: {
                 mapTo: 1,
