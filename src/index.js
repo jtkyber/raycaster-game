@@ -47,12 +47,15 @@ class GameWindow {
 		this.texturePaths = [
 			// Walls
 			'src/assets/wall1.png',
+			'src/assets/wall1Dark.png',
 			'src/assets/wall2.png',
 			'src/assets/wall3.png',
 			'src/assets/wall3nice.png',
 			'src/assets/wall3job.png',
-			'src/assets/doubleDoor.png',
-			'src/assets/doubleDoor2.png',
+			'src/assets/doubleDoorClosed.png',
+			'src/assets/doubleDoorOpen.png',
+			'src/assets/doubleDoor2Closed.png',
+			'src/assets/doubleDoor2Open.png',
 			// Floors
 			'src/assets/floor1.png',
 			'src/assets/floor2.png',
@@ -84,9 +87,8 @@ class GameWindow {
 		this.mapWidth = this.TILE_SIZE * this.mapCols;
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
 
-		this.map = maps[0].map;
-		// [mapNum, playerX, playerY]
-		this.mapDataToSet = [0, 90, 80];
+		this.mapNum = 1;
+		this.map = maps[this.mapNum].map;
 
 		this.debugCanvas;
 		this.debugCanvasWidth;
@@ -98,8 +100,8 @@ class GameWindow {
 
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
-		this.fPlayerX = this.mapDataToSet[1];
-		this.fPlayerY = this.mapDataToSet[2];
+		this.fPlayerX = 100;
+		this.fPlayerY = 100;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
@@ -171,6 +173,10 @@ class GameWindow {
 		this.redTint = 0;
 		this.greenTint = 0;
 		this.blueTint = 0;
+
+		this.levelTransition = false;
+		this.levelTransitionFadeAmt = 0;
+		this.doorMap = {};
 
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
@@ -994,16 +1000,17 @@ class GameWindow {
 				this.portalOutYVals[i] += 1;
 			}
 
-			const tileSideDiff = portalTileSideIn - portalTileSideOut;
+			let tileSideDiff = portalTileSideIn - portalTileSideOut;
 			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
+			tileSideDiff = Math.abs(tileSideDiff);
 			let rayOutAng;
 
 			if (tileSideDiff === 0) rayOutAng = rayInAng + Math.PI;
-			else if (Math.abs(tileSideDiff) === 1) {
+			else if (tileSideDiff === 1) {
 				rayOutAng = rayInAng + (Math.PI / 2) * tileSideDiffSign;
-			} else if (Math.abs(tileSideDiff) === 2) {
+			} else if (tileSideDiff === 2) {
 				rayOutAng = rayInAng;
-			} else if (Math.abs(tileSideDiff) === 3) {
+			} else if (tileSideDiff === 3) {
 				rayOutAng = rayInAng - (Math.PI / 2) * tileSideDiffSign;
 			}
 
@@ -1013,6 +1020,8 @@ class GameWindow {
 			let tileSideDirTemp = 0;
 			let tileIndexTemp = null;
 
+			// Find a way to merge this into where you loop through all the tiles in the raycaster function
+			// instead of doing it twice
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
 					const tile = this.map[row * this.mapCols + col];
@@ -1460,9 +1469,7 @@ class GameWindow {
 		}
 	};
 
-	setNewMapData = () => {
-		const i = this.mapDataToSet[0];
-
+	setNewMapData = (i = this.mapNum) => {
 		this.onWallTextureLoaded(maps[i].wallTextures);
 		this.onPaintingTextureLoaded(maps[i].paintings);
 		this.fPaintingDetails = maps[i].paintingDetails;
@@ -1471,12 +1478,15 @@ class GameWindow {
 		this.onFloorTextureLoaded(maps[i].floorTexture);
 
 		this.map = new Uint8Array(maps[i].map.flat());
+		this.mapNum = i;
+		this.doorMap = maps[i].doorMap;
 		this.mapCols = maps[i].map[0].length;
 		this.mapRows = maps[i].map.length;
 		this.mapWidth = this.TILE_SIZE * this.mapCols;
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
-		this.fPlayerX = this.mapDataToSet[1];
-		this.fPlayerY = this.mapDataToSet[2];
+		this.fPlayerX = this.fPlayerX;
+		this.fPlayerY = this.fPlayerY;
+		this.portalTileIndeces = [null, null];
 
 		if (this.DEBUG && this.debugCanvas) {
 			this.debugCanvas.width = this.mapWidth;
@@ -1486,6 +1496,94 @@ class GameWindow {
 			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
 
 			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
+		}
+	};
+
+	openDoor = () => {
+		if (!this.reticleOnWall) return;
+		let tileTypeTemp = 0;
+		let tileIndex = 0;
+		let closest = null;
+		let record = Infinity;
+
+		let adjustedAngle = this.fPlayerAngle;
+		if (adjustedAngle < 0) adjustedAngle += 360;
+		const playerQuadrant = Math.floor(adjustedAngle / 90);
+		const sidesToCheck = this.getSidesToCheck(playerQuadrant);
+		let rowFound;
+		let colFound;
+
+		for (let row = 0; row < this.mapRows; row++) {
+			for (let col = 0; col < this.mapCols; col++) {
+				const tile = this.map[row * this.mapCols + col];
+				if (tile === 0) continue;
+
+				const tileIntersection = this.getIntersectionOfTile(
+					this.fPlayerX,
+					this.fPlayerY,
+					row,
+					col,
+					degToRad(this.fPlayerAngle),
+					sidesToCheck
+				);
+
+				if (tileIntersection.record < record) {
+					tileIndex = row * this.mapCols + col;
+					record = tileIntersection.record;
+					closest = tileIntersection.closest;
+
+					tileTypeTemp = tile;
+					rowFound = row;
+					colFound = col;
+				}
+			}
+		}
+
+		if (this.doorMap[tileIndex] && record < 120) {
+			this.map[rowFound * this.mapCols + colFound] = 3;
+			this.levelTransition = true;
+
+			const newTileIndex = this.doorMap[tileIndex].indexTo;
+			const newTileSide = this.doorMap[tileIndex].side;
+			const newMapNum = this.doorMap[tileIndex].mapTo;
+			const newMapCols = maps[newMapNum].map[0].length;
+			let x = this.TILE_SIZE * (newTileIndex % newMapCols);
+			let y = this.TILE_SIZE * Math.floor(newTileIndex / newMapCols);
+			let newPlayerAngle = 0;
+			const offset = 20;
+
+			switch (newTileSide) {
+				case 0:
+					x = x + this.TILE_SIZE / 2;
+					y = y - offset;
+					newPlayerAngle = 270;
+					break;
+				case 1:
+					x = x + this.TILE_SIZE + offset;
+					y = y + this.TILE_SIZE / 2;
+					newPlayerAngle = 0;
+					break;
+				case 2:
+					x = x + this.TILE_SIZE / 2;
+					y = y + this.TILE_SIZE + offset;
+					newPlayerAngle = 90;
+					break;
+				case 3:
+					x = x - this.TILE_SIZE - offset;
+					y = y + this.TILE_SIZE / 2;
+					newPlayerAngle = 180;
+					break;
+			}
+
+			const interval = setInterval(() => {
+				if (!this.levelTransition) {
+					this.fPlayerX = x;
+					this.fPlayerY = y;
+					this.fPlayerAngle = newPlayerAngle;
+					this.setNewMapData(newMapNum);
+					clearInterval(interval);
+				}
+			}, 50);
 		}
 	};
 
@@ -1518,7 +1616,7 @@ class GameWindow {
 		for (let row = 0; row < this.mapRows; row++) {
 			for (let col = 0; col < this.mapCols; col++) {
 				const tile = this.map[row * this.mapCols + col];
-				if (tile === 0 || tile === 2) continue;
+				if (tile === 0 || tile === 4) continue;
 
 				const tileIntersection = this.getIntersectionOfTile(
 					this.fPlayerX,
@@ -1542,6 +1640,8 @@ class GameWindow {
 
 		if (closest) {
 			if (
+				tileTypeTemp === 2 ||
+				tileTypeTemp === 3 ||
 				(this.portalTileIndeces[0] === tileIndex && this.portalTileSides[0] === tileSideDirTemp) ||
 				(this.portalTileIndeces[1] === tileIndex && this.portalTileSides[1] === tileSideDirTemp)
 			) {
@@ -1637,6 +1737,19 @@ class GameWindow {
 		}
 	};
 
+	fade = () => {
+		if (this.levelTransition) {
+			if (this.levelTransitionFadeAmt < 1) this.levelTransitionFadeAmt += 0.05;
+			else this.levelTransition = false;
+			this.ctx.fillStyle = `rgba(0, 0, 0, ${this.levelTransitionFadeAmt})`;
+			this.ctx.fillRect(0, 0, this.PROJECTIONPLANEWIDTH, this.PROJECTIONPLANEHEIGHT);
+		} else if (this.levelTransitionFadeAmt > 0) {
+			this.levelTransitionFadeAmt -= 0.05;
+			this.ctx.fillStyle = `rgba(0, 0, 0, ${this.levelTransitionFadeAmt})`;
+			this.ctx.fillRect(0, 0, this.PROJECTIONPLANEWIDTH, this.PROJECTIONPLANEHEIGHT);
+		}
+	};
+
 	update = () => {
 		this.animationFrameId = requestAnimationFrame(this.update);
 		this.now = Date.now();
@@ -1658,11 +1771,6 @@ class GameWindow {
 				this.debugCtx.clearRect(0, 0, this.debugCanvasWidth, this.debugCanvasHeight);
 			this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-			if (this.mapDataToSet[0]) {
-				this.setNewMapData();
-				this.mapDataToSet = [];
-			}
-
 			if (this.isJumping) this.jump();
 			if (this.isCrouching) this.crouch();
 			if (this.isStanding) this.stand();
@@ -1676,6 +1784,7 @@ class GameWindow {
 			this.draw3dWalls();
 			this.drawReticle();
 			this.ctx.putImageData(this.offscreenCanvasPixels, 0, 0);
+			this.fade();
 
 			if (this.DEBUG && this.debugCtx) {
 				this.debugCtx.fillStyle = `rgba(0,255,0,1)`;
@@ -1830,6 +1939,10 @@ class GameWindow {
 			} else if (e.code === 'KeyD') {
 				if (this.DEBUG) this.fRotationDir = '';
 				else this.fKeyRight = false;
+			}
+
+			if (e.code === 'KeyE') {
+				this.openDoor();
 			}
 
 			if (e.code === 'ShiftLeft') {
