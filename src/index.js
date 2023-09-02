@@ -49,6 +49,8 @@ class GameWindow {
 			'src/assets/wall1.png',
 			'src/assets/wall1Dark.png',
 			'src/assets/wall2.png',
+			'src/assets/wall2nice.png',
+			'src/assets/wall2job.png',
 			'src/assets/wall2Chipped.png',
 			'src/assets/wall3.png',
 			'src/assets/wall3nice.png',
@@ -188,7 +190,7 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 	}
 
 	getSidesToCheck(quadrant) {
