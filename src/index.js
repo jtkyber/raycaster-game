@@ -148,12 +148,12 @@ class GameWindow {
 		this.rayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.tileCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.tileCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileTypes = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileSides = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileIndeces = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.tileTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
+		this.tileSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
+		this.tileIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
 
 		this.portalTileIndeces = new Uint16Array([null, null]);
-		this.portalTileSides = new Uint16Array([null, null]);
+		this.portalTileSides = new Uint8Array([null, null]);
 		this.portalSizeMultipliers = new Float32Array([1, 1]);
 		this.portalColors = [
 			[0, 101, 255],
@@ -165,9 +165,9 @@ class GameWindow {
 		this.portalOutYVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutTypes = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutSides = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutIndeces = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
+		this.portalOutIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
 		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.userIsInTab = false;
