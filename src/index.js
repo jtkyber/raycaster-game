@@ -135,7 +135,7 @@ class GameWindow {
 		this.fWallTextureCanvas;
 		this.fWallTexturePixels;
 
-		this.fFishTable = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.fFishTable;
 
 		this.RAD0 = 0;
 		this.RAD90 = (3 * Math.PI) / 2;
@@ -143,32 +143,32 @@ class GameWindow {
 		this.RAD270 = Math.PI / 2;
 		this.RAD360 = 2 * Math.PI;
 
-		this.rayAngles = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.rayAngleQuadrants = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.rayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.tileTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.tileSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.tileIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
+		this.rayAngles;
+		this.rayAngleQuadrants;
+		this.rayLengths;
+		this.tileCollisionsX;
+		this.tileCollisionsY;
+		this.tileTypes;
+		this.tileSides;
+		this.tileIndeces;
 
-		this.portalTileIndeces = new Uint16Array([null, null]);
-		this.portalTileSides = new Uint8Array([null, null]);
-		this.portalSizeMultipliers = new Float32Array([1, 1]);
+		this.portalTileIndeces;
+		this.portalTileSides;
+		this.portalSizeMultipliers;
 		this.portalColors = [
 			[0, 101, 255],
 			[255, 93, 0],
 		];
 
-		this.totalPortalRayLengths = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutXVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutYVals = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.totalPortalRayLengths;
+		this.portalOutXVals;
+		this.portalOutYVals;
+		this.portalOutCollisionsX;
+		this.portalOutCollisionsY;
+		this.portalOutTypes;
+		this.portalOutSides;
+		this.portalOutIndeces;
+		this.portalOutAngs;
 
 		this.userIsInTab = false;
 		this.reticleOnWall = false;
@@ -713,11 +713,12 @@ class GameWindow {
 
 	draw3dWalls() {
 		for (let i = 0; i < this.rayLengths.length; i++) {
+			if (this.rayLengths[i] === 0) return;
 			let dist = this.rayLengths[i] / this.fFishTable[i];
 
 			// For possible portal ray --------------------------------------
 			let totalPortalRayDist =
-				this.totalPortalRayLengths[i] < Infinity ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
+				this.totalPortalRayLengths[i] > 0 ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
 			let portalWallHeight = null;
 			let portalWallBottom = null;
 			let portalWallTop = null;
@@ -1053,7 +1054,7 @@ class GameWindow {
 			let portal2RayClosest = null;
 			let tileTypeTemp = 0;
 			let tileSideDirTemp = 0;
-			let tileIndexTemp = null;
+			let tileIndexTemp = 0;
 
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
@@ -1107,7 +1108,7 @@ class GameWindow {
 					this.debugCtx.lineWidth = 1;
 					this.debugCtx.stroke();
 				}
-			} else this.totalPortalRayLengths[i] = Infinity;
+			} else this.totalPortalRayLengths[i] = 0;
 		}
 	}
 
@@ -1126,7 +1127,7 @@ class GameWindow {
 			let closest = null;
 			let record = Infinity;
 
-			let tileIndex = null;
+			let tileIndex = 0;
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
 					const tile = this.map[row * this.mapCols + col];
@@ -1183,7 +1184,7 @@ class GameWindow {
 						tileSideDirTemp,
 						adjustedAngle
 					);
-				} else this.totalPortalRayLengths[i] = Infinity;
+				} else this.totalPortalRayLengths[i] = 0;
 
 				if (this.DEBUG) {
 					this.debugCtx.strokeStyle =
@@ -1194,7 +1195,7 @@ class GameWindow {
 					this.debugCtx.lineWidth = 1;
 					this.debugCtx.stroke();
 				}
-			} else this.rayLengths[i] = Infinity;
+			} else this.rayLengths[i] = 0;
 		}
 	}
 
@@ -1509,7 +1510,7 @@ class GameWindow {
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
 		this.fPlayerX = this.fPlayerX;
 		this.fPlayerY = this.fPlayerY;
-		this.portalTileIndeces = [null, null];
+		this.portalTileIndeces = [-1, -1];
 
 		if (this.DEBUG && this.debugCanvas) {
 			this.debugCanvas.width = this.mapWidth;
@@ -1627,7 +1628,7 @@ class GameWindow {
 		if (!this.reticleOnWall) return;
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
-		let tileIndex = 0;
+		let tileIndex = -1;
 		let closest = null;
 		let record = Infinity;
 
@@ -1858,8 +1859,40 @@ class GameWindow {
 		this.setNewMapData();
 	}
 
+	setTypedArrays() {
+		const w = this.PROJECTIONPLANEWIDTH;
+		const bufferSize = w * (4 * 13 + 2 * 2 + 1 * 4) + 2 * 4 + 2 * 1 + 2 * 2;
+		const buffer = new ArrayBuffer(bufferSize);
+
+		this.fFishTable = new Float32Array(buffer, 0, w);
+		this.rayAngles = new Float32Array(buffer, w * 4, w);
+		this.rayAngleQuadrants = new Float32Array(buffer, w * 8, w);
+		this.rayLengths = new Float32Array(buffer, w * 12, w);
+		this.tileCollisionsX = new Float32Array(buffer, w * 16, w);
+		this.tileCollisionsY = new Float32Array(buffer, w * 20, w);
+		this.totalPortalRayLengths = new Float32Array(buffer, w * 24, w);
+		this.portalOutXVals = new Float32Array(buffer, w * 28, w);
+		this.portalOutYVals = new Float32Array(buffer, w * 32, w);
+		this.portalOutCollisionsX = new Float32Array(buffer, w * 36, w);
+		this.portalOutCollisionsY = new Float32Array(buffer, w * 40, w);
+		this.portalOutAngs = new Float32Array(buffer, w * 44, w);
+
+		this.tileIndeces = new Uint16Array(buffer, w * 48, w);
+		this.portalOutIndeces = new Uint16Array(buffer, w * 50, w);
+
+		this.tileTypes = new Uint8Array(buffer, w * 52, w);
+		this.tileSides = new Uint8Array(buffer, w * 53, w);
+		this.portalOutTypes = new Uint8Array(buffer, w * 54, w);
+		this.portalOutSides = new Uint8Array(buffer, w * 55, w);
+
+		this.portalSizeMultipliers = new Float32Array(buffer, w * 56, 2).fill(1);
+		this.portalTileSides = new Int8Array(buffer, w * 56 + 8, 2).fill(-1);
+		this.portalTileIndeces = new Int16Array(buffer, w * 56 + 10, 2).fill(-1);
+	}
+
 	async init() {
 		await this.preloadTextures();
+		this.setTypedArrays();
 		this.setAngles();
 
 		if (!this.DEBUG) {
