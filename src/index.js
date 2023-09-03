@@ -1663,8 +1663,8 @@ class GameWindow {
 
 		if (closest) {
 			if (
+				tileTypeTemp === 1 ||
 				tileTypeTemp === 2 ||
-				tileTypeTemp === 3 ||
 				(this.portalTileIndeces[0] === tileIndex && this.portalTileSides[0] === tileSideDirTemp) ||
 				(this.portalTileIndeces[1] === tileIndex && this.portalTileSides[1] === tileSideDirTemp)
 			) {
