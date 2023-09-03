@@ -1911,6 +1911,14 @@ class GameWindow {
 			if (!this.DEBUG) {
 				this.fPlayerAngle += e.movementX / 20;
 				this.fProjectionPlaneYCenter -= e.movementY / 4;
+				if (this.fProjectionPlaneYCenter < -this.PROJECTIONPLANEHEIGHT / 2) {
+					this.fProjectionPlaneYCenter = -this.PROJECTIONPLANEHEIGHT / 2;
+				} else if (
+					this.fProjectionPlaneYCenter >
+					this.PROJECTIONPLANEHEIGHT + this.PROJECTIONPLANEHEIGHT / 2
+				) {
+					this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT + this.PROJECTIONPLANEHEIGHT / 2;
+				}
 			}
 		});
 
