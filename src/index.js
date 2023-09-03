@@ -193,7 +193,7 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -239,8 +239,8 @@ class GameWindow {
 				this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]
 			);
 
-			let brighnessLevel = 100 / diagDist;
-			if (brighnessLevel > 1.3) brighnessLevel = 1.3;
+			let brightnessLevel = 100 / diagDist;
+			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 
 			let xEnd = Math.floor(diagDist * Math.cos(rayAng));
 			let yEnd = Math.floor(diagDist * Math.sin(rayAng));
@@ -280,12 +280,12 @@ class GameWindow {
 					const sourceIndex =
 						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-					const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brighnessLevel + this.redTint));
+					const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
 					const green = Math.floor(
-						this.fCeilingTexturePixels[sourceIndex + 1] * (brighnessLevel + this.greenTint)
+						this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint)
 					);
 					const blue = Math.floor(
-						this.fCeilingTexturePixels[sourceIndex + 2] * (brighnessLevel + this.blueTint)
+						this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint)
 					);
 					const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
 
@@ -305,12 +305,12 @@ class GameWindow {
 				const sourceIndex =
 					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brighnessLevel + this.redTint));
+				const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
 				const green = Math.floor(
-					this.fCeilingTexturePixels[sourceIndex + 1] * (brighnessLevel + this.greenTint)
+					this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint)
 				);
 				const blue = Math.floor(
-					this.fCeilingTexturePixels[sourceIndex + 2] * (brighnessLevel + this.blueTint)
+					this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint)
 				);
 				const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
 
@@ -346,7 +346,7 @@ class GameWindow {
 
 			const actualDistance = straightDistance * this.fFishTable[castColumn];
 
-			const brighnessLevel = 120 / actualDistance;
+			const brightnessLevel = 120 / actualDistance;
 
 			let xEnd = Math.floor(actualDistance * Math.cos(rayAng));
 			let yEnd = Math.floor(actualDistance * Math.sin(rayAng));
@@ -394,13 +394,13 @@ class GameWindow {
 						this.bytesPerPixel * tileCol;
 
 					const red = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brighnessLevel + this.redTint)
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brightnessLevel + this.redTint)
 					);
 					const green = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brighnessLevel + this.greenTint)
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brightnessLevel + this.greenTint)
 					);
 					const blue = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brighnessLevel + this.blueTint)
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brightnessLevel + this.blueTint)
 					);
 					const alpha = Math.floor(this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3]);
 
@@ -422,13 +422,13 @@ class GameWindow {
 					this.bytesPerPixel * tileCol;
 
 				const red = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brighnessLevel + this.redTint)
+					this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint)
 				);
 				const green = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brighnessLevel + this.greenTint)
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel + this.greenTint)
 				);
 				const blue = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brighnessLevel + this.blueTint)
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel + this.blueTint)
 				);
 				const alpha = Math.floor(this.fFloorTexturePixelsList[fIndex][sourceIndex + 3]);
 
@@ -449,7 +449,7 @@ class GameWindow {
 		rectTop,
 		height,
 		xOffset,
-		brighnessLevel,
+		brightnessLevel,
 		textureBuffer,
 		texturePixels,
 		textureBufferPainting,
@@ -635,18 +635,18 @@ class GameWindow {
 				xOffset < paintingSourceRight
 			) {
 				// Painting on column and within size of painting source
-				red = Math.floor(texturePixelsPainting[sourceIndexPainting] * (brighnessLevel + this.redTint));
+				red = Math.floor(texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint));
 				green = Math.floor(
-					texturePixelsPainting[sourceIndexPainting + 1] * (brighnessLevel + this.greenTint)
+					texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint)
 				);
-				blue = Math.floor(texturePixelsPainting[sourceIndexPainting + 2] * (brighnessLevel + this.blueTint));
+				blue = Math.floor(texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint));
 				alpha = Math.floor(texturePixelsPainting[sourceIndexPainting + 3]);
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
-				red = Math.floor(texturePixels[sourceIndex] * (brighnessLevel + this.redTint));
-				green = Math.floor(texturePixels[sourceIndex + 1] * (brighnessLevel + this.greenTint));
-				blue = Math.floor(texturePixels[sourceIndex + 2] * (brighnessLevel + this.blueTint));
+				red = Math.floor(texturePixels[sourceIndex] * (brightnessLevel + this.redTint));
+				green = Math.floor(texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
+				blue = Math.floor(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
 				alpha = Math.floor(texturePixels[sourceIndex + 3]);
 			}
 
@@ -662,11 +662,11 @@ class GameWindow {
 					// Portal on column but source index is not within portal ellipse
 					if (inEffectEllipse) {
 						// source index is within portal effect ellipse but outside of portal ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 1] =
-							this.portalColors[portalNum][1] * brighnessLevel;
+							this.portalColors[portalNum][1] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 2] =
-							this.portalColors[portalNum][2] * brighnessLevel;
+							this.portalColors[portalNum][2] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						// Fill area outside of effect ellipse with wall texture
@@ -679,11 +679,11 @@ class GameWindow {
 					// Closed portal
 					if (inEffectEllipse) {
 						// Use solid colors to fill inside of effect ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brighnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 1] =
-							this.portalColors[portalNum][1] * brighnessLevel;
+							this.portalColors[portalNum][1] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 2] =
-							this.portalColors[portalNum][2] * brighnessLevel;
+							this.portalColors[portalNum][2] * brightnessLevel;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						// Fill area outside of effect ellipse with wall texture
@@ -840,12 +840,12 @@ class GameWindow {
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
 			dist = Math.floor(dist);
-			let brighnessLevel = 110 / dist;
+			let brightnessLevel = 110 / dist;
 
-			if (brighnessLevel > 1.3) brighnessLevel = 1.3;
+			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 
 			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) {
-				brighnessLevel = brighnessLevel * 0.8;
+				brightnessLevel = brightnessLevel * 0.8;
 			}
 
 			this.drawFloor(
@@ -871,7 +871,7 @@ class GameWindow {
 				wallTop,
 				wallHeight + 1,
 				offset,
-				brighnessLevel,
+				brightnessLevel,
 				textureBuffer,
 				texturePixels,
 				textureBufferPainting,
@@ -984,7 +984,7 @@ class GameWindow {
 		portalTileSideIn,
 		rayInAng
 	) {
-		if (portalIndexOut) {
+		if (portalIndexOut >= 0) {
 			let offset;
 
 			switch (portalTileSideIn) {
@@ -1359,10 +1359,15 @@ class GameWindow {
 								else if (playerWallTileDiffCol < 0 && moveDir < 270 && moveDir > 90) break loop1;
 
 								const intersectSide = playerWallTileDiffCol > 0 ? 1 : 3;
-								if (tileIndex === this.portalTileIndeces[0] && this.portalTileSides[0] === intersectSide) {
+								if (
+									this.portalTileIndeces[1] >= 0 &&
+									tileIndex === this.portalTileIndeces[0] &&
+									this.portalTileSides[0] === intersectSide
+								) {
 									this.handlePortalCollision(0);
 									return;
 								} else if (
+									this.portalTileIndeces[0] >= 0 &&
 									tileIndex === this.portalTileIndeces[1] &&
 									this.portalTileSides[1] === intersectSide
 								) {
@@ -1377,10 +1382,15 @@ class GameWindow {
 								else if (playerWallTileDiffRow < 0 && moveDir > 180 && moveDir < 360) break loop1;
 
 								const intersectSide = playerWallTileDiffRow > 0 ? 2 : 0;
-								if (tileIndex === this.portalTileIndeces[0] && this.portalTileSides[0] === intersectSide) {
+								if (
+									this.portalTileIndeces[1] >= 0 &&
+									tileIndex === this.portalTileIndeces[0] &&
+									this.portalTileSides[0] === intersectSide
+								) {
 									this.handlePortalCollision(0);
 									return;
 								} else if (
+									this.portalTileIndeces[0] >= 0 &&
 									tileIndex === this.portalTileIndeces[1] &&
 									this.portalTileSides[1] === intersectSide
 								) {
@@ -1510,7 +1520,7 @@ class GameWindow {
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
 		this.fPlayerX = this.fPlayerX;
 		this.fPlayerY = this.fPlayerY;
-		this.portalTileIndeces = [-1, -1];
+		this.portalTileIndeces.fill(-1);
 
 		if (this.DEBUG && this.debugCanvas) {
 			this.debugCanvas.width = this.mapWidth;
@@ -1891,8 +1901,8 @@ class GameWindow {
 	}
 
 	async init() {
-		await this.preloadTextures();
 		this.setTypedArrays();
+		await this.preloadTextures();
 		this.setAngles();
 
 		if (!this.DEBUG) {
