@@ -115,7 +115,7 @@ class GameWindow {
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
 		this.fPlayerX = 100;
-		this.fPlayerY = 1500;
+		this.fPlayerY = 100;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
@@ -193,7 +193,7 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 	}
 
 	getSidesToCheck(quadrant) {
