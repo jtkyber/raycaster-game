@@ -26,8 +26,8 @@ class GameWindow {
 		this.fPaintingTexturePixelsList;
 		this.fPaintingDetails;
 
-		this.fFloorTextureBuffer;
-		this.fFloorTexturePixels;
+		this.fFloorTextureBufferList;
+		this.fFloorTexturePixelsList;
 
 		this.fCeilingTextureBuffer;
 		this.fCeilingTexturePixels;
@@ -62,6 +62,9 @@ class GameWindow {
 			// Floors
 			'src/assets/floor1.png',
 			'src/assets/floor2.png',
+			'src/assets/floor3.png',
+			'src/assets/floor4.png',
+			'src/assets/floor5.png',
 			// Ceilings
 			'src/assets/ceiling1.png',
 			'src/assets/ceiling2.png',
@@ -112,7 +115,7 @@ class GameWindow {
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
 		this.fPlayerX = 100;
-		this.fPlayerY = 100;
+		this.fPlayerY = 1500;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
@@ -190,7 +193,7 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -321,6 +324,13 @@ class GameWindow {
 		}
 	}
 
+	getFloorTypeIndexFromRowCol(row, col) {
+		const tileIndex = row * this.mapCols + col;
+		let type = this.map[tileIndex];
+		if (type < 6) type = 6;
+		return type - 6;
+	}
+
 	drawFloor(wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) {
 		let targetIndex =
 			wallBottom * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
@@ -329,11 +339,12 @@ class GameWindow {
 			wallBottomPortal * (this.offscreenCanvasPixels.width * this.bytesPerPixel) +
 			this.bytesPerPixel * castColumn;
 
+		let count = 0;
 		for (let row = wallBottomPortal || wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
 			const straightDistance =
 				(this.fPlayerHeight / (row - this.fProjectionPlaneYCenter)) * this.fPlayerDistanceToProjectionPlane;
 
-			let actualDistance = straightDistance * this.fFishTable[castColumn];
+			const actualDistance = straightDistance * this.fFishTable[castColumn];
 
 			const brighnessLevel = 120 / actualDistance;
 
@@ -345,6 +356,8 @@ class GameWindow {
 
 			let cellX = Math.floor(xEnd / this.TILE_SIZE);
 			let cellY = Math.floor(yEnd / this.TILE_SIZE);
+
+			const fIndex = this.getFloorTypeIndexFromRowCol(cellY, cellX);
 
 			//-------------------------------------------------------------------------
 
@@ -364,6 +377,8 @@ class GameWindow {
 				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
 			}
 
+			const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
+
 			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
 				if (
 					cellXPortal < this.mapCols &&
@@ -375,16 +390,19 @@ class GameWindow {
 					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
 
 					const sourceIndex =
-						tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
+						tileRow * this.fFloorTextureBufferList[fIndexPortal].width * this.bytesPerPixel +
+						this.bytesPerPixel * tileCol;
 
-					const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * (brighnessLevel + this.redTint));
+					const red = Math.floor(
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brighnessLevel + this.redTint)
+					);
 					const green = Math.floor(
-						this.fFloorTexturePixels[sourceIndex + 1] * (brighnessLevel + this.greenTint)
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brighnessLevel + this.greenTint)
 					);
 					const blue = Math.floor(
-						this.fFloorTexturePixels[sourceIndex + 2] * (brighnessLevel + this.blueTint)
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brighnessLevel + this.blueTint)
 					);
-					const alpha = Math.floor(this.fFloorTexturePixels[sourceIndex + 3]);
+					const alpha = Math.floor(this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3]);
 
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
@@ -400,14 +418,19 @@ class GameWindow {
 				const tileCol = Math.floor(yEnd % this.TILE_SIZE);
 
 				const sourceIndex =
-					tileRow * this.fFloorTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
+					tileRow * this.fFloorTextureBufferList[fIndex].width * this.bytesPerPixel +
+					this.bytesPerPixel * tileCol;
 
-				const red = Math.floor(this.fFloorTexturePixels[sourceIndex] * (brighnessLevel + this.redTint));
-				const green = Math.floor(
-					this.fFloorTexturePixels[sourceIndex + 1] * (brighnessLevel + this.greenTint)
+				const red = Math.floor(
+					this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brighnessLevel + this.redTint)
 				);
-				const blue = Math.floor(this.fFloorTexturePixels[sourceIndex + 2] * (brighnessLevel + this.blueTint));
-				const alpha = Math.floor(this.fFloorTexturePixels[sourceIndex + 3]);
+				const green = Math.floor(
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brighnessLevel + this.greenTint)
+				);
+				const blue = Math.floor(
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brighnessLevel + this.blueTint)
+				);
+				const alpha = Math.floor(this.fFloorTexturePixelsList[fIndex][sourceIndex + 3]);
 
 				this.offscreenCanvasPixels.data[targetIndex] = red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
@@ -416,6 +439,7 @@ class GameWindow {
 
 				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
 			}
+			count++;
 		}
 	}
 
@@ -745,8 +769,8 @@ class GameWindow {
 				if (this.portalOutSides?.[i] === 0 || this.portalOutSides?.[i] === 1)
 					portalWallOffset = this.TILE_SIZE - portalWallOffset;
 
-				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i] - 1];
-				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i] - 1];
+				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i]];
+				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i]];
 
 				totalPortalRayDist = Math.floor(totalPortalRayDist);
 				portalBrightness = 110 / totalPortalRayDist;
@@ -811,8 +835,8 @@ class GameWindow {
 
 			if (this.tileSides?.[i] === 0 || this.tileSides?.[i] === 1) offset = this.TILE_SIZE - offset;
 
-			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i] - 1];
-			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i] - 1];
+			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
+			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
 			dist = Math.floor(dist);
 			let brighnessLevel = 110 / dist;
@@ -871,7 +895,7 @@ class GameWindow {
 			for (let j = 0; j < this.mapCols; j++) {
 				const tile = this.map[i * this.mapCols + j];
 
-				this.debugCtx.fillStyle = `rgb(${40 * tile}, ${40 * tile}, ${40 * tile})`;
+				this.debugCtx.fillStyle = `rgb(${40 * (tile + 1)}, ${40 * (tile + 1)}, ${40 * (tile + 1)})`;
 				this.debugCtx.beginPath();
 				this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 				count++;
@@ -1031,12 +1055,10 @@ class GameWindow {
 			let tileSideDirTemp = 0;
 			let tileIndexTemp = null;
 
-			// Find a way to merge this into where you loop through all the tiles in the raycaster function
-			// instead of doing it twice
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
 					const tile = this.map[row * this.mapCols + col];
-					if (tile === 0) continue;
+					if (tile > 5) continue;
 
 					const tileIntersection = this.getIntersectionOfTile(
 						this.portalOutXVals[i],
@@ -1108,7 +1130,7 @@ class GameWindow {
 			for (let row = 0; row < this.mapRows; row++) {
 				for (let col = 0; col < this.mapCols; col++) {
 					const tile = this.map[row * this.mapCols + col];
-					if (tile === 0) continue;
+					if (tile > 5) continue;
 
 					const tileIntersection = this.getIntersectionOfTile(
 						this.fPlayerX,
@@ -1319,7 +1341,7 @@ class GameWindow {
 				loop1: for (let col = 0; col < this.mapCols; col++) {
 					const tileIndex = row * this.mapCols + col;
 					const tile = this.map[tileIndex];
-					if (tile === 0 || (row === playerTileRow && col === playerTileCol)) continue;
+					if (tile > 5 || (row === playerTileRow && col === playerTileCol)) continue;
 
 					if (Math.abs(col - playerTileCol) <= 1 && Math.abs(row - playerTileRow) <= 1) {
 						const closeDistToTile = this.playerTooCloseToWall(row, col);
@@ -1430,17 +1452,21 @@ class GameWindow {
 		this.fCeilingTexturePixels = imgData.data;
 	}
 
-	onFloorTextureLoaded(imgName) {
-		const img = this.textures[imgName];
-		this.fFloorTextureBuffer = document.createElement('canvas');
-		this.fFloorTextureBuffer.width = img.width;
-		this.fFloorTextureBuffer.height = img.height;
-		this.fFloorTextureBuffer.getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+	onFloorTextureLoaded(imgNames) {
+		this.fFloorTextureBufferList = new Array(imgNames.length);
+		this.fFloorTexturePixelsList = new Array(imgNames.length);
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fFloorTextureBufferList[i] = document.createElement('canvas');
+			this.fFloorTextureBufferList[i].width = img.width;
+			this.fFloorTextureBufferList[i].height = img.height;
+			this.fFloorTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
-		const imgData = this.fFloorTextureBuffer
-			.getContext('2d', { alpha: false })
-			.getImageData(0, 0, this.fFloorTextureBuffer.width, this.fFloorTextureBuffer.height);
-		this.fFloorTexturePixels = imgData.data;
+			const imgData = this.fFloorTextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(0, 0, this.fFloorTextureBufferList[i].width, this.fFloorTextureBufferList[i].height);
+			this.fFloorTexturePixelsList[i] = imgData.data;
+		}
 	}
 
 	onPaintingTextureLoaded(imgNames) {
@@ -1472,7 +1498,7 @@ class GameWindow {
 		this.fPaintingDetails = maps[i].paintingDetails;
 
 		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
-		this.onFloorTextureLoaded(maps[i].floorTexture);
+		this.onFloorTextureLoaded(maps[i].floorTextures);
 
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapNum = i;
@@ -1513,7 +1539,7 @@ class GameWindow {
 		for (let row = 0; row < this.mapRows; row++) {
 			for (let col = 0; col < this.mapCols; col++) {
 				const tile = this.map[row * this.mapCols + col];
-				if (tile === 0) continue;
+				if (tile > 5) continue;
 
 				const tileIntersection = this.getIntersectionOfTile(
 					this.fPlayerX,
@@ -1537,7 +1563,7 @@ class GameWindow {
 		}
 
 		if (this.doorMap[tileIndex] && record < 120) {
-			this.map[rowFound * this.mapCols + colFound] = 3;
+			this.map[rowFound * this.mapCols + colFound] = 2;
 			this.levelTransition = true;
 
 			const newTileIndex = this.doorMap[tileIndex].indexTo;
@@ -1613,7 +1639,7 @@ class GameWindow {
 		for (let row = 0; row < this.mapRows; row++) {
 			for (let col = 0; col < this.mapCols; col++) {
 				const tile = this.map[row * this.mapCols + col];
-				if (tile === 0 || tile === 4) continue;
+				if (tile > 5 || tile === 3) continue;
 
 				const tileIntersection = this.getIntersectionOfTile(
 					this.fPlayerX,
