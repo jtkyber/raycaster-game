@@ -193,7 +193,7 @@ class GameWindow {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -517,50 +517,55 @@ class GameWindow {
 		let yError = 0;
 		let sourceRow;
 
+		let paintingSourceTopPortal = null;
+		let paintingSourceBottomPortal = null;
+		let paintingSourceLeftPortal = null;
+		let paintingSourceRightPortal = null;
+
+		let sourceIndexPaintingPortal = null;
+
+		let sourceRowPortal;
+
 		//------------------------Draw Portal Walls & Paintings-------------------------
 
 		if (sourceIndexPortal !== null && portalNum !== null) {
 			// Open portal on column
-			let paintingSourceTop = null;
-			let paintingSourceBottom = null;
-			let paintingSourceLeft = null;
-			let paintingSourceRight = null;
-
-			let sourceIndexPainting = null;
-			sourceRow = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBuffer.width));
+			sourceRowPortal = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBuffer.width));
 
 			if (textureBufferPaintingPortal) {
 				// Painting is present on column in portal
-				paintingSourceTop = textureBufferPortal.height / 2 - textureBufferPaintingPortal.height / 2;
-				paintingSourceBottom = textureBufferPortal.height / 2 + textureBufferPaintingPortal.height / 2;
-				paintingSourceLeft = textureBufferPortal.width / 2 - textureBufferPaintingPortal.width / 2;
-				paintingSourceRight = textureBufferPortal.width / 2 + textureBufferPaintingPortal.width / 2;
+				paintingSourceTopPortal = textureBufferPortal.height / 2 - textureBufferPaintingPortal.height / 2;
+				paintingSourceBottomPortal = textureBufferPortal.height / 2 + textureBufferPaintingPortal.height / 2;
+				paintingSourceLeftPortal = textureBufferPortal.width / 2 - textureBufferPaintingPortal.width / 2;
+				paintingSourceRightPortal = textureBufferPortal.width / 2 + textureBufferPaintingPortal.width / 2;
 
-				sourceIndexPainting = this.bytesPerPixel * (xOffsetPortal - paintingSourceLeft);
+				sourceIndexPaintingPortal = this.bytesPerPixel * (xOffsetPortal - paintingSourceLeftPortal);
 			}
 
 			loop1: while (true) {
 				yError += heightPortal;
 				if (
 					textureBufferPaintingPortal &&
-					sourceRow > paintingSourceTop - 1 &&
-					sourceRow < paintingSourceBottom &&
-					xOffsetPortal > paintingSourceLeft - 1 &&
-					xOffsetPortal < paintingSourceRight
+					sourceRowPortal > paintingSourceTopPortal - 1 &&
+					sourceRowPortal < paintingSourceBottomPortal &&
+					xOffsetPortal > paintingSourceLeftPortal - 1 &&
+					xOffsetPortal < paintingSourceRightPortal
 				) {
 					// Painting on column and within size of painting source
 					red = Math.floor(
-						texturePixelsPaintingPortal[sourceIndexPainting] * (brighnessLevelPortal + this.redTint)
+						texturePixelsPaintingPortal[sourceIndexPaintingPortal] * (brighnessLevelPortal + this.redTint)
 					);
 					green = Math.floor(
-						texturePixelsPaintingPortal[sourceIndexPainting + 1] * (brighnessLevelPortal + this.greenTint)
+						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 1] *
+							(brighnessLevelPortal + this.greenTint)
 					);
 					blue = Math.floor(
-						texturePixelsPaintingPortal[sourceIndexPainting + 2] * (brighnessLevelPortal + this.blueTint)
+						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 2] *
+							(brighnessLevelPortal + this.blueTint)
 					);
-					alpha = Math.floor(texturePixelsPaintingPortal[sourceIndexPainting + 3]);
+					alpha = Math.floor(texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3]);
 
-					sourceIndexPainting += this.bytesPerPixel * textureBufferPaintingPortal.width;
+					sourceIndexPaintingPortal += this.bytesPerPixel * textureBufferPaintingPortal.width;
 				} else {
 					// Just draw wall
 					red = Math.floor(texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint));
@@ -591,7 +596,7 @@ class GameWindow {
 
 				sourceIndexPortal += this.bytesPerPixel * textureBufferPortal.width;
 				if (sourceIndexPortal > lastSourceIndexPortal) sourceIndexPortal = lastSourceIndexPortal;
-				sourceRow = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBufferPortal.width));
+				sourceRowPortal = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBufferPortal.width));
 			}
 			yError = 0;
 		}
@@ -614,6 +619,11 @@ class GameWindow {
 
 		let sourceIndexPainting = null;
 
+		let yOffset;
+		let dy;
+		let inEllipse;
+		let inEffectEllipse;
+
 		if (textureBufferPainting) {
 			// Painting is present on column
 			paintingSourceTop = textureBuffer.height / 2 - textureBufferPainting.height / 2;
@@ -626,6 +636,12 @@ class GameWindow {
 
 		while (true) {
 			yError += height;
+
+			yOffset = sourceIndex / (this.bytesPerPixel * textureBuffer.width);
+			dy = circleCenter - yOffset;
+			inEllipse = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1;
+			inEffectEllipse =
+				(dx * dx) / (effectRadiusX * effectRadiusX) + (dy * dy) / (effectRadiusY * effectRadiusY) <= 1;
 
 			if (
 				textureBufferPainting &&
@@ -649,12 +665,6 @@ class GameWindow {
 				blue = Math.floor(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
 				alpha = Math.floor(texturePixels[sourceIndex + 3]);
 			}
-
-			const yOffset = sourceIndex / (this.bytesPerPixel * textureBuffer.width);
-			const dy = circleCenter - yOffset;
-			const inEllipse = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1;
-			const inEffectEllipse =
-				(dx * dx) / (effectRadiusX * effectRadiusX) + (dy * dy) / (effectRadiusY * effectRadiusY) <= 1;
 
 			while (yError >= textureBuffer.width) {
 				yError -= textureBuffer.width;
@@ -840,13 +850,10 @@ class GameWindow {
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
 			dist = Math.floor(dist);
+
 			let brightnessLevel = 110 / dist;
-
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
-
-			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) {
-				brightnessLevel = brightnessLevel * 0.8;
-			}
+			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel = brightnessLevel * 0.8;
 
 			this.drawFloor(
 				Math.floor(wallBottom),
@@ -896,7 +903,7 @@ class GameWindow {
 			for (let j = 0; j < this.mapCols; j++) {
 				const tile = this.map[i * this.mapCols + j];
 
-				this.debugCtx.fillStyle = `rgb(${40 * (tile + 1)}, ${40 * (tile + 1)}, ${40 * (tile + 1)})`;
+				this.debugCtx.fillStyle = `rgb(${(tile + 1) / 0.1}, ${(tile + 1) / 0.1}, ${(tile + 1) / 0.1})`;
 				this.debugCtx.beginPath();
 				this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
 				count++;
@@ -1123,6 +1130,7 @@ class GameWindow {
 			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
 
 			const sidesToCheck = this.getSidesToCheck(this.rayAngleQuadrants[i]);
+			// const sidesToCheck = [0, 1, 2, 3];
 
 			let closest = null;
 			let record = Infinity;
@@ -1931,16 +1939,26 @@ class GameWindow {
 		);
 
 		document.addEventListener('mousedown', e => {
-			// if (this.DEBUG) return;
 			if (!this.userIsInTab && !this.DEBUG) {
 				this.canvas.requestPointerLock =
 					this.canvas.requestPointerLock ||
 					this.canvas.mozRequestPointerLock ||
 					this.canvas.webkitRequestPointerLock;
-				this.canvas.requestPointerLock({
-					unadjustedMovement: true,
-				});
-				return;
+
+				const promise = this.canvas.requestPointerLock({ unadjustedMovement: true });
+
+				if (!promise) {
+					console.log('Disabling mouse acceleration is not supported');
+					return this.canvas.requestPointerLock();
+				}
+
+				return promise
+					.then(() => console.log('Pointer is locked'))
+					.catch(err => {
+						if (err.name === 'NotSupportedError') {
+							return this.canvas.requestPointerLock();
+						}
+					});
 			}
 
 			if (e.button === 0) this.handlePortalShot(0);
