@@ -113,10 +113,8 @@ export default class Engine {
 		this.fPlayerHeight = this.TILE_SIZE / 2;
 		this.fGameSpeed = 0;
 		this.fPlayerMoveSpeed = 0;
-		this.fPlayerDistanceToProjectionPlane = ~~(
-			this.PROJECTIONPLANEWIDTH /
-			2 /
-			Math.tan(degToRad(this.fPlayerFov) / 2)
+		this.fPlayerDistanceToProjectionPlane = Math.floor(
+			this.PROJECTIONPLANEWIDTH / 2 / Math.tan(degToRad(this.fPlayerFov) / 2)
 		);
 
 		this.fKeyForward = false;
@@ -1109,7 +1107,7 @@ export default class Engine {
 			let adjustedAngle;
 			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
-			this.rayAngleQuadrants[i] = ~~(adjustedAngle / (Math.PI / 2));
+			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
 
 			const sidesToCheck = this.getSidesToCheck(this.rayAngleQuadrants[i]);
 			// const sidesToCheck = [0, 1, 2, 3];
