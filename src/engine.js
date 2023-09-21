@@ -187,7 +187,7 @@ export default class Engine {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 	}
 
 	getSidesToCheck(quadrant) {
