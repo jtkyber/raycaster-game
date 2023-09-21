@@ -199,12 +199,12 @@ export default class Actions {
 				}
 			}
 
-			if (e.code === 'Space' && !engine.isJumping && !engine.isCrouching && !engine.isStanding)
+			if (e.code === 'Space' && !engine.isJumping && !engine.isCrouching && !engine.isStanding) {
 				engine.isJumping = true;
+			}
 
 			if (e.code === 'ShiftLeft' && !engine.isCrouching && !engine.isJumping) {
 				engine.isCrouching = true;
-				engine.fPlayerSpeed *= 0.5;
 			}
 		});
 
@@ -228,7 +228,6 @@ export default class Actions {
 			if (e.code === 'ShiftLeft') {
 				engine.isCrouching = false;
 				engine.isStanding = true;
-				engine.fPlayerSpeed /= 0.5;
 			}
 
 			if (e.code === 'KeyE') {

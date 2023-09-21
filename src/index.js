@@ -6,13 +6,15 @@ const engine = new Engine();
 const actions = new Actions(engine);
 const hud = new Hud(engine);
 
-const frameRate = 30;
+const frameRate = 60;
 const fpsInterval = 1000 / frameRate;
 let frameCount = 0;
 let animationFrameId;
 let now = 0;
 let then = 0;
 let elapsed = 0;
+let deltaTime = 0;
+let date = 0;
 
 const alterOffscreenCanvasPixels = () => {
 	engine.update();
@@ -41,12 +43,17 @@ const gameLoop = () => {
 		then = now - (elapsed % fpsInterval);
 		frameCount++;
 
-		engine.offscreenCanvasContext.clearRect(0, 0, engine.canvasWidth, engine.canvasHeight);
-		engine.ctx.clearRect(0, 0, engine.canvasWidth, engine.canvasHeight);
+		date = Date.now();
+
+		if (engine.isCrouching) engine.fPlayerMoveSpeed *= 0.5;
 
 		alterOffscreenCanvasPixels();
 
 		drawOntoCanvas();
+
+		deltaTime = Date.now() - date;
+		engine.fGameSpeed = deltaTime / 6;
+		engine.fPlayerMoveSpeed = deltaTime / 4;
 	}
 };
 
@@ -59,7 +66,6 @@ const setUp = async () => {
 	await engine.init();
 	await actions.init();
 
-	engine.fPlayerSpeed = 3.5 / (frameRate / 60);
 	hud.frameRate = frameRate;
 
 	beginLoop();

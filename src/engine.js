@@ -90,6 +90,7 @@ export default class Engine {
 		this.mapRows = maps[0].map.length;
 		this.mapWidth = this.TILE_SIZE * this.mapCols;
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
+		this.TILE_SIZE - 1;
 
 		this.mapNum = 0;
 		this.map = maps[this.mapNum].map;
@@ -110,9 +111,12 @@ export default class Engine {
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
-		this.fPlayerSpeed = 0;
-		this.fPlayerDistanceToProjectionPlane = Math.floor(
-			this.PROJECTIONPLANEWIDTH / 2 / Math.tan(degToRad(this.fPlayerFov) / 2)
+		this.fGameSpeed = 0;
+		this.fPlayerMoveSpeed = 0;
+		this.fPlayerDistanceToProjectionPlane = ~~(
+			this.PROJECTIONPLANEWIDTH /
+			2 /
+			Math.tan(degToRad(this.fPlayerFov) / 2)
 		);
 
 		this.fKeyForward = false;
@@ -163,16 +167,16 @@ export default class Engine {
 		this.userIsInTab = false;
 		this.reticleOnWall = false;
 		this.isJumping = false;
-		this.jumpSpeedStart = 5;
+		this.jumpSpeedStart = 1.2;
 		this.jumpSpeed = this.jumpSpeedStart;
-		this.gravityValue = 0.6;
+		this.gravityValue = 0.035;
 
 		this.isCrouching = false;
 		this.isStanding = false;
 		this.crouchAmt = 10;
-		this.crouchSpeedStart = 2;
+		this.crouchSpeedStart = 0.4;
 		this.crouchSpeed = this.crouchSpeedStart;
-		this.crouchGravity = 0.1;
+		this.crouchGravity = 0.007;
 
 		this.redTint = 0;
 		this.greenTint = 0;
@@ -183,7 +187,7 @@ export default class Engine {
 		this.doorMap = {};
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -225,21 +229,19 @@ export default class Engine {
 		for (let row = wallTopPortal || wallTop; row >= 0; row--) {
 			const ratio = (this.WALL_HEIGHT - this.fPlayerHeight) / (this.fProjectionPlaneYCenter - row);
 
-			const diagDist = Math.floor(
-				this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]
-			);
+			const diagDist = ~~(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
 
 			let brightnessLevel = 100 / diagDist;
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 
-			let xEnd = Math.floor(diagDist * Math.cos(rayAng));
-			let yEnd = Math.floor(diagDist * Math.sin(rayAng));
+			let xEnd = ~~(diagDist * Math.cos(rayAng));
+			let yEnd = ~~(diagDist * Math.sin(rayAng));
 
 			xEnd += this.fPlayerX;
 			yEnd += this.fPlayerY;
 
-			const cellX = Math.floor(xEnd / this.TILE_SIZE);
-			const cellY = Math.floor(yEnd / this.TILE_SIZE);
+			const cellX = ~~(xEnd / this.TILE_SIZE);
+			const cellY = ~~(yEnd / this.TILE_SIZE);
 
 			//----------------------------------------------------------------------------------
 
@@ -249,14 +251,14 @@ export default class Engine {
 			let cellYPortal;
 
 			if (wallTopPortal) {
-				xEndPortal = Math.floor(diagDist * Math.cos(rayAngPortal));
-				yEndPortal = Math.floor(diagDist * Math.sin(rayAngPortal));
+				xEndPortal = ~~(diagDist * Math.cos(rayAngPortal));
+				yEndPortal = ~~(diagDist * Math.sin(rayAngPortal));
 
 				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
 				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
 
-				cellXPortal = Math.floor(xEndPortal / this.TILE_SIZE);
-				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
+				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
+				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
 			}
 
 			if (portalNum !== null && wallTopPortal && row > wallTop) {
@@ -264,20 +266,16 @@ export default class Engine {
 					true ||
 					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
 				) {
-					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
-					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
+					const tileRow = xEndPortal & (this.TILE_SIZE - 1);
+					const tileCol = yEndPortal & (this.TILE_SIZE - 1);
 
 					const sourceIndex =
 						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-					const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-					const green = Math.floor(
-						this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint)
-					);
-					const blue = Math.floor(
-						this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint)
-					);
-					const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
+					const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
+					const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
+					const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+					const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
@@ -289,20 +287,16 @@ export default class Engine {
 					targetIndexPortal -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
 				}
 			} else if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
-				const tileRow = Math.floor(xEnd % this.TILE_SIZE);
-				const tileCol = Math.floor(yEnd % this.TILE_SIZE);
+				const tileRow = xEnd & (this.TILE_SIZE - 1);
+				const tileCol = yEnd & (this.TILE_SIZE - 1);
 
 				const sourceIndex =
 					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const red = Math.floor(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-				const green = Math.floor(
-					this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint)
-				);
-				const blue = Math.floor(
-					this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint)
-				);
-				const alpha = Math.floor(this.fCeilingTexturePixels[sourceIndex + 3]);
+				const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
+				const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
+				const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+				const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
@@ -338,14 +332,14 @@ export default class Engine {
 
 			const brightnessLevel = 120 / actualDistance;
 
-			let xEnd = Math.floor(actualDistance * Math.cos(rayAng));
-			let yEnd = Math.floor(actualDistance * Math.sin(rayAng));
+			let xEnd = ~~(actualDistance * Math.cos(rayAng));
+			let yEnd = ~~(actualDistance * Math.sin(rayAng));
 
 			xEnd += this.fPlayerX;
 			yEnd += this.fPlayerY;
 
-			let cellX = Math.floor(xEnd / this.TILE_SIZE);
-			let cellY = Math.floor(yEnd / this.TILE_SIZE);
+			let cellX = ~~(xEnd / this.TILE_SIZE);
+			let cellY = ~~(yEnd / this.TILE_SIZE);
 
 			const fIndex = this.getFloorTypeIndexFromRowCol(cellY, cellX);
 
@@ -357,14 +351,14 @@ export default class Engine {
 			let cellYPortal;
 
 			if (wallBottomPortal) {
-				xEndPortal = Math.floor(actualDistance * Math.cos(rayAngPortal));
-				yEndPortal = Math.floor(actualDistance * Math.sin(rayAngPortal));
+				xEndPortal = ~~(actualDistance * Math.cos(rayAngPortal));
+				yEndPortal = ~~(actualDistance * Math.sin(rayAngPortal));
 
 				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
 				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
 
-				cellXPortal = Math.floor(xEndPortal / this.TILE_SIZE);
-				cellYPortal = Math.floor(yEndPortal / this.TILE_SIZE);
+				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
+				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
 			}
 
 			const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
@@ -376,23 +370,26 @@ export default class Engine {
 					cellXPortal >= 0 &&
 					cellYPortal >= 0
 				) {
-					const tileRow = Math.floor(xEndPortal % this.TILE_SIZE);
-					const tileCol = Math.floor(yEndPortal % this.TILE_SIZE);
+					const tileRow = xEndPortal & (this.TILE_SIZE - 1);
+					const tileCol = yEndPortal & (this.TILE_SIZE - 1);
 
 					const sourceIndex =
 						tileRow * this.fFloorTextureBufferList[fIndexPortal].width * this.bytesPerPixel +
 						this.bytesPerPixel * tileCol;
 
-					const red = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brightnessLevel + this.redTint)
+					const red = ~~(
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] *
+						(brightnessLevel + this.redTint)
 					);
-					const green = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brightnessLevel + this.greenTint)
+					const green = ~~(
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] *
+						(brightnessLevel + this.greenTint)
 					);
-					const blue = Math.floor(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brightnessLevel + this.blueTint)
+					const blue = ~~(
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] *
+						(brightnessLevel + this.blueTint)
 					);
-					const alpha = Math.floor(this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3]);
+					const alpha = ~~this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3];
 
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
@@ -404,23 +401,23 @@ export default class Engine {
 					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
 				}
 			} else if (cellX < this.mapCols && cellY < this.mapRows && cellX >= 0 && cellY >= 0) {
-				const tileRow = Math.floor(xEnd % this.TILE_SIZE);
-				const tileCol = Math.floor(yEnd % this.TILE_SIZE);
+				const tileRow = xEnd & (this.TILE_SIZE - 1);
+				const tileCol = yEnd & (this.TILE_SIZE - 1);
 
 				const sourceIndex =
 					tileRow * this.fFloorTextureBufferList[fIndex].width * this.bytesPerPixel +
 					this.bytesPerPixel * tileCol;
 
-				const red = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint)
+				const red = ~~(this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint));
+				const green = ~~(
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] *
+					(brightnessLevel + this.greenTint)
 				);
-				const green = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel + this.greenTint)
+				const blue = ~~(
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] *
+					(brightnessLevel + this.blueTint)
 				);
-				const blue = Math.floor(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel + this.blueTint)
-				);
-				const alpha = Math.floor(this.fFloorTexturePixelsList[fIndex][sourceIndex + 3]);
+				const alpha = ~~this.fFloorTexturePixelsList[fIndex][sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
@@ -455,10 +452,10 @@ export default class Engine {
 		texturePixelsPortal,
 		portalNum
 	) {
-		x = Math.floor(x);
+		x = ~~x;
 
 		rectTop = Math.floor(rectTop);
-		xOffset = Math.floor(xOffset);
+		xOffset = ~~xOffset;
 
 		let sourceIndex = this.bytesPerPixel * xOffset;
 		const lastSourceIndex = sourceIndex + textureBuffer.width * textureBuffer.height * this.bytesPerPixel;
@@ -482,7 +479,7 @@ export default class Engine {
 
 		if (rectTopPortal) {
 			rectTopPortal = Math.floor(rectTopPortal);
-			xOffsetPortal = Math.floor(xOffsetPortal);
+			xOffsetPortal = ~~xOffsetPortal;
 
 			sourceIndexPortal = this.bytesPerPixel * xOffsetPortal;
 			lastSourceIndexPortal =
@@ -520,7 +517,7 @@ export default class Engine {
 
 		if (sourceIndexPortal !== null && portalNum !== null) {
 			// Open portal on column
-			sourceRowPortal = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBuffer.width));
+			sourceRowPortal = ~~(sourceIndexPortal / (this.bytesPerPixel * textureBuffer.width));
 
 			if (textureBufferPaintingPortal) {
 				// Painting is present on column in portal
@@ -542,30 +539,27 @@ export default class Engine {
 					xOffsetPortal < paintingSourceRightPortal
 				) {
 					// Painting on column and within size of painting source
-					red = Math.floor(
-						texturePixelsPaintingPortal[sourceIndexPaintingPortal] * (brighnessLevelPortal + this.redTint)
+					red = ~~(
+						texturePixelsPaintingPortal[sourceIndexPaintingPortal] *
+						(brighnessLevelPortal + this.redTint)
 					);
-					green = Math.floor(
+					green = ~~(
 						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 1] *
-							(brighnessLevelPortal + this.greenTint)
+						(brighnessLevelPortal + this.greenTint)
 					);
-					blue = Math.floor(
+					blue = ~~(
 						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 2] *
-							(brighnessLevelPortal + this.blueTint)
+						(brighnessLevelPortal + this.blueTint)
 					);
-					alpha = Math.floor(texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3]);
+					alpha = ~~texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3];
 
 					sourceIndexPaintingPortal += this.bytesPerPixel * textureBufferPaintingPortal.width;
 				} else {
 					// Just draw wall
-					red = Math.floor(texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint));
-					green = Math.floor(
-						texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint)
-					);
-					blue = Math.floor(
-						texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint)
-					);
-					alpha = Math.floor(texturePixelsPortal[sourceIndexPortal + 3]);
+					red = ~~(texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint));
+					green = ~~(texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint));
+					blue = ~~(texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint));
+					alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
 				}
 
 				while (yError >= textureBufferPortal.width) {
@@ -586,7 +580,7 @@ export default class Engine {
 
 				sourceIndexPortal += this.bytesPerPixel * textureBufferPortal.width;
 				if (sourceIndexPortal > lastSourceIndexPortal) sourceIndexPortal = lastSourceIndexPortal;
-				sourceRowPortal = Math.floor(sourceIndexPortal / (this.bytesPerPixel * textureBufferPortal.width));
+				sourceRowPortal = ~~(sourceIndexPortal / (this.bytesPerPixel * textureBufferPortal.width));
 			}
 			yError = 0;
 		}
@@ -600,7 +594,7 @@ export default class Engine {
 		const effectRadiusY = radiusY + 2;
 		const effectRadiusX = radiusX + 2;
 
-		sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
+		sourceRow = ~~(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 
 		let paintingSourceTop = null;
 		let paintingSourceBottom = null;
@@ -641,19 +635,17 @@ export default class Engine {
 				xOffset < paintingSourceRight
 			) {
 				// Painting on column and within size of painting source
-				red = Math.floor(texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint));
-				green = Math.floor(
-					texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint)
-				);
-				blue = Math.floor(texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint));
-				alpha = Math.floor(texturePixelsPainting[sourceIndexPainting + 3]);
+				red = ~~(texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint));
+				green = ~~(texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint));
+				blue = ~~(texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint));
+				alpha = ~~texturePixelsPainting[sourceIndexPainting + 3];
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
-				red = Math.floor(texturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-				green = Math.floor(texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
-				blue = Math.floor(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
-				alpha = Math.floor(texturePixels[sourceIndex + 3]);
+				red = ~~(texturePixels[sourceIndex] * (brightnessLevel + this.redTint));
+				green = ~~(texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
+				blue = ~~(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+				alpha = ~~texturePixels[sourceIndex + 3];
 			}
 
 			while (yError >= textureBuffer.width) {
@@ -707,7 +699,7 @@ export default class Engine {
 
 			sourceIndex += this.bytesPerPixel * textureBuffer.width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
-			sourceRow = Math.floor(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
+			sourceRow = ~~(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 		}
 	}
 
@@ -773,7 +765,7 @@ export default class Engine {
 				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i]];
 				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i]];
 
-				totalPortalRayDist = Math.floor(totalPortalRayDist);
+				totalPortalRayDist = ~~totalPortalRayDist;
 				portalBrightness = 110 / totalPortalRayDist;
 
 				if (portalBrightness > 1.3) portalBrightness = 1.3;
@@ -839,7 +831,7 @@ export default class Engine {
 			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
-			dist = Math.floor(dist);
+			dist = ~~dist;
 
 			let brightnessLevel = 110 / dist;
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
@@ -1117,7 +1109,7 @@ export default class Engine {
 			let adjustedAngle;
 			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
-			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
+			this.rayAngleQuadrants[i] = ~~(adjustedAngle / (Math.PI / 2));
 
 			const sidesToCheck = this.getSidesToCheck(this.rayAngleQuadrants[i]);
 			// const sidesToCheck = [0, 1, 2, 3];
@@ -1233,10 +1225,6 @@ export default class Engine {
 		}
 	}
 
-	getXspeed = () => this.fPlayerSpeed * Math.cos(degToRad(this.fPlayerMoveDir));
-
-	getYspeed = () => this.fPlayerSpeed * Math.sin(degToRad(this.fPlayerMoveDir));
-
 	playerTooCloseToWall(row, col) {
 		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
 
@@ -1254,7 +1242,7 @@ export default class Engine {
 	handlePortalCollision(portalNum) {
 		const portalNumOut = portalNum === 0 ? 1 : 0;
 		const xStartOut = this.TILE_SIZE * (this.portalTileIndeces[portalNumOut] % this.mapCols);
-		const yStartOut = this.TILE_SIZE * Math.floor(this.portalTileIndeces[portalNumOut] / this.mapCols);
+		const yStartOut = this.TILE_SIZE * ~~(this.portalTileIndeces[portalNumOut] / this.mapCols);
 
 		let offset;
 		let newPlayerX = null;
@@ -1315,23 +1303,19 @@ export default class Engine {
 		}
 	}
 
+	getXspeed = () => this.fPlayerMoveSpeed * Math.cos(degToRad(this.fPlayerMoveDir));
+
+	getYspeed = () => this.fPlayerMoveSpeed * Math.sin(degToRad(this.fPlayerMoveDir));
+
 	move() {
 		if (this.levelTransition) return;
 		this.rotate();
 
-		const ang = degToRad(this.fPlayerAngle + 90);
-		const moveX = this.fPlayerSpeed * Math.cos(Math.PI / 2 - ang);
-		const moveY = this.fPlayerSpeed * Math.cos(ang);
-
-		const angStrafe = ang + Math.PI / 2;
-		const strafeX = (this.fPlayerSpeed * Math.cos(Math.PI / 2 - angStrafe)) / 2;
-		const strafeY = (this.fPlayerSpeed * Math.cos(angStrafe)) / 2;
-
-		const playerTileCol = Math.floor(this.fPlayerX / this.TILE_SIZE);
-		const playerTileRow = Math.floor(this.fPlayerY / this.TILE_SIZE);
+		const playerTileCol = ~~(this.fPlayerX / this.TILE_SIZE);
+		const playerTileRow = ~~(this.fPlayerY / this.TILE_SIZE);
 
 		this.setMoveDir();
-		const moveDir = convertDeg0To360(this.fPlayerMoveDir);
+		let moveDir = convertDeg0To360(this.fPlayerMoveDir);
 		let newPlayerX = null;
 		let newPlayerY = null;
 
@@ -1412,23 +1396,12 @@ export default class Engine {
 			}
 		}
 
-		if (this.fKeyForward) {
-			this.fPlayerX += moveX;
-			this.fPlayerY -= moveY;
-		} else if (this.fKeyBack) {
-			this.fPlayerX -= moveX;
-			this.fPlayerY += moveY;
-		}
+		moveDir = degToRad(moveDir);
 
-		if (this.fKeyLeft) {
-			this.fPlayerX -= strafeX;
-			this.fPlayerY += strafeY;
-		} else if (this.fKeyRight) {
-			this.fPlayerX += strafeX;
-			this.fPlayerY -= strafeY;
+		if (this.fKeyForward || this.fKeyBack || this.fKeyLeft || this.fKeyRight) {
+			this.fPlayerX += this.fPlayerMoveSpeed * Math.cos(moveDir);
+			this.fPlayerY += this.fPlayerMoveSpeed * Math.sin(moveDir);
 		}
-
-		this.setMoveDir();
 	}
 
 	onWallTextureLoaded(imgNames) {
@@ -1533,8 +1506,8 @@ export default class Engine {
 
 	jump() {
 		if (this.isCrouching || this.isStanding) return;
-		this.fPlayerHeight += this.jumpSpeed;
-		this.jumpSpeed -= this.gravityValue;
+		this.fPlayerHeight += this.jumpSpeed * this.fGameSpeed;
+		this.jumpSpeed -= this.gravityValue * this.fGameSpeed;
 
 		if (this.fPlayerHeight <= this.TILE_SIZE / 2) {
 			this.jumpSpeed = this.jumpSpeedStart;
@@ -1545,8 +1518,8 @@ export default class Engine {
 
 	crouch() {
 		if (this.isJumping || this.isStanding) return;
-		this.fPlayerHeight -= this.crouchSpeed;
-		this.crouchSpeed -= this.crouchGravity;
+		this.fPlayerHeight -= this.crouchSpeed * this.fGameSpeed;
+		this.crouchSpeed -= this.crouchGravity * this.fGameSpeed;
 
 		if (this.fPlayerHeight <= this.TILE_SIZE / 2 - this.crouchAmt) {
 			this.crouchSpeed = this.crouchSpeedStart;
@@ -1555,9 +1528,9 @@ export default class Engine {
 	}
 
 	stand() {
-		if (this.isJumping || this.isJumping) return;
-		this.fPlayerHeight += this.crouchSpeed;
-		this.crouchSpeed -= this.crouchGravity;
+		if (this.isJumping || this.isCrouching) return;
+		this.fPlayerHeight += this.crouchSpeed * this.fGameSpeed;
+		this.crouchSpeed -= this.crouchGravity * this.fGameSpeed;
 
 		if (this.fPlayerHeight >= this.TILE_SIZE / 2) {
 			this.crouchSpeed = this.crouchSpeedStart;
@@ -1587,8 +1560,14 @@ export default class Engine {
 		if (this.isCrouching) this.crouch();
 		if (this.isStanding) this.stand();
 
-		if (this.portalSizeMultipliers[0] < 1) this.portalSizeMultipliers[0] += 0.1;
-		if (this.portalSizeMultipliers[1] < 1) this.portalSizeMultipliers[1] += 0.1;
+		if (this.portalSizeMultipliers[0] < 1) {
+			this.portalSizeMultipliers[0] += 0.02 * this.fGameSpeed;
+			if (this.portalSizeMultipliers[0] >= 1) this.portalSizeMultipliers[0] = 1;
+		}
+		if (this.portalSizeMultipliers[1] < 1) {
+			this.portalSizeMultipliers[1] += 0.02 * this.fGameSpeed;
+			if (this.portalSizeMultipliers[1] >= 1) this.portalSizeMultipliers[1] = 1;
+		}
 
 		this.move();
 		if (this.DEBUG) this.draw2dWalls();
