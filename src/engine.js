@@ -192,7 +192,7 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
-		this.DEBUG = true;
+		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
 	}
 
