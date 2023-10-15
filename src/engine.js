@@ -1,4 +1,4 @@
-import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
+import { convertDeg0To360, degToRad, getIntersection, getPerpCoords, radToDeg } from '../utils/calc.js';
 import maps from './maps.js';
 
 export default class Engine {
@@ -8,9 +8,7 @@ export default class Engine {
 		this.canvasHeight = this.canvas.height;
 		this.ctx = this.canvas.getContext('2d', { alpha: false });
 
-		this.offscreenCanvas = document.createElement('canvas');
-		this.offscreenCanvas.width = canvas.width;
-		this.offscreenCanvas.height = canvas.height;
+		this.offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
 		this.offscreenCanvasContext = this.offscreenCanvas.getContext('2d', { alpha: false });
 		this.offscreenCanvasPixels = this.offscreenCanvasContext.getImageData(
 			0,
@@ -31,6 +29,11 @@ export default class Engine {
 
 		this.fCeilingTextureBuffer;
 		this.fCeilingTexturePixels;
+
+		this.fObjectTextureBuffer;
+		this.fObjectTexturePixels;
+
+		this.objects;
 
 		this.bytesPerPixel = 4;
 
@@ -80,6 +83,8 @@ export default class Engine {
 			'src/assets/paintings/painting13.png',
 			'src/assets/paintings/painting14.png',
 			'src/assets/paintings/painting15.png',
+			// Objects
+			'src/assets/objects/barrel.png',
 		];
 		this.textures = {};
 
@@ -175,6 +180,9 @@ export default class Engine {
 		this.crouchSpeedStart = 0.4;
 		this.crouchSpeed = this.crouchSpeedStart;
 		this.crouchGravity = 0.007;
+		this.standSpeedStart = 0.4;
+		this.standSpeed = this.standSpeedStart;
+		this.standGravity = 0.007;
 
 		this.redTint = 0;
 		this.greenTint = 0;
@@ -184,7 +192,7 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
-		this.DEBUG = false;
+		this.DEBUG = true;
 		this.preventPageReloadDialog = false;
 	}
 
@@ -248,7 +256,7 @@ export default class Engine {
 			let cellXPortal;
 			let cellYPortal;
 
-			if (wallTopPortal) {
+			if (portalNum !== null && wallTopPortal && row > wallTop) {
 				xEndPortal = ~~(diagDist * Math.cos(rayAngPortal));
 				yEndPortal = ~~(diagDist * Math.sin(rayAngPortal));
 
@@ -257,9 +265,7 @@ export default class Engine {
 
 				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
 				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
-			}
 
-			if (portalNum !== null && wallTopPortal && row > wallTop) {
 				if (
 					true ||
 					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
@@ -348,7 +354,7 @@ export default class Engine {
 			let cellXPortal;
 			let cellYPortal;
 
-			if (wallBottomPortal) {
+			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
 				xEndPortal = ~~(actualDistance * Math.cos(rayAngPortal));
 				yEndPortal = ~~(actualDistance * Math.sin(rayAngPortal));
 
@@ -357,11 +363,8 @@ export default class Engine {
 
 				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
 				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
-			}
+				const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
 
-			const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
-
-			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
 				if (
 					cellXPortal < this.mapCols &&
 					cellYPortal < this.mapRows &&
@@ -721,18 +724,6 @@ export default class Engine {
 			let texturePixelsPaintingPortal = null;
 
 			if (totalPortalRayDist) {
-				if (
-					this.portalTileIndeces[0] === this.tileIndeces[i] &&
-					this.portalTileSides[0] === this.tileSides[i]
-				) {
-					portalNum = 0;
-				} else if (
-					this.portalTileIndeces[1] === this.tileIndeces[i] &&
-					this.portalTileSides[1] === this.tileSides[i]
-				) {
-					portalNum = 1;
-				}
-
 				loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
 					const tileIndexPainting =
 						this.fPaintingDetails[j].row * this.mapCols + this.fPaintingDetails[j].col;
@@ -771,18 +762,15 @@ export default class Engine {
 				if (this.portalOutSides?.[i] === 1 || this.portalOutSides?.[i] === 3) {
 					portalBrightness = portalBrightness * 0.8;
 				}
-			} else {
-				if (
-					this.portalTileIndeces[0] === this.tileIndeces[i] &&
-					this.portalTileSides[0] === this.tileSides[i]
-				)
-					portalNum = 0;
-				else if (
-					this.portalTileIndeces[1] === this.tileIndeces[i] &&
-					this.portalTileSides[1] === this.tileSides[i]
-				)
-					portalNum = 1;
 			}
+
+			if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileSides[i])
+				portalNum = 0;
+			else if (
+				this.portalTileIndeces[1] === this.tileIndeces[i] &&
+				this.portalTileSides[1] === this.tileSides[i]
+			)
+				portalNum = 1;
 			// ---------------------------------------------------------------
 
 			const ratio = this.fPlayerDistanceToProjectionPlane / dist;
@@ -878,7 +866,6 @@ export default class Engine {
 	}
 
 	draw2dWalls() {
-		let count = 0;
 		for (let i = 0; i < this.mapRows; i++) {
 			for (let j = 0; j < this.mapCols; j++) {
 				const tile = this.map[i * this.mapCols + j];
@@ -886,8 +873,22 @@ export default class Engine {
 				this.debugCtx.fillStyle = `rgb(${(tile + 1) / 0.1}, ${(tile + 1) / 0.1}, ${(tile + 1) / 0.1})`;
 				this.debugCtx.beginPath();
 				this.debugCtx.fillRect(j * this.TILE_SIZE, i * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
-				count++;
 			}
+		}
+
+		for (let i = 0; i < this.objects.length; i++) {
+			this.debugCtx.fillStyle = `rgb(0, 100, 255)`;
+			this.debugCtx.beginPath();
+			this.debugCtx.ellipse(
+				this.objects[i].x,
+				this.objects[i].y,
+				this.fObjectTextureBuffer[i].width / 2,
+				this.fObjectTextureBuffer[i].width / 2,
+				2 * Math.PI,
+				0,
+				2 * Math.PI
+			);
+			this.debugCtx.fill();
 		}
 	}
 
@@ -1107,8 +1108,8 @@ export default class Engine {
 			let adjustedAngle;
 			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
-			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
 
+			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
 			const sidesToCheck = this.getSidesToCheck(this.rayAngleQuadrants[i]);
 			// const sidesToCheck = [0, 1, 2, 3];
 
@@ -1184,6 +1185,47 @@ export default class Engine {
 					this.debugCtx.stroke();
 				}
 			} else this.rayLengths[i] = 0;
+
+			const sprites = [];
+			// Filter through objects for each ray
+			for (let j = 0; j < this.objects.length; j++) {
+				const objCoords = getPerpCoords(
+					this.fPlayerX,
+					this.fPlayerY,
+					this.objects[j].x,
+					this.objects[j].y,
+					this.fObjectTextureBuffer[j].width / 2
+				);
+
+				const intersection = getIntersection(
+					this.fPlayerX,
+					this.fPlayerY,
+					1,
+					adjustedAngle,
+					objCoords[0],
+					objCoords[1],
+					objCoords[2],
+					objCoords[3]
+				);
+				if (intersection?.[0]) {
+					const dx = Math.abs(this.fPlayerX - intersection[0]);
+					const dy = Math.abs(this.fPlayerY - intersection[1]);
+					const d = Math.sqrt(dx * dx + dy * dy);
+
+					if (d < record) {
+						sprites.push(d);
+
+						if (this.DEBUG) {
+							this.debugCtx.strokeStyle = `rgba(0,100,255,0.3)`;
+							this.debugCtx.beginPath();
+							this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
+							this.debugCtx.lineTo(intersection[0], intersection[1]);
+							this.debugCtx.lineWidth = 1;
+							this.debugCtx.stroke();
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1407,9 +1449,7 @@ export default class Engine {
 		this.fWallTexturePixelsList = new Array(imgNames.length);
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
-			this.fWallTextureBufferList[i] = document.createElement('canvas');
-			this.fWallTextureBufferList[i].width = img.width;
-			this.fWallTextureBufferList[i].height = img.height;
+			this.fWallTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
 			this.fWallTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
 			const imgData = this.fWallTextureBufferList[i]
@@ -1421,9 +1461,7 @@ export default class Engine {
 
 	onCeilingTextureLoaded(imgName) {
 		const img = this.textures[imgName];
-		this.fCeilingTextureBuffer = document.createElement('canvas');
-		this.fCeilingTextureBuffer.width = img.width;
-		this.fCeilingTextureBuffer.height = img.height;
+		this.fCeilingTextureBuffer = new OffscreenCanvas(img.width, img.height);
 		this.fCeilingTextureBuffer.getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
 		const imgData = this.fCeilingTextureBuffer
@@ -1437,9 +1475,7 @@ export default class Engine {
 		this.fFloorTexturePixelsList = new Array(imgNames.length);
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
-			this.fFloorTextureBufferList[i] = document.createElement('canvas');
-			this.fFloorTextureBufferList[i].width = img.width;
-			this.fFloorTextureBufferList[i].height = img.height;
+			this.fFloorTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
 			this.fFloorTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
 			const imgData = this.fFloorTextureBufferList[i]
@@ -1449,15 +1485,13 @@ export default class Engine {
 		}
 	}
 
-	onPaintingTextureLoaded(imgNames) {
+	onPaintingTexturesLoaded(imgNames) {
 		this.fPaintingTextureBufferList = new Array(imgNames.length);
 		this.fPaintingTexturePixelsList = new Array(imgNames.length);
 
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
-			this.fPaintingTextureBufferList[i] = document.createElement('canvas');
-			this.fPaintingTextureBufferList[i].width = img.width;
-			this.fPaintingTextureBufferList[i].height = img.height;
+			this.fPaintingTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
 			this.fPaintingTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
 
 			const imgData = this.fPaintingTextureBufferList[i]
@@ -1472,13 +1506,31 @@ export default class Engine {
 		}
 	}
 
+	onObjectTexturesLoaded(imgNames) {
+		this.fObjectTextureBuffer = new Array(imgNames.length);
+		this.fObjectTexturePixels = new Array(imgNames.length);
+
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fObjectTextureBuffer[i] = new OffscreenCanvas(img.width, img.height);
+			this.fObjectTextureBuffer[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+			const imgData = this.fPaintingTextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(0, 0, this.fObjectTextureBuffer[i].width, this.fObjectTextureBuffer[i].height);
+			this.fObjectTexturePixels[i] = imgData.data;
+		}
+	}
+
 	setNewMapData(i = this.mapNum) {
 		this.onWallTextureLoaded(maps[i].wallTextures);
-		this.onPaintingTextureLoaded(maps[i].paintings);
+		this.onPaintingTexturesLoaded(maps[i].paintings);
 		this.fPaintingDetails = maps[i].paintingDetails;
 
 		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
 		this.onFloorTextureLoaded(maps[i].floorTextures);
+		this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
+		this.objects = maps[i].objects;
 
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapNum = i;
@@ -1527,11 +1579,11 @@ export default class Engine {
 
 	stand() {
 		if (this.isJumping || this.isCrouching) return;
-		this.fPlayerHeight += this.crouchSpeed * this.fGameSpeed;
-		this.crouchSpeed -= this.crouchGravity * this.fGameSpeed;
+		this.fPlayerHeight += this.standSpeed * this.fGameSpeed;
+		this.standSpeed -= this.standGravity * this.fGameSpeed;
 
 		if (this.fPlayerHeight >= this.TILE_SIZE / 2) {
-			this.crouchSpeed = this.crouchSpeedStart;
+			this.standSpeed = this.standSpeedStart;
 			this.fPlayerHeight = this.TILE_SIZE / 2;
 			this.isStanding = false;
 		}

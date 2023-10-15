@@ -203,7 +203,7 @@ export default class Actions {
 				engine.isJumping = true;
 			}
 
-			if (e.code === 'ShiftLeft' && !engine.isCrouching && !engine.isJumping) {
+			if (e.code === 'ShiftLeft' && !engine.isCrouching && !engine.isJumping && !engine.isStanding) {
 				engine.isCrouching = true;
 			}
 		});

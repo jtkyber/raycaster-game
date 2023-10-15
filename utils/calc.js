@@ -43,3 +43,14 @@ export function getIntersection(x, y, r, theta, x1, y1, x2, y2, p4) {
 export function convertDeg0To360(deg) {
 	return ((deg % 360) + 360) % 360;
 }
+
+export function getPerpCoords(playerX, playerY, x, y, halfLen) {
+	const slope = (x - playerY) / (y - playerX);
+	const perpSlope = -(1 / slope);
+	const angle = Math.atan(perpSlope);
+	const x1 = x + halfLen * Math.cos(angle);
+	const y1 = y + halfLen * Math.sin(angle);
+	const x2 = x - halfLen * Math.cos(angle);
+	const y2 = y - halfLen * Math.sin(angle);
+	return [x1, y1, x2, y2];
+}
