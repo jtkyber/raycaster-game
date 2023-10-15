@@ -1579,11 +1579,11 @@ export default class Engine {
 
 	stand() {
 		if (this.isJumping || this.isCrouching) return;
-		this.fPlayerHeight += this.standSpeed * this.fGameSpeed;
-		this.standSpeed -= this.standGravity * this.fGameSpeed;
+		this.fPlayerHeight += this.crouchSpeed * this.fGameSpeed;
+		this.crouchSpeed -= this.crouchGravity * this.fGameSpeed;
 
-		if (this.fPlayerHeight >= this.TILE_SIZE / 2) {
-			this.standSpeed = this.standSpeedStart;
+		if (this.fPlayerHeight >= this.TILE_SIZE / 2 || this.crouchSpeed <= 0) {
+			this.crouchSpeed = this.crouchSpeedStart;
 			this.fPlayerHeight = this.TILE_SIZE / 2;
 			this.isStanding = false;
 		}
