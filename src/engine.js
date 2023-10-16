@@ -393,7 +393,7 @@ export default class Engine {
 				// const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
 				let fIndexPortal = 0;
 
-				const tileIndex = cellY * this.mapCols + cellX;
+				const tileIndex = cellYPortal * this.mapCols + cellXPortal;
 				let type = this.map[tileIndex];
 				if (type >= 6) fIndexPortal = type - 6;
 

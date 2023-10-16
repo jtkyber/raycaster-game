@@ -6,7 +6,7 @@ const engine = new Engine();
 const actions = new Actions(engine);
 const hud = new Hud(engine);
 
-const frameRate = 70;
+const frameRate = 60;
 const frameRateMultiplier = 60 / frameRate;
 const fpsInterval = 1000 / frameRate;
 let frameCount = 0;
