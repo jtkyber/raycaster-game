@@ -45,7 +45,7 @@ export function convertDeg0To360(deg) {
 }
 
 export function getPerpCoords(playerX, playerY, x, y, halfLen) {
-	const slope = (x - playerY) / (y - playerX);
+	const slope = (y - playerY) / (x - playerX);
 	const perpSlope = -(1 / slope);
 	const angle = Math.atan(perpSlope);
 	const x1 = x + halfLen * Math.cos(angle);

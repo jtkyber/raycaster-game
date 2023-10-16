@@ -31,11 +31,13 @@ export default class Hud {
 
 	drawReticle() {
 		const thickness = 1;
-		const length = 3;
+		const length = 2;
+		const canvasHalfWidth = ~~(this.canvasWidth / 2);
+		const canvasHalfHeight = ~~(this.canvasHeight / 2);
 
 		this.drawFillRectangle(
-			this.canvasWidth / 2 - length + 1,
-			this.canvasHeight / 2,
+			canvasHalfWidth - length + 1,
+			canvasHalfHeight,
 			length - 1,
 			thickness,
 			255,
@@ -45,8 +47,8 @@ export default class Hud {
 		);
 
 		this.drawFillRectangle(
-			this.canvasWidth / 2,
-			this.canvasHeight / 2 - length + 1,
+			canvasHalfWidth,
+			canvasHalfHeight - length + 1,
 			thickness,
 			length - 1,
 			255,
@@ -55,27 +57,9 @@ export default class Hud {
 			255
 		);
 
-		this.drawFillRectangle(
-			this.canvasWidth / 2,
-			this.canvasHeight / 2,
-			length,
-			thickness,
-			255,
-			255,
-			255,
-			255
-		);
+		this.drawFillRectangle(canvasHalfWidth, canvasHalfHeight, length, thickness, 255, 255, 255, 255);
 
-		this.drawFillRectangle(
-			this.canvasWidth / 2,
-			this.canvasHeight / 2,
-			thickness,
-			length,
-			255,
-			255,
-			255,
-			255
-		);
+		this.drawFillRectangle(canvasHalfWidth, canvasHalfHeight, thickness, length, 255, 255, 255, 255);
 	}
 
 	drawFps() {
