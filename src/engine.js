@@ -229,7 +229,7 @@ export default class Engine {
 		}
 	}
 
-	async drawCeiling(wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) {
+	drawCeiling(wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) {
 		let targetIndex =
 			wallTop * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
@@ -245,11 +245,11 @@ export default class Engine {
 			let brightnessLevel = 100 / diagDist;
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 
-			let xEnd = ~~(diagDist * Math.cos(rayAng));
-			let yEnd = ~~(diagDist * Math.sin(rayAng));
+			let xEnd = diagDist * Math.cos(rayAng);
+			let yEnd = diagDist * Math.sin(rayAng);
 
-			xEnd += this.fPlayerX;
-			yEnd += this.fPlayerY;
+			xEnd = ~~(xEnd + this.fPlayerX);
+			yEnd = ~~(yEnd + this.fPlayerY);
 
 			const cellX = ~~(xEnd / this.TILE_SIZE);
 			const cellY = ~~(yEnd / this.TILE_SIZE);
@@ -262,11 +262,19 @@ export default class Engine {
 			let cellYPortal;
 
 			if (portalNum !== null && wallTopPortal && row > wallTop) {
-				xEndPortal = ~~(diagDist * Math.cos(rayAngPortal));
-				yEndPortal = ~~(diagDist * Math.sin(rayAngPortal));
+				xEndPortal = diagDist * Math.cos(rayAngPortal);
+				yEndPortal = diagDist * Math.sin(rayAngPortal);
 
-				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
-				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
+				xEndPortal = ~~(
+					xEndPortal +
+					this.portalOutXVals[castColumn] -
+					this.rayLengths[castColumn] * Math.cos(rayAngPortal)
+				);
+				yEndPortal = ~~(
+					yEndPortal +
+					this.portalOutYVals[castColumn] -
+					this.rayLengths[castColumn] * Math.sin(rayAngPortal)
+				);
 
 				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
 				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
@@ -317,12 +325,12 @@ export default class Engine {
 		}
 	}
 
-	getFloorTypeIndexFromRowCol(row, col) {
-		const tileIndex = row * this.mapCols + col;
-		let type = this.map[tileIndex];
-		if (type < 6) type = 6;
-		return type - 6;
-	}
+	// getFloorTypeIndexFromRowCol(row, col) {
+	// 	const tileIndex = row * this.mapCols + col;
+	// 	let type = this.map[tileIndex];
+	// 	if (type < 6) type = 6;
+	// 	return type - 6;
+	// }
 
 	drawFloor(wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) {
 		let targetIndex =
@@ -341,16 +349,21 @@ export default class Engine {
 
 			const brightnessLevel = 120 / actualDistance;
 
-			let xEnd = ~~(actualDistance * Math.cos(rayAng));
-			let yEnd = ~~(actualDistance * Math.sin(rayAng));
+			let xEnd = actualDistance * Math.cos(rayAng);
+			let yEnd = actualDistance * Math.sin(rayAng);
 
-			xEnd += this.fPlayerX;
-			yEnd += this.fPlayerY;
+			xEnd = ~~(xEnd + this.fPlayerX);
+			yEnd = ~~(yEnd + this.fPlayerY);
 
 			let cellX = ~~(xEnd / this.TILE_SIZE);
 			let cellY = ~~(yEnd / this.TILE_SIZE);
 
-			const fIndex = this.getFloorTypeIndexFromRowCol(cellY, cellX);
+			// const fIndex = this.getFloorTypeIndexFromRowCol(cellY, cellX);
+			let fIndex = 0;
+
+			const tileIndex = cellY * this.mapCols + cellX;
+			let type = this.map[tileIndex];
+			if (type >= 6) fIndex = type - 6;
 
 			//-------------------------------------------------------------------------
 
@@ -360,15 +373,29 @@ export default class Engine {
 			let cellYPortal;
 
 			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
-				xEndPortal = ~~(actualDistance * Math.cos(rayAngPortal));
-				yEndPortal = ~~(actualDistance * Math.sin(rayAngPortal));
+				xEndPortal = actualDistance * Math.cos(rayAngPortal);
+				yEndPortal = actualDistance * Math.sin(rayAngPortal);
 
-				xEndPortal += this.portalOutXVals[castColumn] - this.rayLengths[castColumn] * Math.cos(rayAngPortal);
-				yEndPortal += this.portalOutYVals[castColumn] - this.rayLengths[castColumn] * Math.sin(rayAngPortal);
+				xEndPortal = ~~(
+					xEndPortal +
+					this.portalOutXVals[castColumn] -
+					this.rayLengths[castColumn] * Math.cos(rayAngPortal)
+				);
+				yEndPortal = ~~(
+					yEndPortal +
+					this.portalOutYVals[castColumn] -
+					this.rayLengths[castColumn] * Math.sin(rayAngPortal)
+				);
 
 				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
 				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
-				const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
+
+				// const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
+				let fIndexPortal = 0;
+
+				const tileIndex = cellY * this.mapCols + cellX;
+				let type = this.map[tileIndex];
+				if (type >= 6) fIndexPortal = type - 6;
 
 				if (
 					cellXPortal < this.mapCols &&
