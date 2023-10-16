@@ -14,7 +14,7 @@ export default class Engine {
 			0,
 			0,
 			this.canvasWidth,
-			this.canvasWidth
+			this.canvasHeight
 		);
 
 		this.fWallTextureBufferList;
@@ -36,6 +36,7 @@ export default class Engine {
 		this.objects;
 
 		this.bytesPerPixel = 4;
+		this.pi = Math.PI;
 
 		this.texturePaths = [
 			// Walls
@@ -135,10 +136,10 @@ export default class Engine {
 		this.fFishTable = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.RAD0 = 0;
-		this.RAD90 = (3 * Math.PI) / 2;
-		this.RAD180 = Math.PI;
-		this.RAD270 = Math.PI / 2;
-		this.RAD360 = 2 * Math.PI;
+		this.RAD90 = (3 * this.pi) / 2;
+		this.RAD180 = this.pi;
+		this.RAD270 = this.pi / 2;
+		this.RAD360 = 2 * this.pi;
 
 		this.rayLengths = new Uint16Array(this.PROJECTIONPLANEWIDTH);
 		this.rayAngles = new Float32Array(this.PROJECTIONPLANEWIDTH);
@@ -457,10 +458,8 @@ export default class Engine {
 		texturePixelsPortal,
 		portalNum
 	) {
-		x = ~~x;
-
 		rectTop = Math.floor(rectTop);
-		xOffset = ~~xOffset;
+		// xOffset = ~~xOffset;
 
 		let sourceIndex = this.bytesPerPixel * xOffset;
 		const lastSourceIndex = sourceIndex + textureBuffer.width * textureBuffer.height * this.bytesPerPixel;
@@ -484,7 +483,7 @@ export default class Engine {
 
 		if (rectTopPortal) {
 			rectTopPortal = Math.floor(rectTopPortal);
-			xOffsetPortal = ~~xOffsetPortal;
+			// xOffsetPortal = ~~xOffsetPortal;
 
 			sourceIndexPortal = this.bytesPerPixel * xOffsetPortal;
 			lastSourceIndexPortal =
@@ -758,11 +757,11 @@ export default class Engine {
 
 				portalWallOffset =
 					this.portalOutSides?.[i] === 0 || this.portalOutSides?.[i] === 2
-						? this.portalOutCollisionsX[i] % this.TILE_SIZE
-						: this.portalOutCollisionsY[i] % this.TILE_SIZE;
+						? this.portalOutCollisionsX[i] & (this.TILE_SIZE - 1)
+						: this.portalOutCollisionsY[i] & (this.TILE_SIZE - 1);
 
 				if (this.portalOutSides?.[i] === 0 || this.portalOutSides?.[i] === 1)
-					portalWallOffset = this.TILE_SIZE - portalWallOffset;
+					portalWallOffset = this.TILE_SIZE - portalWallOffset - 1;
 
 				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i]];
 				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i]];
@@ -813,7 +812,7 @@ export default class Engine {
 			// -------------------------------------------------------------------------------------------
 
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
-			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
+			if (adjustedAngle < 0) adjustedAngle += 2 * this.pi;
 
 			if (
 				i === this.PROJECTIONPLANEWIDTH / 2 &&
@@ -825,10 +824,10 @@ export default class Engine {
 
 			let offset =
 				this.tileSides?.[i] === 0 || this.tileSides?.[i] === 2
-					? this.tileCollisionsX[i] % this.TILE_SIZE
-					: this.tileCollisionsY[i] % this.TILE_SIZE;
+					? this.tileCollisionsX[i] & (this.TILE_SIZE - 1)
+					: this.tileCollisionsY[i] & (this.TILE_SIZE - 1);
 
-			if (this.tileSides?.[i] === 0 || this.tileSides?.[i] === 1) offset = this.TILE_SIZE - offset;
+			if (this.tileSides?.[i] === 0 || this.tileSides?.[i] === 1) offset = this.TILE_SIZE - offset - 1;
 
 			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
@@ -847,6 +846,7 @@ export default class Engine {
 				this.portalOutAngs[i],
 				portalNum
 			);
+
 			this.drawCeiling(
 				Math.floor(wallTop),
 				i,
@@ -902,9 +902,9 @@ export default class Engine {
 				this.objects[i].y,
 				this.fObjectTextureBufferList[i].width / 2,
 				this.fObjectTextureBufferList[i].width / 2,
-				2 * Math.PI,
+				2 * this.pi,
 				0,
-				2 * Math.PI
+				2 * this.pi
 			);
 			this.debugCtx.fill();
 		}
@@ -995,16 +995,16 @@ export default class Engine {
 
 			switch (portalTileSideIn) {
 				case 0:
-					offset = this.TILE_SIZE - (portalIntersectInX % this.TILE_SIZE);
+					offset = this.TILE_SIZE - (portalIntersectInX & (this.TILE_SIZE - 1));
 					break;
 				case 1:
-					offset = this.TILE_SIZE - (portalIntersectInY % this.TILE_SIZE);
+					offset = this.TILE_SIZE - (portalIntersectInY & (this.TILE_SIZE - 1));
 					break;
 				case 2:
-					offset = portalIntersectInX % this.TILE_SIZE;
+					offset = portalIntersectInX & (this.TILE_SIZE - 1);
 					break;
 				case 3:
-					offset = portalIntersectInY % this.TILE_SIZE;
+					offset = portalIntersectInY & (this.TILE_SIZE - 1);
 					break;
 			}
 
@@ -1032,12 +1032,12 @@ export default class Engine {
 
 			if (
 				(portalTileSideOut === 1 || portalTileSideOut === 3) &&
-				this.portalOutXVals[i] % this.TILE_SIZE !== 0
+				this.portalOutXVals[i] & (this.TILE_SIZE - 1 !== 0)
 			) {
 				this.portalOutXVals[i] += 1;
 			} else if (
 				(portalTileSideOut === 0 || portalTileSideOut === 2) &&
-				this.portalOutYVals[i] % this.TILE_SIZE !== 0
+				this.portalOutYVals[i] & (this.TILE_SIZE - 1 !== 0)
 			) {
 				this.portalOutYVals[i] += 1;
 			}
@@ -1047,13 +1047,13 @@ export default class Engine {
 			tileSideDiff = Math.abs(tileSideDiff);
 			let rayOutAng;
 
-			if (tileSideDiff === 0) rayOutAng = rayInAng + Math.PI;
+			if (tileSideDiff === 0) rayOutAng = rayInAng + this.pi;
 			else if (tileSideDiff === 1) {
-				rayOutAng = rayInAng + (Math.PI / 2) * tileSideDiffSign;
+				rayOutAng = rayInAng + (this.pi / 2) * tileSideDiffSign;
 			} else if (tileSideDiff === 2) {
 				rayOutAng = rayInAng;
 			} else if (tileSideDiff === 3) {
-				rayOutAng = rayInAng - (Math.PI / 2) * tileSideDiffSign;
+				rayOutAng = rayInAng - (this.pi / 2) * tileSideDiffSign;
 			}
 
 			let portal2RayRecord = Infinity;
@@ -1098,12 +1098,12 @@ export default class Engine {
 				if (this.DEBUG) {
 					this.debugCtx.fillStyle = 'blue';
 					this.debugCtx.beginPath();
-					this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * Math.PI);
+					this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * this.pi);
 					this.debugCtx.fill();
 
 					this.debugCtx.fillStyle = 'orangeRed';
 					this.debugCtx.beginPath();
-					this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * Math.PI);
+					this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * this.pi);
 					this.debugCtx.fill();
 
 					this.debugCtx.strokeStyle =
@@ -1125,11 +1125,15 @@ export default class Engine {
 		for (let i = 0; i < this.rayAngles.length; i++) {
 			let adjustedAngle;
 			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
-			if (adjustedAngle < 0) adjustedAngle += 2 * Math.PI;
+			if (adjustedAngle < 0) adjustedAngle += 2 * this.pi;
 
-			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (Math.PI / 2));
-			const sidesToCheck = this.getSidesToCheck(this.rayAngleQuadrants[i]);
-			// const sidesToCheck = [0, 1, 2, 3];
+			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (this.pi / 2));
+
+			let sidesToCheck = [0, 1, 2, 3];
+			if (this.rayAngleQuadrants[i] === 0) sidesToCheck = [0, 3];
+			else if (this.rayAngleQuadrants[i] === 1) sidesToCheck = [0, 1];
+			else if (this.rayAngleQuadrants[i] === 2) sidesToCheck = [1, 2];
+			else if (this.rayAngleQuadrants[i] === 3) sidesToCheck = [2, 3];
 
 			let closest = null;
 			let record = Infinity;
@@ -1206,13 +1210,17 @@ export default class Engine {
 
 			// Filter through objects for each ray
 			for (let j = 0; j < this.objects.length; j++) {
-				const objCoords = getPerpCoords(
-					this.fPlayerX,
-					this.fPlayerY,
-					this.objects[j].x,
-					this.objects[j].y,
-					this.fObjectTextureBufferList[j].width / 2
-				);
+				let objCoords;
+
+				// Get perpendicular line coords
+				const slope = (this.objects[j].y - this.fPlayerY) / (this.objects[j].x - this.fPlayerX);
+				const perpSlope = -(1 / slope);
+				const angle = Math.atan(perpSlope);
+				const x1 = this.objects[j].x + (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+				const y1 = this.objects[j].y + (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+				const x2 = this.objects[j].x - (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+				const y2 = this.objects[j].y - (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+				objCoords = [x1, y1, x2, y2];
 
 				const intersection = getIntersection(
 					this.fPlayerX,
@@ -1309,16 +1317,16 @@ export default class Engine {
 		let newPlayerY = null;
 		switch (this.portalTileSides[portalNum]) {
 			case 0:
-				offset = this.TILE_SIZE - (this.fPlayerX % this.TILE_SIZE);
+				offset = this.TILE_SIZE - (this.fPlayerX & (this.TILE_SIZE - 1));
 				break;
 			case 1:
-				offset = this.TILE_SIZE - (this.fPlayerY % this.TILE_SIZE);
+				offset = this.TILE_SIZE - (this.fPlayerY & (this.TILE_SIZE - 1));
 				break;
 			case 2:
-				offset = this.fPlayerX % this.TILE_SIZE;
+				offset = this.fPlayerX & (this.TILE_SIZE - 1);
 				break;
 			case 3:
-				offset = this.fPlayerY % this.TILE_SIZE;
+				offset = this.fPlayerY & (this.TILE_SIZE - 1);
 				break;
 		}
 
@@ -1350,13 +1358,13 @@ export default class Engine {
 			let portalInAng = degToRad(this.fPlayerAngle);
 			let portalOutAng;
 
-			if (tileSideDiff === 0) portalOutAng = portalInAng + Math.PI;
+			if (tileSideDiff === 0) portalOutAng = portalInAng + this.pi;
 			else if (Math.abs(tileSideDiff) === 1) {
-				portalOutAng = portalInAng + (Math.PI / 2) * tileSideDiffSign;
+				portalOutAng = portalInAng + (this.pi / 2) * tileSideDiffSign;
 			} else if (Math.abs(tileSideDiff) === 2) {
 				portalOutAng = portalInAng;
 			} else if (Math.abs(tileSideDiff) === 3) {
-				portalOutAng = portalInAng - (Math.PI / 2) * tileSideDiffSign;
+				portalOutAng = portalInAng - (this.pi / 2) * tileSideDiffSign;
 			}
 
 			this.fPlayerAngle = radToDeg(portalOutAng);
@@ -1647,7 +1655,7 @@ export default class Engine {
 		if (this.DEBUG && this.debugCtx) {
 			this.debugCtx.fillStyle = `rgba(0,255,0,1)`;
 			this.debugCtx.beginPath();
-			this.debugCtx.ellipse(this.fPlayerX, this.fPlayerY, 4, 4, 0, 0, 2 * Math.PI);
+			this.debugCtx.ellipse(this.fPlayerX, this.fPlayerY, 4, 4, 0, 0, 2 * this.pi);
 			this.debugCtx.fill();
 		}
 	}
@@ -1662,7 +1670,7 @@ export default class Engine {
 		}
 
 		for (let i = -this.PROJECTIONPLANEWIDTH / 2; i < this.PROJECTIONPLANEWIDTH / 2; i++) {
-			const radian = (i * Math.PI) / (this.PROJECTIONPLANEWIDTH * 3);
+			const radian = (i * this.pi) / (this.PROJECTIONPLANEWIDTH * 3);
 			this.fFishTable[i + this.PROJECTIONPLANEWIDTH / 2] = 1 / Math.cos(radian);
 		}
 	}
