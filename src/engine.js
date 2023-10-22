@@ -1,4 +1,4 @@
-import { convertDeg0To360, degToRad, getIntersection, getPerpCoords, radToDeg } from '../utils/calc.js';
+import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
 import maps from './maps.js';
 
 export default class Engine {
@@ -17,6 +17,9 @@ export default class Engine {
 			this.canvasHeight
 		);
 
+		this.PROJECTIONPLANEWIDTH = this.canvasWidth;
+		this.PROJECTIONPLANEHEIGHT = this.canvasHeight;
+
 		this.fWallTextureBufferList;
 		this.fWallTexturePixelsList;
 
@@ -34,6 +37,11 @@ export default class Engine {
 		this.fObjectTexturePixelsList;
 
 		this.objects;
+		this.objectRefs = new Array(this.PROJECTIONPLANEWIDTH);
+		this.objectOffsets = new Array(this.PROJECTIONPLANEWIDTH);
+		this.objectRayLengths = new Array(this.PROJECTIONPLANEWIDTH);
+		this.objectCollisionsX = new Array(this.PROJECTIONPLANEWIDTH);
+		this.objectCollisionsY = new Array(this.PROJECTIONPLANEWIDTH);
 
 		this.bytesPerPixel = 4;
 		this.pi = Math.PI;
@@ -86,6 +94,8 @@ export default class Engine {
 			'src/assets/paintings/painting15.png',
 			// Objects
 			'src/assets/objects/barrel.png',
+			'src/assets/objects/redbull.png',
+			'src/assets/objects/elmo.png',
 		];
 		this.textures = {};
 
@@ -105,9 +115,6 @@ export default class Engine {
 		this.debugCanvasWidth;
 		this.debugCanvasHeight;
 		this.debugCtx;
-
-		this.PROJECTIONPLANEWIDTH = this.canvasWidth;
-		this.PROJECTIONPLANEHEIGHT = this.canvasHeight;
 
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
@@ -149,10 +156,6 @@ export default class Engine {
 		this.tileTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
 		this.tileSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
 		this.tileIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-
-		this.objectRayLengths = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-		this.objectCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.objectCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.portalSizeMultipliers = new Float32Array(2).fill(1);
 		this.portalTileSides = new Int8Array(2).fill(-1);
@@ -486,7 +489,6 @@ export default class Engine {
 		portalNum
 	) {
 		rectTop = Math.floor(rectTop);
-		// xOffset = ~~xOffset;
 
 		let sourceIndex = this.bytesPerPixel * xOffset;
 		const lastSourceIndex = sourceIndex + textureBuffer.width * textureBuffer.height * this.bytesPerPixel;
@@ -734,20 +736,58 @@ export default class Engine {
 		}
 	}
 
-	drawObjects(x) {}
+	drawObjectStrip(x, y, height, brightness, objRef, xOffset) {
+		if (this.fObjectTextureBufferList[objRef] == undefined) return;
+		const bytesPerPixel = 4;
+
+		let sourceIndex = bytesPerPixel * xOffset;
+		const lastSourceIndex =
+			sourceIndex +
+			this.fObjectTextureBufferList[objRef].width *
+				this.fObjectTextureBufferList[objRef].height *
+				bytesPerPixel;
+
+		let targetIndex = this.offscreenCanvasPixels.width * bytesPerPixel * y + bytesPerPixel * x;
+
+		let heightToDraw = height;
+
+		if (y + heightToDraw > this.offscreenCanvasPixels.height)
+			heightToDraw = this.offscreenCanvasPixels.height - y;
+
+		let yError = 0;
+
+		if (heightToDraw < 0) return;
+
+		while (true) {
+			yError += height;
+
+			const red = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex] * brightness);
+			const green = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 1] * brightness);
+			const blue = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness);
+			const alpha = ~~this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
+
+			while (yError >= this.fObjectTextureBufferList[objRef].width) {
+				if (alpha > 0) {
+					this.offscreenCanvasPixels.data[targetIndex] = red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+				}
+				yError -= this.fObjectTextureBufferList[objRef].height;
+				targetIndex += bytesPerPixel * this.offscreenCanvasPixels.width;
+
+				heightToDraw--;
+				if (heightToDraw < 1) return;
+			}
+			sourceIndex += bytesPerPixel * this.fObjectTextureBufferList[objRef].width;
+			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+		}
+	}
 
 	draw3d() {
 		for (let i = 0; i < this.rayLengths.length; i++) {
 			if (this.rayLengths[i] === 0) return;
 			let dist = ~~(this.rayLengths[i] / this.fFishTable[i]);
-
-			// Objects
-			let objDist = null;
-			if (this.objectRayLengths[i]) {
-				objDist = this.objectRayLengths[i];
-				// console.log(objDist);
-			}
-
 			// For possible portal ray --------------------------------------
 			let totalPortalRayDist =
 				this.totalPortalRayLengths[i] > 0 ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
@@ -762,6 +802,7 @@ export default class Engine {
 			let textureBufferPaintingPortal = null;
 			let texturePixelsPaintingPortal = null;
 
+			//----------------- Portals ---------------------------------------------
 			if (totalPortalRayDist) {
 				loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
 					const tileIndexPainting =
@@ -859,8 +900,6 @@ export default class Engine {
 			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
-			// dist = ~~dist;
-
 			let brightnessLevel = 110 / dist;
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel = brightnessLevel * 0.8;
@@ -906,7 +945,34 @@ export default class Engine {
 				portalNum
 			);
 
-			this.drawObjects();
+			// Objects
+			for (let j = 0; j < this.objectRayLengths[i].length; j++) {
+				let objDist =
+					this.objectRayLengths[i][j] > 0 ? ~~(this.objectRayLengths[i][j] / this.fFishTable[i]) : null;
+
+				if (objDist) {
+					let objBrightnessLevel = 110 / objDist;
+					if (objBrightnessLevel > 1.3) objBrightnessLevel = 1.3;
+
+					const objRatio = this.fPlayerDistanceToProjectionPlane / objDist;
+					const objScale =
+						(this.fPlayerDistanceToProjectionPlane *
+							this.fObjectTextureBufferList[this.objectRefs[i][j]].height) /
+						objDist;
+					const objBottom = objRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+					const objTop = objBottom - objScale;
+					const objHeight = objBottom - objTop;
+
+					this.drawObjectStrip(
+						i,
+						Math.floor(objTop),
+						objHeight,
+						objBrightnessLevel,
+						this.objectRefs[i][j],
+						this.objectOffsets[i][j]
+					);
+				}
+			}
 		}
 	}
 
@@ -1236,9 +1302,24 @@ export default class Engine {
 			} else this.rayLengths[i] = 0;
 
 			// Filter through objects for each ray
-			for (let j = 0; j < this.objects.length; j++) {
-				let objCoords;
 
+			this.objectRayLengths[i] = [];
+			this.objectCollisionsX[i] = [];
+			this.objectCollisionsY[i] = [];
+			this.objectRefs[i] = [];
+			this.objectOffsets[i] = [];
+
+			const rayObjData = [
+				{
+					rayLength: 0,
+					collisionX: 0,
+					collisionY: 0,
+					ref: 0,
+					offset: 0,
+				},
+			];
+
+			for (let j = 0; j < this.objects.length; j++) {
 				// Get perpendicular line coords
 				const slope = (this.objects[j].y - this.fPlayerY) / (this.objects[j].x - this.fPlayerX);
 				const perpSlope = -(1 / slope);
@@ -1247,7 +1328,7 @@ export default class Engine {
 				const y1 = this.objects[j].y + (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
 				const x2 = this.objects[j].x - (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
 				const y2 = this.objects[j].y - (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
-				objCoords = [x1, y1, x2, y2];
+				const objCoords = [x1, y1, x2, y2];
 
 				const intersection = getIntersection(
 					this.fPlayerX,
@@ -1266,9 +1347,16 @@ export default class Engine {
 					const d = Math.sqrt(dx * dx + dy * dy);
 
 					if (d < record) {
-						this.objectRayLengths[j] = d;
-						this.objectCollisionsX[j] = intersection[0];
-						this.objectCollisionsY[j] = intersection[1];
+						rayObjData.push({
+							rayLength: ~~d,
+							collisionX: intersection[0],
+							collisionY: intersection[1],
+							ref: j,
+							offset: ~~Math.sqrt(
+								(intersection[0] - x1) * (intersection[0] - x1) +
+									(intersection[1] - y1) * (intersection[1] - y1)
+							),
+						});
 
 						if (this.DEBUG) {
 							this.debugCtx.strokeStyle = `rgba(0,100,255,0.3)`;
@@ -1280,6 +1368,16 @@ export default class Engine {
 						}
 					}
 				}
+			}
+
+			rayObjData.sort((a, b) => b.rayLength - a.rayLength);
+
+			for (let j = 0; j < rayObjData.length; j++) {
+				this.objectRayLengths[i].push(rayObjData[j].rayLength);
+				this.objectCollisionsX[i].push(rayObjData[j].collisionX);
+				this.objectCollisionsY[i].push(rayObjData[j].collisionY);
+				this.objectRefs[i].push(rayObjData[j].ref);
+				this.objectOffsets[i].push(rayObjData[j].offset);
 			}
 		}
 	}
@@ -1568,9 +1666,9 @@ export default class Engine {
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
 			this.fObjectTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
-			this.fObjectTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+			this.fObjectTextureBufferList[i].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
 
-			const imgData = this.fPaintingTextureBufferList[i]
+			const imgData = this.fObjectTextureBufferList[i]
 				.getContext('2d', { alpha: false })
 				.getImageData(0, 0, this.fObjectTextureBufferList[i].width, this.fObjectTextureBufferList[i].height);
 			this.fObjectTexturePixelsList[i] = imgData.data;

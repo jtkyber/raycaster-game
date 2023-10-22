@@ -41,9 +41,24 @@ const maps = [
         objects: [
             {
                 type: 'barrel',
-                x: 400,
-                y: 150
-            }
+                x: 944,
+                y: 78
+            },
+            {
+                type: 'barrel',
+                x: 410,
+                y: 1270
+            },
+            {
+                type: 'barrel',
+                x: 546,
+                y: 1270
+            },
+            {
+                type: 'barrel',
+                x: 944,
+                y: 78
+            },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark', 'wall3'],
         doorMap: {
@@ -140,7 +155,13 @@ const maps = [
             [0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
-        objects: [],
+        objects: [
+            {
+                type: 'elmo',
+                x: 1042,
+                y: 86
+            }
+        ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark'],
         doorMap: {
             198: {
@@ -228,7 +249,9 @@ const maps = [
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
-        objects: [],
+        objects: [
+
+        ],
         wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open', 'wall2Chipped', 'wall2nice', 'wall2job'],
         doorMap: {
             1: {
