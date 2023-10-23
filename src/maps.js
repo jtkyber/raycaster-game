@@ -41,8 +41,8 @@ const maps = [
         objects: [
             {
                 type: 'barrel',
-                x: 944,
-                y: 78
+                x: 940,
+                y: 80
             },
             {
                 type: 'barrel',
@@ -55,10 +55,10 @@ const maps = [
                 y: 1270
             },
             {
-                type: 'barrel',
-                x: 944,
-                y: 78
-            },
+                type: 'note',
+                x: 936,
+                y: 96
+            }
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark', 'wall3'],
         doorMap: {

@@ -96,6 +96,7 @@ export default class Engine {
 			'src/assets/objects/barrel.png',
 			'src/assets/objects/redbull.png',
 			'src/assets/objects/elmo.png',
+			'src/assets/objects/note.png',
 		];
 		this.textures = {};
 
@@ -219,7 +220,7 @@ export default class Engine {
 
 	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
 		const bytesPerPixel = 4;
-		let targetIndex = bytesPerPixel * this.offscreenCanvasPixels.width * y + bytesPerPixel * x;
+		let targetIndex = bytesPerPixel * this.canvasWidth * y + bytesPerPixel * x;
 		for (let h = 0; h < height; h++) {
 			for (let w = 0; w < width; w++) {
 				this.offscreenCanvasPixels.data[targetIndex] = red;
@@ -228,17 +229,15 @@ export default class Engine {
 				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 				targetIndex += bytesPerPixel;
 			}
-			targetIndex += bytesPerPixel * (this.offscreenCanvasPixels.width - width);
+			targetIndex += bytesPerPixel * (this.canvasWidth - width);
 		}
 	}
 
 	drawCeiling(wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) {
-		let targetIndex =
-			wallTop * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
+		let targetIndex = wallTop * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
 		let targetIndexPortal =
-			wallTopPortal * (this.offscreenCanvasPixels.width * this.bytesPerPixel) +
-			this.bytesPerPixel * castColumn;
+			wallTopPortal * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
 		for (let row = wallTopPortal || wallTop; row >= 0; row--) {
 			const ratio = (this.WALL_HEIGHT - this.fPlayerHeight) / (this.fProjectionPlaneYCenter - row);
@@ -304,7 +303,7 @@ export default class Engine {
 						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
-					targetIndexPortal -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
+					targetIndexPortal -= this.bytesPerPixel * this.canvasWidth;
 				}
 			} else if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
 				const tileRow = xEnd & (this.TILE_SIZE - 1);
@@ -323,7 +322,7 @@ export default class Engine {
 				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
 				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 
-				targetIndex -= this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				targetIndex -= this.bytesPerPixel * this.canvasWidth;
 			}
 		}
 	}
@@ -336,12 +335,10 @@ export default class Engine {
 	// }
 
 	drawFloor(wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) {
-		let targetIndex =
-			wallBottom * (this.offscreenCanvasPixels.width * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
+		let targetIndex = wallBottom * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
 		let targetIndexPortal =
-			wallBottomPortal * (this.offscreenCanvasPixels.width * this.bytesPerPixel) +
-			this.bytesPerPixel * castColumn;
+			wallBottomPortal * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
 		let count = 0;
 		for (let row = wallBottomPortal || wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
@@ -434,7 +431,7 @@ export default class Engine {
 						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
 
-					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
 				}
 			} else if (cellX < this.mapCols && cellY < this.mapRows && cellX >= 0 && cellY >= 0) {
 				const tileRow = xEnd & (this.TILE_SIZE - 1);
@@ -460,7 +457,7 @@ export default class Engine {
 				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
 				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 
-				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				targetIndex += this.bytesPerPixel * this.canvasWidth;
 			}
 			count++;
 		}
@@ -493,13 +490,11 @@ export default class Engine {
 		let sourceIndex = this.bytesPerPixel * xOffset;
 		const lastSourceIndex = sourceIndex + textureBuffer.width * textureBuffer.height * this.bytesPerPixel;
 
-		let targetIndex =
-			this.offscreenCanvasPixels.width * this.bytesPerPixel * rectTop + this.bytesPerPixel * x;
+		let targetIndex = this.canvasWidth * this.bytesPerPixel * rectTop + this.bytesPerPixel * x;
 
 		let heightToDraw = height;
 
-		if (rectTop + heightToDraw > this.offscreenCanvasPixels.height)
-			heightToDraw = this.offscreenCanvasPixels.height - rectTop;
+		if (rectTop + heightToDraw > this.canvasHeight) heightToDraw = this.canvasHeight - rectTop;
 
 		if (heightToDraw < 0) return;
 
@@ -518,13 +513,12 @@ export default class Engine {
 			lastSourceIndexPortal =
 				sourceIndexPortal + textureBufferPortal.width * textureBufferPortal.height * this.bytesPerPixel;
 
-			targetIndexPortal =
-				this.offscreenCanvasPixels.width * this.bytesPerPixel * rectTopPortal + this.bytesPerPixel * x;
+			targetIndexPortal = this.canvasWidth * this.bytesPerPixel * rectTopPortal + this.bytesPerPixel * x;
 
 			heightToDrawPortal = heightPortal;
 
-			if (rectTopPortal + heightToDrawPortal > this.offscreenCanvasPixels.height)
-				heightToDrawPortal = this.offscreenCanvasPixels.height - rectTopPortal;
+			if (rectTopPortal + heightToDrawPortal > this.canvasHeight)
+				heightToDrawPortal = this.canvasHeight - rectTopPortal;
 
 			if (heightToDrawPortal < 0) return;
 		}
@@ -595,15 +589,15 @@ export default class Engine {
 					alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
 				}
 
-				while (yError >= textureBufferPortal.width) {
-					yError -= textureBufferPortal.width;
+				while (yError >= textureBufferPortal.height) {
+					yError -= textureBufferPortal.height;
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
 						green + this.portalColors[portalNum][1] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
 						blue + this.portalColors[portalNum][2] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
-					targetIndexPortal += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
 
 					heightToDrawPortal--;
 					if (heightToDrawPortal < 1) {
@@ -681,8 +675,8 @@ export default class Engine {
 				alpha = ~~texturePixels[sourceIndex + 3];
 			}
 
-			while (yError >= textureBuffer.width) {
-				yError -= textureBuffer.width;
+			while (yError >= textureBuffer.height) {
+				yError -= textureBuffer.height;
 				if (sourceIndexPortal !== null && portalNum !== null && !inEllipse) {
 					// Portal on column but source index is not within portal ellipse
 					if (inEffectEllipse) {
@@ -724,7 +718,7 @@ export default class Engine {
 					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
 					this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
 				}
-				targetIndex += this.bytesPerPixel * this.offscreenCanvasPixels.width;
+				targetIndex += this.bytesPerPixel * this.canvasWidth;
 
 				heightToDraw--;
 				if (heightToDraw < 1) return;
@@ -747,12 +741,11 @@ export default class Engine {
 				this.fObjectTextureBufferList[objRef].height *
 				bytesPerPixel;
 
-		let targetIndex = this.offscreenCanvasPixels.width * bytesPerPixel * y + bytesPerPixel * x;
+		let targetIndex = this.canvasWidth * bytesPerPixel * y + bytesPerPixel * x;
 
 		let heightToDraw = height;
 
-		if (y + heightToDraw > this.offscreenCanvasPixels.height)
-			heightToDraw = this.offscreenCanvasPixels.height - y;
+		if (y + heightToDraw > this.canvasHeight) heightToDraw = this.canvasHeight - y;
 
 		let yError = 0;
 
@@ -766,7 +759,7 @@ export default class Engine {
 			const blue = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness);
 			const alpha = ~~this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
 
-			while (yError >= this.fObjectTextureBufferList[objRef].width) {
+			while (yError >= this.fObjectTextureBufferList[objRef].height) {
 				if (alpha > 0) {
 					this.offscreenCanvasPixels.data[targetIndex] = red;
 					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
@@ -774,7 +767,7 @@ export default class Engine {
 					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 				}
 				yError -= this.fObjectTextureBufferList[objRef].height;
-				targetIndex += bytesPerPixel * this.offscreenCanvasPixels.width;
+				targetIndex += bytesPerPixel * this.canvasWidth;
 
 				heightToDraw--;
 				if (heightToDraw < 1) return;
@@ -787,7 +780,7 @@ export default class Engine {
 	draw3d() {
 		for (let i = 0; i < this.rayLengths.length; i++) {
 			if (this.rayLengths[i] === 0) return;
-			let dist = ~~(this.rayLengths[i] / this.fFishTable[i]);
+			let dist = this.rayLengths[i] / this.fFishTable[i];
 			// For possible portal ray --------------------------------------
 			let totalPortalRayDist =
 				this.totalPortalRayLengths[i] > 0 ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
@@ -900,7 +893,7 @@ export default class Engine {
 			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
-			let brightnessLevel = 110 / dist;
+			let brightnessLevel = 110 / ~~dist;
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel = brightnessLevel * 0.8;
 
@@ -948,10 +941,10 @@ export default class Engine {
 			// Objects
 			for (let j = 0; j < this.objectRayLengths[i].length; j++) {
 				let objDist =
-					this.objectRayLengths[i][j] > 0 ? ~~(this.objectRayLengths[i][j] / this.fFishTable[i]) : null;
+					this.objectRayLengths[i][j] > 0 ? this.objectRayLengths[i][j] / this.fFishTable[i] : null;
 
 				if (objDist) {
-					let objBrightnessLevel = 110 / objDist;
+					let objBrightnessLevel = 110 / ~~objDist;
 					if (objBrightnessLevel > 1.3) objBrightnessLevel = 1.3;
 
 					const objRatio = this.fPlayerDistanceToProjectionPlane / objDist;
