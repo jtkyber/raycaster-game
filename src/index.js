@@ -21,6 +21,7 @@ const alterOffscreenCanvasPixels = () => {
 const drawOntoCanvas = () => {
 	engine.fade();
 	hud.drawFps();
+	if (engine.consoleValues[0]) hud.drawEngineConsole(engine.consoleValues);
 };
 
 const gameLoop = () => {

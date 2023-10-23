@@ -203,6 +203,7 @@ export default class Engine {
 
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
+		this.consoleValues = [];
 	}
 
 	getSidesToCheck(quadrant) {
@@ -1314,13 +1315,27 @@ export default class Engine {
 
 			for (let j = 0; j < this.objects.length; j++) {
 				// Get perpendicular line coords
-				const slope = (this.objects[j].y - this.fPlayerY) / (this.objects[j].x - this.fPlayerX);
+				const deltaY = this.objects[j].y - this.fPlayerY;
+				const deltaX = this.objects[j].x - this.fPlayerX;
+				const slope = deltaY / deltaX;
 				const perpSlope = -(1 / slope);
 				const angle = Math.atan(perpSlope);
-				const x1 = this.objects[j].x + (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
-				const y1 = this.objects[j].y + (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
-				const x2 = this.objects[j].x - (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
-				const y2 = this.objects[j].y - (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+				const angle2 = Math.atan2(deltaY, deltaX);
+				let x1;
+				let y1;
+				let x2;
+				let y2;
+				if (angle2 < 0) {
+					x1 = this.objects[j].x - (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+					y1 = this.objects[j].y - (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+					x2 = this.objects[j].x + (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+					y2 = this.objects[j].y + (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+				} else {
+					x1 = this.objects[j].x + (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+					y1 = this.objects[j].y + (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+					x2 = this.objects[j].x - (this.fObjectTextureBufferList[j].width / 2) * Math.cos(angle);
+					y2 = this.objects[j].y - (this.fObjectTextureBufferList[j].width / 2) * Math.sin(angle);
+				}
 				const objCoords = [x1, y1, x2, y2];
 
 				const intersection = getIntersection(

@@ -14,6 +14,26 @@ export default class Hud {
 		this.framesCounted = value;
 	}
 
+	drawEngineConsole(values) {
+		const fontSize = this.canvasHeight / 34;
+		const xOffset = this.canvasWidth / 90;
+		const h = 10 * values.length;
+
+		this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+		this.ctx.fillRect(0, this.canvasHeight - h - 2, this.canvasWidth, h + 2);
+
+		for (let i = 0; i < values.length; i++) {
+			const yOffset = this.canvasHeight - h + 10 * i;
+
+			this.ctx.font = `500 ${fontSize}px arial`;
+			this.ctx.fillStyle = 'white';
+			this.ctx.strokeStyle = 'black';
+			this.ctx.textAlign = 'left';
+			this.ctx.textBaseline = 'top';
+			this.ctx.fillText(`${i})   ${values[i]}`, xOffset, yOffset);
+		}
+	}
+
 	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
 		const bytesPerPixel = 4;
 		let targetIndex = bytesPerPixel * this.engine.offscreenCanvasPixels.width * y + bytesPerPixel * x;
