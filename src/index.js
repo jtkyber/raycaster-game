@@ -7,7 +7,6 @@ const actions = new Actions(engine);
 const hud = new Hud(engine);
 
 const fpsInterval = 1000 / 60;
-let framesCounted = 0;
 let animationFrameId;
 let deltaTime = 0;
 let timestamp = 0;

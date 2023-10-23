@@ -294,14 +294,14 @@ export default class Engine {
 					const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
 					const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
 					const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
-					const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
+					// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
 						green + this.portalColors[portalNum][1] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
 						blue + this.portalColors[portalNum][2] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 
 					targetIndexPortal -= this.bytesPerPixel * this.canvasWidth;
 				}
@@ -315,12 +315,12 @@ export default class Engine {
 				const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
 				const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
 				const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
-				const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
+				// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 
 				targetIndex -= this.bytesPerPixel * this.canvasWidth;
 			}
@@ -422,14 +422,14 @@ export default class Engine {
 						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] *
 						(brightnessLevel + this.blueTint)
 					);
-					const alpha = ~~this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3];
+					// const alpha = ~~this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3];
 
 					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
 						green + this.portalColors[portalNum][1] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
 						blue + this.portalColors[portalNum][2] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 
 					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
 				}
@@ -450,12 +450,12 @@ export default class Engine {
 					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] *
 					(brightnessLevel + this.blueTint)
 				);
-				const alpha = ~~this.fFloorTexturePixelsList[fIndex][sourceIndex + 3];
+				// const alpha = ~~this.fFloorTexturePixelsList[fIndex][sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
 			}
@@ -526,7 +526,7 @@ export default class Engine {
 		let red;
 		let green;
 		let blue;
-		let alpha;
+		// let alpha;
 
 		let yError = 0;
 		let sourceRow;
@@ -578,7 +578,7 @@ export default class Engine {
 						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 2] *
 						(brighnessLevelPortal + this.blueTint)
 					);
-					alpha = ~~texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3];
+					// alpha = ~~texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3];
 
 					sourceIndexPaintingPortal += this.bytesPerPixel * textureBufferPaintingPortal.width;
 				} else {
@@ -586,7 +586,7 @@ export default class Engine {
 					red = ~~(texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint));
 					green = ~~(texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint));
 					blue = ~~(texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint));
-					alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
+					// alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
 				}
 
 				while (yError >= textureBufferPortal.height) {
@@ -596,7 +596,7 @@ export default class Engine {
 						green + this.portalColors[portalNum][1] * 0.2;
 					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
 						blue + this.portalColors[portalNum][2] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = alpha;
+					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
 
 					heightToDrawPortal--;
@@ -665,14 +665,14 @@ export default class Engine {
 				red = ~~(texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint));
 				green = ~~(texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint));
 				blue = ~~(texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint));
-				alpha = ~~texturePixelsPainting[sourceIndexPainting + 3];
+				// alpha = ~~texturePixelsPainting[sourceIndexPainting + 3];
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
 				red = ~~(texturePixels[sourceIndex] * (brightnessLevel + this.redTint));
 				green = ~~(texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
 				blue = ~~(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
-				alpha = ~~texturePixels[sourceIndex + 3];
+				// alpha = ~~texturePixels[sourceIndex + 3];
 			}
 
 			while (yError >= textureBuffer.height) {
@@ -692,7 +692,7 @@ export default class Engine {
 						this.offscreenCanvasPixels.data[targetIndex] = red;
 						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-						this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					}
 				} else if (!sourceIndexPortal && portalNum !== null) {
 					// Closed portal
@@ -709,14 +709,14 @@ export default class Engine {
 						this.offscreenCanvasPixels.data[targetIndex] = red;
 						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-						this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					}
 				} else if (!sourceIndexPortal) {
 					// No portal exists on column
 					this.offscreenCanvasPixels.data[targetIndex] = red;
 					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
 					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-					this.offscreenCanvasPixels.data[targetIndex + 3] = alpha;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 				}
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
 

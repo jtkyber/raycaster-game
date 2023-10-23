@@ -5,6 +5,7 @@ export default class Hud {
 		this.canvasWidth = engine.canvasWidth;
 		this.canvasHeight = engine.canvasHeight;
 		this.canvasPixels = engine.ctx.getImageData(0, 0, engine.canvasWidth, engine.canvasWidth);
+		this.showFps = true;
 
 		this.framesCounted = 0;
 	}
@@ -62,6 +63,7 @@ export default class Hud {
 	}
 
 	drawFps() {
+		if (!this.showFps) return;
 		const fontSize = this.canvasHeight / 28;
 		const xOffset = this.canvasWidth / 90;
 		const yOffset = this.canvasHeight / 90;
