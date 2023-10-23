@@ -6,6 +6,7 @@
 // Portal-proof Block --> 3
 const maps = [
     {
+        // 24 x 23
         map: [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 7, 7, 7, 7, 7, 7, 7, 0],
@@ -55,7 +56,7 @@ const maps = [
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark', 'wall3'],
         doorMap: {
-            725: {
+            432: {
                 mapTo: 1,
                 indexTo: 198,
                 side: 1
@@ -159,7 +160,7 @@ const maps = [
         doorMap: {
             198: {
                 mapTo: 0,
-                indexTo: 725,
+                indexTo: 432,
                 side: 1
             },
             413: {
