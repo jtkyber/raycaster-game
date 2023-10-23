@@ -6,7 +6,6 @@ export default class Hud {
 		this.canvasHeight = engine.canvasHeight;
 		this.canvasPixels = engine.ctx.getImageData(0, 0, engine.canvasWidth, engine.canvasWidth);
 
-		this.frameRate = 0;
 		this.framesCounted = 0;
 	}
 
@@ -68,7 +67,7 @@ export default class Hud {
 		const yOffset = this.canvasHeight / 90;
 
 		this.ctx.font = `600 ${fontSize}px arial`;
-		this.ctx.fillStyle = this.framesCounted < this.frameRate ? 'red' : 'green';
+		this.ctx.fillStyle = this.framesCounted < 60 ? 'red' : 'green';
 		this.ctx.strokeStyle = 'black';
 		this.ctx.textAlign = 'left';
 		this.ctx.textBaseline = 'top';
