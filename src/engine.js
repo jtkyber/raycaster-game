@@ -97,6 +97,7 @@ export default class Engine {
 			'src/assets/objects/redbull.png',
 			'src/assets/objects/elmo.png',
 			'src/assets/objects/note.png',
+			'src/assets/objects/table.png',
 		];
 		this.textures = {};
 
@@ -760,7 +761,7 @@ export default class Engine {
 			const blue = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness);
 			const alpha = ~~this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
 
-			while (yError >= this.fObjectTextureBufferList[objRef].height) {
+			loop: while (yError >= this.fObjectTextureBufferList[objRef].height) {
 				if (alpha > 0) {
 					this.offscreenCanvasPixels.data[targetIndex] = red;
 					this.offscreenCanvasPixels.data[targetIndex + 1] = green;

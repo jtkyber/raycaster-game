@@ -32,6 +32,15 @@ const maps = [
             [4, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 4, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
+        thinWalls: [
+            {
+                texture: 'wall3',
+                row: 2,
+                col: 15,
+                dir: 'down',
+                closedAmt: 1
+            }
+        ],
         objects: [
             {
                 type: 'barrel',
@@ -52,6 +61,21 @@ const maps = [
                 type: 'barrel',
                 x: 546,
                 y: 820
+            },
+            {
+                type: 'table',
+                x: 1370,
+                y: 640
+            },
+            {
+                type: 'table',
+                x: 1370,
+                y: 900
+            },
+            {
+                type: 'table',
+                x: 1370,
+                y: 1160
             },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark', 'wall3'],
