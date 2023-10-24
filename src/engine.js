@@ -36,12 +36,22 @@ export default class Engine {
 		this.fObjectTextureBufferList;
 		this.fObjectTexturePixelsList;
 
+		this.fThinWallTextureBufferList;
+		this.fThinWallTexturePixelsList;
+
 		this.objects;
 		this.objectRefs = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectOffsets = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectRayLengths = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsX = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsY = new Array(this.PROJECTIONPLANEWIDTH);
+
+		this.thinWalls;
+		this.thinWallRefs = new Array(this.PROJECTIONPLANEWIDTH);
+		this.thinWallOffsets = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.thinWallRayLengths = new Uint16Array(this.PROJECTIONPLANEWIDTH);
+		this.thinWallCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
+		this.thinWallCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
 		this.bytesPerPixel = 4;
 		this.pi = Math.PI;
@@ -761,7 +771,7 @@ export default class Engine {
 			const blue = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness);
 			const alpha = ~~this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
 
-			loop: while (yError >= this.fObjectTextureBufferList[objRef].height) {
+			while (yError >= this.fObjectTextureBufferList[objRef].height) {
 				if (alpha > 0) {
 					this.offscreenCanvasPixels.data[targetIndex] = red;
 					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
@@ -775,6 +785,53 @@ export default class Engine {
 				if (heightToDraw < 1) return;
 			}
 			sourceIndex += bytesPerPixel * this.fObjectTextureBufferList[objRef].width;
+			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+		}
+	}
+
+	drawThinWallStrip(x, y, height, brightness, thinWallRef, xOffset) {
+		if (this.fThinWallTextureBufferList[thinWallRef] == undefined) return;
+		const bytesPerPixel = 4;
+
+		let sourceIndex = bytesPerPixel * xOffset;
+		const lastSourceIndex =
+			sourceIndex +
+			this.fThinWallTextureBufferList[thinWallRef].width *
+				this.fThinWallTextureBufferList[thinWallRef].height *
+				bytesPerPixel;
+
+		let targetIndex = this.canvasWidth * bytesPerPixel * y + bytesPerPixel * x;
+
+		let heightToDraw = height;
+
+		if (y + heightToDraw > this.canvasHeight) heightToDraw = this.canvasHeight - y;
+
+		let yError = 0;
+
+		if (heightToDraw < 0) return;
+
+		while (true) {
+			yError += height;
+
+			const red = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness);
+			const green = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness);
+			const blue = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness);
+			const alpha = ~~this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
+
+			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
+				if (alpha > 0) {
+					this.offscreenCanvasPixels.data[targetIndex] = red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+				}
+				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
+				targetIndex += bytesPerPixel * this.canvasWidth;
+
+				heightToDraw--;
+				if (heightToDraw < 1) return;
+			}
+			sourceIndex += bytesPerPixel * this.fThinWallTextureBufferList[thinWallRef].width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
 		}
 	}
@@ -917,28 +974,52 @@ export default class Engine {
 				portalNum
 			);
 
-			this.drawWallSliceRectangleTinted(
-				i,
-				// Regular Ray
-				wallTop,
-				wallHeight + 1,
-				offset,
-				brightnessLevel,
-				textureBuffer,
-				texturePixels,
-				textureBufferPainting,
-				texturePixelsPainting,
-				textureBufferPaintingPortal,
-				texturePixelsPaintingPortal,
-				// Portal Ray
-				portalWallTop,
-				portalWallHeight + 1,
-				portalWallOffset,
-				portalBrightness,
-				portalTextureBuffer,
-				portalTexturePixels,
-				portalNum
-			);
+			let thinWallDist =
+				this.thinWallRayLengths[i] > 0 ? this.thinWallRayLengths[i] / this.fFishTable[i] : null;
+			if (thinWallDist) {
+				if (thinWallDist) {
+					let thinWallBrightnessLevel = 110 / ~~thinWallDist;
+					if (thinWallBrightnessLevel > 1.3) thinWallBrightnessLevel = 1.3;
+
+					const thinWallRatio = this.fPlayerDistanceToProjectionPlane / thinWallDist;
+					const thinWallScale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / thinWallDist;
+					const thinWallBottom = thinWallRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+					const thinWallTop = thinWallBottom - thinWallScale;
+					const thinWallHeight = thinWallBottom - thinWallTop;
+
+					this.drawThinWallStrip(
+						i,
+						Math.floor(thinWallTop),
+						thinWallHeight,
+						thinWallBrightnessLevel,
+						this.thinWallRefs[i],
+						this.thinWallOffsets[i]
+					);
+				}
+			} else {
+				this.drawWallSliceRectangleTinted(
+					i,
+					// Regular Ray
+					wallTop,
+					wallHeight + 1,
+					offset,
+					brightnessLevel,
+					textureBuffer,
+					texturePixels,
+					textureBufferPainting,
+					texturePixelsPainting,
+					textureBufferPaintingPortal,
+					texturePixelsPaintingPortal,
+					// Portal Ray
+					portalWallTop,
+					portalWallHeight + 1,
+					portalWallOffset,
+					portalBrightness,
+					portalTextureBuffer,
+					portalTexturePixels,
+					portalNum
+				);
+			}
 
 			// Objects
 			for (let j = 0; j < this.objectRayLengths[i].length; j++) {
@@ -995,6 +1076,17 @@ export default class Engine {
 				2 * this.pi
 			);
 			this.debugCtx.fill();
+		}
+
+		for (let i = 0; i < this.thinWalls.length; i++) {
+			const wall = this.thinWalls[i];
+
+			this.debugCtx.strokeStyle = `rgb(255, 0, 255)`;
+			this.debugCtx.lineWidth = 10;
+			this.debugCtx.beginPath();
+			this.debugCtx.moveTo(wall.xStart, wall.yStart);
+			this.debugCtx.lineTo(wall.xEnd, wall.yEnd);
+			this.debugCtx.stroke();
 		}
 	}
 
@@ -1215,6 +1307,52 @@ export default class Engine {
 			adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * this.pi;
 
+			let closest = null;
+			let record = Infinity;
+			let thinWallRecord = Infinity;
+			let thinWallClosest = null;
+
+			// Filter through thin walls for each ray --------------------------------------------------------
+			this.thinWallRayLengths[i] = 0;
+			this.thinWallCollisionsX[i] = 0;
+			this.thinWallCollisionsY[i] = 0;
+			this.thinWallRefs[i] = 0;
+			this.thinWallOffsets[i] = 0;
+
+			for (let j = 0; j < this.thinWalls.length; j++) {
+				const intersection = getIntersection(
+					this.fPlayerX,
+					this.fPlayerY,
+					1,
+					adjustedAngle,
+					this.thinWalls[j].xStart,
+					this.thinWalls[j].yStart,
+					this.thinWalls[j].xEnd,
+					this.thinWalls[j].yEnd
+				);
+
+				if (intersection?.[0]) {
+					const dx = Math.abs(this.fPlayerX - intersection[0]);
+					const dy = Math.abs(this.fPlayerY - intersection[1]);
+					const d = Math.sqrt(dx * dx + dy * dy);
+
+					if (d < thinWallRecord) {
+						thinWallRecord = d;
+						thinWallClosest = intersection;
+						this.thinWallRayLengths[i] = d;
+						this.thinWallCollisionsX[i] = intersection[0];
+						this.thinWallCollisionsY[i] = intersection[1];
+						this.thinWallRefs[i] = j;
+						this.thinWallOffsets[i] = ~~Math.sqrt(
+							(intersection[0] - this.thinWalls[j].xStart) * (intersection[0] - this.thinWalls[j].xStart) +
+								(intersection[1] - this.thinWalls[j].yStart) * (intersection[1] - this.thinWalls[j].yStart)
+						);
+					}
+				}
+			}
+
+			//-------------------------------------------------------------------------------------------
+
 			this.rayAngleQuadrants[i] = Math.floor(adjustedAngle / (this.pi / 2));
 
 			let sidesToCheck = [0, 1, 2, 3];
@@ -1222,9 +1360,6 @@ export default class Engine {
 			else if (this.rayAngleQuadrants[i] === 1) sidesToCheck = [0, 1];
 			else if (this.rayAngleQuadrants[i] === 2) sidesToCheck = [1, 2];
 			else if (this.rayAngleQuadrants[i] === 3) sidesToCheck = [2, 3];
-
-			let closest = null;
-			let record = Infinity;
 
 			let tileIndex = 0;
 			for (let row = 0; row < this.mapRows; row++) {
@@ -1248,6 +1383,8 @@ export default class Engine {
 
 						tileTypeTemp = tile;
 						tileSideDirTemp = tileIntersection.dir;
+
+						if (record < thinWallRecord) this.thinWallRayLengths[i] = 0;
 					}
 				}
 			}
@@ -1260,32 +1397,37 @@ export default class Engine {
 				this.tileSides[i] = tileSideDirTemp;
 				this.tileIndeces[i] = tileIndex;
 
-				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
-					this.setRayFromPortal(
-						i,
-						closest[0],
-						closest[1],
-						this.portalTileIndeces?.[1],
-						this.portalTileSides[1],
-						tileSideDirTemp,
-						adjustedAngle
-					);
-				} else if (
-					this.portalTileIndeces?.[1] === tileIndex &&
-					this.portalTileSides?.[1] === tileSideDirTemp
-				) {
-					this.setRayFromPortal(
-						i,
-						closest[0],
-						closest[1],
-						this.portalTileIndeces?.[0],
-						this.portalTileSides[0],
-						tileSideDirTemp,
-						adjustedAngle
-					);
-				} else this.totalPortalRayLengths[i] = 0;
+				if (record < thinWallRecord) {
+					if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
+						this.setRayFromPortal(
+							i,
+							closest[0],
+							closest[1],
+							this.portalTileIndeces?.[1],
+							this.portalTileSides[1],
+							tileSideDirTemp,
+							adjustedAngle
+						);
+					} else if (
+						this.portalTileIndeces?.[1] === tileIndex &&
+						this.portalTileSides?.[1] === tileSideDirTemp
+					) {
+						this.setRayFromPortal(
+							i,
+							closest[0],
+							closest[1],
+							this.portalTileIndeces?.[0],
+							this.portalTileSides[0],
+							tileSideDirTemp,
+							adjustedAngle
+						);
+					} else this.totalPortalRayLengths[i] = 0;
+				}
+			} else this.rayLengths[i] = 0;
 
-				if (this.DEBUG) {
+			// Draw rays on debug canvas
+			if (this.DEBUG) {
+				if (record < thinWallRecord) {
 					this.debugCtx.strokeStyle =
 						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
 					this.debugCtx.beginPath();
@@ -1293,11 +1435,19 @@ export default class Engine {
 					this.debugCtx.lineTo(closest[0], closest[1]);
 					this.debugCtx.lineWidth = 1;
 					this.debugCtx.stroke();
+				} else {
+					if (this.DEBUG) {
+						this.debugCtx.strokeStyle = `rgba(255,0,255,0.3)`;
+						this.debugCtx.beginPath();
+						this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
+						this.debugCtx.lineTo(thinWallClosest[0], thinWallClosest[1]);
+						this.debugCtx.lineWidth = 1;
+						this.debugCtx.stroke();
+					}
 				}
-			} else this.rayLengths[i] = 0;
+			}
 
-			// Filter through objects for each ray
-
+			// Filter through objects for each ray -----------------------------------------------------------
 			this.objectRayLengths[i] = [];
 			this.objectCollisionsX[i] = [];
 			this.objectCollisionsY[i] = [];
@@ -1355,7 +1505,7 @@ export default class Engine {
 					const dy = Math.abs(this.fPlayerY - intersection[1]);
 					const d = Math.sqrt(dx * dx + dy * dy);
 
-					if (d < record) {
+					if (d < record && d < thinWallRecord) {
 						rayObjData.push({
 							rayLength: ~~d,
 							collisionX: intersection[0],
@@ -1427,9 +1577,7 @@ export default class Engine {
 		}
 	}
 
-	playerTooCloseToWall(row, col) {
-		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
-
+	playerTooCloseToWall(row, col, minDist) {
 		const tileMidX = col * this.TILE_SIZE + this.TILE_SIZE / 2;
 		const tileMidY = row * this.TILE_SIZE + this.TILE_SIZE / 2;
 
@@ -1521,7 +1669,29 @@ export default class Engine {
 		let newPlayerX = null;
 		let newPlayerY = null;
 
+		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
 		if (this.fKeyForward || this.fKeyBack || this.fKeyLeft || this.fKeyRight) {
+			for (let i = 0; i < this.thinWalls.length; i++) {
+				const intersection = getIntersection(
+					this.fPlayerX,
+					this.fPlayerY,
+					1,
+					degToRad(moveDir),
+					this.thinWalls[i].xStart,
+					this.thinWalls[i].yStart,
+					this.thinWalls[i].xEnd,
+					this.thinWalls[i].yEnd
+				);
+
+				if (intersection?.[0]) {
+					const dx = this.fPlayerX - intersection[0];
+					const dy = this.fPlayerY - intersection[1];
+					const d = Math.sqrt(dx * dx + dy * dy);
+
+					if (d <= minDist) return;
+				}
+			}
+
 			for (let row = 0; row < this.mapRows; row++) {
 				loop1: for (let col = 0; col < this.mapCols; col++) {
 					const tileIndex = row * this.mapCols + col;
@@ -1529,7 +1699,7 @@ export default class Engine {
 					if (tile > 5 || (row === playerTileRow && col === playerTileCol)) continue;
 
 					if (Math.abs(col - playerTileCol) <= 1 && Math.abs(row - playerTileRow) <= 1) {
-						const closeDistToTile = this.playerTooCloseToWall(row, col);
+						const closeDistToTile = this.playerTooCloseToWall(row, col, minDist);
 
 						if (closeDistToTile) {
 							const angleToWallCenter = radToDeg(
@@ -1684,6 +1854,27 @@ export default class Engine {
 		}
 	}
 
+	onThinWallTexturesLoaded(imgNames) {
+		this.fThinWallTextureBufferList = new Array(imgNames.length);
+		this.fThinWallTexturePixelsList = new Array(imgNames.length);
+
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fThinWallTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
+			this.fThinWallTextureBufferList[i].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
+
+			const imgData = this.fThinWallTextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(
+					0,
+					0,
+					this.fThinWallTextureBufferList[i].width,
+					this.fThinWallTextureBufferList[i].height
+				);
+			this.fThinWallTexturePixelsList[i] = imgData.data;
+		}
+	}
+
 	setNewMapData(i = this.mapNum) {
 		this.onWallTextureLoaded(maps[i].wallTextures);
 		this.onPaintingTexturesLoaded(maps[i].paintings);
@@ -1693,6 +1884,36 @@ export default class Engine {
 		this.onFloorTextureLoaded(maps[i].floorTextures);
 		this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
 		this.objects = maps[i].objects;
+		this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
+		this.thinWalls = maps[i].thinWalls.map(wall => {
+			let xStartTemp = wall.colStart * this.TILE_SIZE;
+			let yStartTemp = wall.rowStart * this.TILE_SIZE;
+			let xEndTemp = wall.colEnd * this.TILE_SIZE;
+			let yEndTemp = wall.rowEnd * this.TILE_SIZE;
+
+			if (yStartTemp < yEndTemp) {
+				xStartTemp += this.TILE_SIZE / 2;
+				xEndTemp += this.TILE_SIZE / 2;
+			} else if (yEndTemp < yStartTemp) {
+				xStartTemp += this.TILE_SIZE / 2;
+				xEndTemp += this.TILE_SIZE / 2;
+			} else if (xStartTemp < xEndTemp) {
+				yStartTemp += this.TILE_SIZE / 2;
+				yEndTemp += this.TILE_SIZE / 2;
+			} else if (xEndTemp < xStartTemp) {
+				yStartTemp += this.TILE_SIZE / 2;
+				yEndTemp += this.TILE_SIZE / 2;
+			}
+
+			return {
+				texture: wall.texture,
+				xStart: xStartTemp,
+				yStart: yStartTemp,
+				xEnd: xEndTemp,
+				yEnd: yEndTemp,
+				isOpen: wall.isOpen,
+			};
+		});
 
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapNum = i;

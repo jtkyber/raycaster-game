@@ -35,10 +35,27 @@ const maps = [
         thinWalls: [
             {
                 texture: 'wall3',
-                row: 2,
-                col: 15,
-                dir: 'down',
-                closedAmt: 1
+                rowStart: 2,
+                colStart: 15,
+                rowEnd: 3,
+                colEnd: 15,
+                isOpen: false,
+            },
+            {
+                texture: 'wall3',
+                rowStart: 11,
+                colStart: 15,
+                rowEnd: 13,
+                colEnd: 15,
+                isOpen: false,
+            },
+            {
+                texture: 'wall3',
+                rowStart: 6,
+                colStart: 1,
+                rowEnd: 6,
+                colEnd: 2,
+                isOpen: false,
             }
         ],
         objects: [
