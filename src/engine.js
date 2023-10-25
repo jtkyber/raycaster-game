@@ -1,5 +1,5 @@
 import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
-import maps from './maps.js';
+import { maps, texturePaths } from './maps.js';
 
 export default class Engine {
 	constructor() {
@@ -56,61 +56,7 @@ export default class Engine {
 		this.bytesPerPixel = 4;
 		this.pi = Math.PI;
 
-		this.texturePaths = [
-			// Walls
-			'src/assets/walls/wall1.png',
-			'src/assets/walls/wall1Dark.png',
-			'src/assets/walls/wall2.png',
-			'src/assets/walls/wall2nice.png',
-			'src/assets/walls/wall2job.png',
-			'src/assets/walls/wall2Chipped.png',
-			'src/assets/walls/wall3.png',
-			'src/assets/walls/wall3nice.png',
-			'src/assets/walls/wall3job.png',
-			'src/assets/walls/doubleDoorClosed.png',
-			'src/assets/walls/doubleDoorOpen.png',
-			'src/assets/walls/doubleDoor2Closed.png',
-			'src/assets/walls/doubleDoor2Open.png',
-			// Floors
-			'src/assets/floors/floor1.png',
-			'src/assets/floors/floor2.png',
-			'src/assets/floors/floor3.png',
-			'src/assets/floors/floor4.png',
-			'src/assets/floors/floor5.png',
-			// Ceilings
-			'src/assets/ceilings/ceiling1.png',
-			'src/assets/ceilings/ceiling2.png',
-			// Paintings
-			'src/assets/paintings/painting1.png',
-			'src/assets/paintings/painting2one.png',
-			'src/assets/paintings/painting2two.png',
-			'src/assets/paintings/painting3one.png',
-			'src/assets/paintings/painting3two.png',
-			'src/assets/paintings/painting4one.png',
-			'src/assets/paintings/painting4two.png',
-			'src/assets/paintings/painting5one.png',
-			'src/assets/paintings/painting5two.png',
-			'src/assets/paintings/painting6one.png',
-			'src/assets/paintings/painting6two.png',
-			'src/assets/paintings/painting7one.png',
-			'src/assets/paintings/painting7two.png',
-			'src/assets/paintings/painting8.png',
-			'src/assets/paintings/painting9.png',
-			'src/assets/paintings/painting10.png',
-			'src/assets/paintings/painting11.png',
-			'src/assets/paintings/painting12.png',
-			'src/assets/paintings/painting13.png',
-			'src/assets/paintings/painting14.png',
-			'src/assets/paintings/painting15.png',
-			// Objects
-			'src/assets/objects/barrel.png',
-			'src/assets/objects/redbull.png',
-			'src/assets/objects/elmo.png',
-			'src/assets/objects/note.png',
-			'src/assets/objects/table.png',
-			// Thin Walls
-			'src/assets/thinWalls/test.png',
-		];
+		this.texturePaths = texturePaths;
 		this.textures = {};
 
 		this.TILE_SIZE = 64;
@@ -480,7 +426,6 @@ export default class Engine {
 
 		if (heightToDraw < 0) return;
 
-		let count = 0;
 		while (true) {
 			yError += height;
 
@@ -490,24 +435,11 @@ export default class Engine {
 			const alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
 
 			// Blend pixel color values with transparent thin wall color values
-			const redBlend =
-				(alpha / 255) * red +
-				(1 - alpha / 255) *
-					(this.offscreenCanvasPixels.data[targetIndex] >= 0
-						? this.offscreenCanvasPixels.data[targetIndex]
-						: 100);
+			const redBlend = (alpha / 255) * red + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex];
 			const greenBlend =
-				(alpha / 255) * green +
-				(1 - alpha / 255) *
-					(this.offscreenCanvasPixels.data[targetIndex + 1] >= 0
-						? this.offscreenCanvasPixels.data[targetIndex + 1]
-						: 100);
+				(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
 			const blueBlend =
-				(alpha / 255) * blue +
-				(1 - alpha / 255) *
-					(this.offscreenCanvasPixels.data[targetIndex + 2] >= 0
-						? this.offscreenCanvasPixels.data[targetIndex + 2]
-						: 100);
+				(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
 
 			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
 				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
@@ -523,7 +455,6 @@ export default class Engine {
 			}
 			sourceIndex += bytesPerPixel * this.fThinWallTextureBufferList[thinWallRef].width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
-			count++;
 		}
 	}
 
@@ -856,7 +787,7 @@ export default class Engine {
 				this.tileIndeces[i] = tileIndex;
 			} else this.rayLengths[i] = 0;
 
-			// Draw rays on debug canvas
+			// Draw rays on debug canvas ----------------------------------------------------------------
 			if (this.DEBUG) {
 				if (record < thinWallRecord) {
 					this.debugCtx.strokeStyle =

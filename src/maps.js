@@ -3,8 +3,7 @@
 // Floors: 6 - 9
 // Closed Door --> 1
 // Open Door --> 2
-// Portal-proof Block --> 3
-const maps = [
+export const maps = [
     {
         // 24 x 23
         map: [
@@ -22,15 +21,15 @@ const maps = [
             [0, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0, 6, 0, 6, 6, 6, 7, 7, 7, 7, 7, 0, 7, 0],
             [0, 6, 6, 6, 6, 0, 6, 6, 6, 0, 6, 6, 0, 6, 6, 6, 7, 7, 7, 7, 7, 0, 7, 0],
             [0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [4, 4, 4, 4, 4, 4, 4, 6, 4, 4, 4, 4, 4, 4, 4, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [4, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 4, 0, 7, 7, 7, 7, 7, 0, 7, 0],
-            [4, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 4, 0, 7, 7, 7, 7, 7, 0, 7, 0],
-            [4, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 4, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [1, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 4, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [4, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 4, 0, 7, 7, 7, 7, 7, 0, 7, 0],
-            [4, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 4, 0, 7, 7, 7, 7, 7, 0, 7, 0],
-            [4, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 4, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [4, 3, 3, 3, 3, 3, 3, 6, 3, 3, 3, 3, 3, 3, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
+            [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
+            [3, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
+            [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
+            [1, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
+            [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
+            [3, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
+            [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
+            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
         thinWalls: [
             {
@@ -79,7 +78,7 @@ const maps = [
                 y: 1160
             },
         ],
-        wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark', 'wall3'],
+        wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall3'],
         doorMap: {
             432: {
                 mapTo: 1,
@@ -181,7 +180,7 @@ const maps = [
                 y: 86
             }
         ],
-        wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall1Dark'],
+        wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen'],
         doorMap: {
             198: {
                 mapTo: 0,
@@ -271,7 +270,7 @@ const maps = [
         objects: [
 
         ],
-        wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open', 'wall2Chipped', 'wall2nice', 'wall2job'],
+        wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open'],
         doorMap: {
             1: {
                 mapTo: 1,
@@ -286,4 +285,52 @@ const maps = [
     }
 ]
 
-export default maps;
+export const texturePaths = [
+	// Walls
+	'src/assets/walls/wall1.png',
+	'src/assets/walls/wall2.png',
+	'src/assets/walls/wall3.png',
+	'src/assets/walls/doubleDoorClosed.png',
+	'src/assets/walls/doubleDoorOpen.png',
+	'src/assets/walls/doubleDoor2Closed.png',
+	'src/assets/walls/doubleDoor2Open.png',
+	// Floors
+	'src/assets/floors/floor1.png',
+	'src/assets/floors/floor2.png',
+	'src/assets/floors/floor3.png',
+	'src/assets/floors/floor4.png',
+	'src/assets/floors/floor5.png',
+	// Ceilings
+	'src/assets/ceilings/ceiling1.png',
+	'src/assets/ceilings/ceiling2.png',
+	// Paintings
+	'src/assets/paintings/painting1.png',
+	'src/assets/paintings/painting2one.png',
+	'src/assets/paintings/painting2two.png',
+	'src/assets/paintings/painting3one.png',
+	'src/assets/paintings/painting3two.png',
+	'src/assets/paintings/painting4one.png',
+	'src/assets/paintings/painting4two.png',
+	'src/assets/paintings/painting5one.png',
+	'src/assets/paintings/painting5two.png',
+	'src/assets/paintings/painting6one.png',
+	'src/assets/paintings/painting6two.png',
+	'src/assets/paintings/painting7one.png',
+	'src/assets/paintings/painting7two.png',
+	'src/assets/paintings/painting8.png',
+	'src/assets/paintings/painting9.png',
+	'src/assets/paintings/painting10.png',
+	'src/assets/paintings/painting11.png',
+	'src/assets/paintings/painting12.png',
+	'src/assets/paintings/painting13.png',
+	'src/assets/paintings/painting14.png',
+	'src/assets/paintings/painting15.png',
+	// Objects
+	'src/assets/objects/barrel.png',
+	'src/assets/objects/redbull.png',
+	'src/assets/objects/elmo.png',
+	'src/assets/objects/note.png',
+	'src/assets/objects/table.png',
+	// Thin Walls
+	'src/assets/thinWalls/test.png',
+];

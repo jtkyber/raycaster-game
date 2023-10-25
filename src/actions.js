@@ -1,5 +1,5 @@
 import { degToRad, getIntersection } from '../utils/calc.js';
-import maps from './maps.js';
+import { maps } from './maps.js';
 
 export default class Actions {
 	constructor(engine) {
