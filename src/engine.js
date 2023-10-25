@@ -108,6 +108,8 @@ export default class Engine {
 			'src/assets/objects/elmo.png',
 			'src/assets/objects/note.png',
 			'src/assets/objects/table.png',
+			// Thin Walls
+			'src/assets/thinWalls/test.png',
 		];
 		this.textures = {};
 
@@ -810,22 +812,42 @@ export default class Engine {
 
 		if (heightToDraw < 0) return;
 
+		let count = 0;
 		while (true) {
 			yError += height;
 
-			const red = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness);
-			const green = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness);
-			const blue = ~~(this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness);
-			const alpha = ~~this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
+			const red = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness;
+			const green = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness;
+			const blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness;
+			const alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
+
+			// Blend pixel color values with transparent thin wall color values
+			const redBlend =
+				(alpha / 255) * red +
+				(1 - alpha / 255) *
+					(this.offscreenCanvasPixels.data[targetIndex] >= 0
+						? this.offscreenCanvasPixels.data[targetIndex]
+						: 100);
+			const greenBlend =
+				(alpha / 255) * green +
+				(1 - alpha / 255) *
+					(this.offscreenCanvasPixels.data[targetIndex + 1] >= 0
+						? this.offscreenCanvasPixels.data[targetIndex + 1]
+						: 100);
+			const blueBlend =
+				(alpha / 255) * blue +
+				(1 - alpha / 255) *
+					(this.offscreenCanvasPixels.data[targetIndex + 2] >= 0
+						? this.offscreenCanvasPixels.data[targetIndex + 2]
+						: 100);
 
 			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
-				if (alpha > 0) {
-					this.offscreenCanvasPixels.data[targetIndex] = red;
-					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
-					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-				}
 				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
+				this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blueBlend;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+
 				targetIndex += bytesPerPixel * this.canvasWidth;
 
 				heightToDraw--;
@@ -833,6 +855,7 @@ export default class Engine {
 			}
 			sourceIndex += bytesPerPixel * this.fThinWallTextureBufferList[thinWallRef].width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
+			count++;
 		}
 	}
 
@@ -976,50 +999,29 @@ export default class Engine {
 
 			let thinWallDist =
 				this.thinWallRayLengths[i] > 0 ? this.thinWallRayLengths[i] / this.fFishTable[i] : null;
-			if (thinWallDist) {
-				if (thinWallDist) {
-					let thinWallBrightnessLevel = 110 / ~~thinWallDist;
-					if (thinWallBrightnessLevel > 1.3) thinWallBrightnessLevel = 1.3;
 
-					const thinWallRatio = this.fPlayerDistanceToProjectionPlane / thinWallDist;
-					const thinWallScale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / thinWallDist;
-					const thinWallBottom = thinWallRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
-					const thinWallTop = thinWallBottom - thinWallScale;
-					const thinWallHeight = thinWallBottom - thinWallTop;
-
-					this.drawThinWallStrip(
-						i,
-						Math.floor(thinWallTop),
-						thinWallHeight,
-						thinWallBrightnessLevel,
-						this.thinWallRefs[i],
-						this.thinWallOffsets[i]
-					);
-				}
-			} else {
-				this.drawWallSliceRectangleTinted(
-					i,
-					// Regular Ray
-					wallTop,
-					wallHeight + 1,
-					offset,
-					brightnessLevel,
-					textureBuffer,
-					texturePixels,
-					textureBufferPainting,
-					texturePixelsPainting,
-					textureBufferPaintingPortal,
-					texturePixelsPaintingPortal,
-					// Portal Ray
-					portalWallTop,
-					portalWallHeight + 1,
-					portalWallOffset,
-					portalBrightness,
-					portalTextureBuffer,
-					portalTexturePixels,
-					portalNum
-				);
-			}
+			this.drawWallSliceRectangleTinted(
+				i,
+				// Regular Ray
+				wallTop,
+				wallHeight + 1,
+				offset,
+				brightnessLevel,
+				textureBuffer,
+				texturePixels,
+				textureBufferPainting,
+				texturePixelsPainting,
+				textureBufferPaintingPortal,
+				texturePixelsPaintingPortal,
+				// Portal Ray
+				portalWallTop,
+				portalWallHeight + 1,
+				portalWallOffset,
+				portalBrightness,
+				portalTextureBuffer,
+				portalTexturePixels,
+				portalNum
+			);
 
 			// Objects
 			for (let j = 0; j < this.objectRayLengths[i].length; j++) {
@@ -1048,6 +1050,26 @@ export default class Engine {
 						this.objectOffsets[i][j]
 					);
 				}
+			}
+
+			if (thinWallDist) {
+				let thinWallBrightnessLevel = 110 / ~~thinWallDist;
+				if (thinWallBrightnessLevel > 1.3) thinWallBrightnessLevel = 1.3;
+
+				const thinWallRatio = this.fPlayerDistanceToProjectionPlane / thinWallDist;
+				const thinWallScale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / thinWallDist;
+				const thinWallBottom = thinWallRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+				const thinWallTop = thinWallBottom - thinWallScale;
+				const thinWallHeight = thinWallBottom - thinWallTop;
+
+				this.drawThinWallStrip(
+					i,
+					Math.floor(thinWallTop),
+					thinWallHeight,
+					thinWallBrightnessLevel,
+					this.thinWallRefs[i],
+					this.thinWallOffsets[i]
+				);
 			}
 		}
 	}
@@ -1505,7 +1527,7 @@ export default class Engine {
 					const dy = Math.abs(this.fPlayerY - intersection[1]);
 					const d = Math.sqrt(dx * dx + dy * dy);
 
-					if (d < record && d < thinWallRecord) {
+					if (d < record) {
 						rayObjData.push({
 							rayLength: ~~d,
 							collisionX: intersection[0],
@@ -1517,7 +1539,7 @@ export default class Engine {
 							),
 						});
 
-						if (this.DEBUG) {
+						if (this.DEBUG && d < thinWallRecord) {
 							this.debugCtx.strokeStyle = `rgba(0,100,255,0.3)`;
 							this.debugCtx.beginPath();
 							this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);

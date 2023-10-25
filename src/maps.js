@@ -34,29 +34,13 @@ const maps = [
         ],
         thinWalls: [
             {
-                texture: 'wall3',
+                texture: 'test',
                 rowStart: 2,
                 colStart: 15,
                 rowEnd: 3,
                 colEnd: 15,
                 isOpen: false,
             },
-            {
-                texture: 'wall3',
-                rowStart: 11,
-                colStart: 15,
-                rowEnd: 13,
-                colEnd: 15,
-                isOpen: false,
-            },
-            {
-                texture: 'wall3',
-                rowStart: 6,
-                colStart: 1,
-                rowEnd: 6,
-                colEnd: 2,
-                isOpen: false,
-            }
         ],
         objects: [
             {
