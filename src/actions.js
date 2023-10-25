@@ -1,4 +1,4 @@
-import { degToRad } from '../utils/calc.js';
+import { degToRad, getIntersection } from '../utils/calc.js';
 import maps from './maps.js';
 
 export default class Actions {
@@ -43,6 +43,27 @@ export default class Actions {
 					tileTypeTemp = tile;
 					tileSideDirTemp = tileIntersection.dir;
 				}
+			}
+		}
+
+		for (let i = 0; i < engine.thinWalls.length; i++) {
+			const intersection = getIntersection(
+				engine.fPlayerX,
+				engine.fPlayerY,
+				1,
+				degToRad(engine.fPlayerAngle),
+				engine.thinWalls[i].xStart,
+				engine.thinWalls[i].yStart,
+				engine.thinWalls[i].xEnd,
+				engine.thinWalls[i].yEnd
+			);
+
+			if (intersection?.[0]) {
+				const dx = Math.abs(engine.fPlayerX - intersection[0]);
+				const dy = Math.abs(engine.fPlayerY - intersection[1]);
+				const d = Math.sqrt(dx * dx + dy * dy);
+
+				if (d <= record) return;
 			}
 		}
 

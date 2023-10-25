@@ -305,16 +305,23 @@ export default class Engine {
 					const sourceIndex =
 						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-					const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-					const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
-					const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+					const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint);
+					const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
+					const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
 					// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
-						green + this.portalColors[portalNum][1] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
-						blue + this.portalColors[portalNum][2] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
+						red +
+						this.portalColors[portalNum][0] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
+						green +
+						this.portalColors[portalNum][1] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
+						blue +
+						this.portalColors[portalNum][2] * 0.2
+					);
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 
 					targetIndexPortal -= this.bytesPerPixel * this.canvasWidth;
@@ -326,14 +333,14 @@ export default class Engine {
 				const sourceIndex =
 					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const red = ~~(this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-				const green = ~~(this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
-				const blue = ~~(this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+				const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint);
+				const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
+				const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
 				// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
-				this.offscreenCanvasPixels.data[targetIndex] = red;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 
 				targetIndex -= this.bytesPerPixel * this.canvasWidth;
@@ -424,25 +431,26 @@ export default class Engine {
 						tileRow * this.fFloorTextureBufferList[fIndexPortal].width * this.bytesPerPixel +
 						this.bytesPerPixel * tileCol;
 
-					const red = ~~(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] *
-						(brightnessLevel + this.redTint)
-					);
-					const green = ~~(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] *
-						(brightnessLevel + this.greenTint)
-					);
-					const blue = ~~(
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] *
-						(brightnessLevel + this.blueTint)
-					);
+					const red =
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brightnessLevel + this.redTint);
+					const green =
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brightnessLevel + this.greenTint);
+					const blue =
+						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brightnessLevel + this.blueTint);
 					// const alpha = ~~this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3];
 
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
-						green + this.portalColors[portalNum][1] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
-						blue + this.portalColors[portalNum][2] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
+						red +
+						this.portalColors[portalNum][0] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
+						green +
+						this.portalColors[portalNum][1] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
+						blue +
+						this.portalColors[portalNum][2] * 0.2
+					);
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 
 					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
@@ -455,20 +463,16 @@ export default class Engine {
 					tileRow * this.fFloorTextureBufferList[fIndex].width * this.bytesPerPixel +
 					this.bytesPerPixel * tileCol;
 
-				const red = ~~(this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint));
-				const green = ~~(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] *
-					(brightnessLevel + this.greenTint)
-				);
-				const blue = ~~(
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] *
-					(brightnessLevel + this.blueTint)
-				);
+				const red = this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint);
+				const green =
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel + this.greenTint);
+				const blue =
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel + this.blueTint);
 				// const alpha = ~~this.fFloorTexturePixelsList[fIndex][sourceIndex + 3];
 
-				this.offscreenCanvasPixels.data[targetIndex] = red;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
@@ -580,36 +584,39 @@ export default class Engine {
 					xOffsetPortal < paintingSourceRightPortal
 				) {
 					// Painting on column and within size of painting source
-					red = ~~(
-						texturePixelsPaintingPortal[sourceIndexPaintingPortal] *
-						(brighnessLevelPortal + this.redTint)
-					);
-					green = ~~(
+					red =
+						texturePixelsPaintingPortal[sourceIndexPaintingPortal] * (brighnessLevelPortal + this.redTint);
+					green =
 						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 1] *
-						(brighnessLevelPortal + this.greenTint)
-					);
-					blue = ~~(
+						(brighnessLevelPortal + this.greenTint);
+					blue =
 						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 2] *
-						(brighnessLevelPortal + this.blueTint)
-					);
+						(brighnessLevelPortal + this.blueTint);
 					// alpha = ~~texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3];
 
 					sourceIndexPaintingPortal += this.bytesPerPixel * textureBufferPaintingPortal.width;
 				} else {
 					// Just draw wall
-					red = ~~(texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint));
-					green = ~~(texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint));
-					blue = ~~(texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint));
+					red = texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint);
+					green = texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint);
+					blue = texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint);
 					// alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
 				}
 
 				while (yError >= textureBufferPortal.height) {
 					yError -= textureBufferPortal.height;
-					this.offscreenCanvasPixels.data[targetIndexPortal] = red + this.portalColors[portalNum][0] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] =
-						green + this.portalColors[portalNum][1] * 0.2;
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] =
-						blue + this.portalColors[portalNum][2] * 0.2;
+					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
+						red +
+						this.portalColors[portalNum][0] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
+						green +
+						this.portalColors[portalNum][1] * 0.2
+					);
+					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
+						blue +
+						this.portalColors[portalNum][2] * 0.2
+					);
 					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
 					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
 
@@ -676,16 +683,16 @@ export default class Engine {
 				xOffset < paintingSourceRight
 			) {
 				// Painting on column and within size of painting source
-				red = ~~(texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint));
-				green = ~~(texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint));
-				blue = ~~(texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint));
+				red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint);
+				green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint);
+				blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint);
 				// alpha = ~~texturePixelsPainting[sourceIndexPainting + 3];
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
-				red = ~~(texturePixels[sourceIndex] * (brightnessLevel + this.redTint));
-				green = ~~(texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint));
-				blue = ~~(texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint));
+				red = texturePixels[sourceIndex] * (brightnessLevel + this.redTint);
+				green = texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
+				blue = texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
 				// alpha = ~~texturePixels[sourceIndex + 3];
 			}
 
@@ -695,41 +702,49 @@ export default class Engine {
 					// Portal on column but source index is not within portal ellipse
 					if (inEffectEllipse) {
 						// source index is within portal effect ellipse but outside of portal ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brightnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 1] =
-							this.portalColors[portalNum][1] * brightnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 2] =
-							this.portalColors[portalNum][2] * brightnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = ~~(
+							this.portalColors[portalNum][0] * brightnessLevel
+						);
+						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~(
+							this.portalColors[portalNum][1] * brightnessLevel
+						);
+						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~(
+							this.portalColors[portalNum][2] * brightnessLevel
+						);
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						// Fill area outside of effect ellipse with wall texture
-						this.offscreenCanvasPixels.data[targetIndex] = red;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+						this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					}
 				} else if (!sourceIndexPortal && portalNum !== null) {
 					// Closed portal
 					if (inEffectEllipse) {
 						// Use solid colors to fill inside of effect ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = this.portalColors[portalNum][0] * brightnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 1] =
-							this.portalColors[portalNum][1] * brightnessLevel;
-						this.offscreenCanvasPixels.data[targetIndex + 2] =
-							this.portalColors[portalNum][2] * brightnessLevel;
+						this.offscreenCanvasPixels.data[targetIndex] = ~~(
+							this.portalColors[portalNum][0] * brightnessLevel
+						);
+						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~(
+							this.portalColors[portalNum][1] * brightnessLevel
+						);
+						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~(
+							this.portalColors[portalNum][2] * brightnessLevel
+						);
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					} else {
 						// Fill area outside of effect ellipse with wall texture
-						this.offscreenCanvasPixels.data[targetIndex] = red;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+						this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 					}
 				} else if (!sourceIndexPortal) {
 					// No portal exists on column
-					this.offscreenCanvasPixels.data[targetIndex] = red;
-					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 				}
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
@@ -768,16 +783,16 @@ export default class Engine {
 		while (true) {
 			yError += height;
 
-			const red = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex] * brightness);
-			const green = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 1] * brightness);
-			const blue = ~~(this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness);
-			const alpha = ~~this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
+			const red = this.fObjectTexturePixelsList[objRef][sourceIndex] * brightness;
+			const green = this.fObjectTexturePixelsList[objRef][sourceIndex + 1] * brightness;
+			const blue = this.fObjectTexturePixelsList[objRef][sourceIndex + 2] * brightness;
+			const alpha = this.fObjectTexturePixelsList[objRef][sourceIndex + 3];
 
 			while (yError >= this.fObjectTextureBufferList[objRef].height) {
 				if (alpha > 0) {
-					this.offscreenCanvasPixels.data[targetIndex] = red;
-					this.offscreenCanvasPixels.data[targetIndex + 1] = green;
-					this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+					this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 				}
 				yError -= this.fObjectTextureBufferList[objRef].height;
@@ -997,9 +1012,6 @@ export default class Engine {
 				portalNum
 			);
 
-			let thinWallDist =
-				this.thinWallRayLengths[i] > 0 ? this.thinWallRayLengths[i] / this.fFishTable[i] : null;
-
 			this.drawWallSliceRectangleTinted(
 				i,
 				// Regular Ray
@@ -1051,6 +1063,9 @@ export default class Engine {
 					);
 				}
 			}
+
+			let thinWallDist =
+				this.thinWallRayLengths[i] > 0 ? this.thinWallRayLengths[i] / this.fFishTable[i] : null;
 
 			if (thinWallDist) {
 				let thinWallBrightnessLevel = 110 / ~~thinWallDist;
@@ -1399,10 +1414,9 @@ export default class Engine {
 					);
 
 					if (tileIntersection.record < record) {
-						tileIndex = row * this.mapCols + col;
 						record = tileIntersection.record;
 						closest = tileIntersection.closest;
-
+						tileIndex = row * this.mapCols + col;
 						tileTypeTemp = tile;
 						tileSideDirTemp = tileIntersection.dir;
 
@@ -1419,32 +1433,30 @@ export default class Engine {
 				this.tileSides[i] = tileSideDirTemp;
 				this.tileIndeces[i] = tileIndex;
 
-				if (record < thinWallRecord) {
-					if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
-						this.setRayFromPortal(
-							i,
-							closest[0],
-							closest[1],
-							this.portalTileIndeces?.[1],
-							this.portalTileSides[1],
-							tileSideDirTemp,
-							adjustedAngle
-						);
-					} else if (
-						this.portalTileIndeces?.[1] === tileIndex &&
-						this.portalTileSides?.[1] === tileSideDirTemp
-					) {
-						this.setRayFromPortal(
-							i,
-							closest[0],
-							closest[1],
-							this.portalTileIndeces?.[0],
-							this.portalTileSides[0],
-							tileSideDirTemp,
-							adjustedAngle
-						);
-					} else this.totalPortalRayLengths[i] = 0;
-				}
+				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
+					this.setRayFromPortal(
+						i,
+						closest[0],
+						closest[1],
+						this.portalTileIndeces[1],
+						this.portalTileSides[1],
+						tileSideDirTemp,
+						adjustedAngle
+					);
+				} else if (
+					this.portalTileIndeces?.[1] === tileIndex &&
+					this.portalTileSides?.[1] === tileSideDirTemp
+				) {
+					this.setRayFromPortal(
+						i,
+						closest[0],
+						closest[1],
+						this.portalTileIndeces[0],
+						this.portalTileSides[0],
+						tileSideDirTemp,
+						adjustedAngle
+					);
+				} else this.totalPortalRayLengths[i] = 0;
 			} else this.rayLengths[i] = 0;
 
 			// Draw rays on debug canvas
