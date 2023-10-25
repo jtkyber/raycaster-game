@@ -6,82 +6,6 @@ export default class Actions {
 		this.engine = engine;
 	}
 
-	handlePortalShot(portalNum) {
-		const engine = this.engine;
-
-		if (!engine.reticleOnWall) return;
-		let tileTypeTemp = 0;
-		let tileSideDirTemp = 0;
-		let tileIndex = -1;
-		let closest = null;
-		let record = Infinity;
-
-		let adjustedAngle = engine.fPlayerAngle;
-		if (adjustedAngle < 0) adjustedAngle += 360;
-		const playerQuadrant = Math.floor(adjustedAngle / 90);
-		const sidesToCheck = engine.getSidesToCheck(playerQuadrant);
-
-		for (let row = 0; row < engine.mapRows; row++) {
-			for (let col = 0; col < engine.mapCols; col++) {
-				const tile = engine.map[row * engine.mapCols + col];
-				if (tile > 5 || tile === 3) continue;
-
-				const tileIntersection = engine.getIntersectionOfTile(
-					engine.fPlayerX,
-					engine.fPlayerY,
-					row,
-					col,
-					degToRad(engine.fPlayerAngle),
-					sidesToCheck
-				);
-
-				if (tileIntersection.record < record) {
-					tileIndex = row * engine.mapCols + col;
-					record = tileIntersection.record;
-					closest = tileIntersection.closest;
-
-					tileTypeTemp = tile;
-					tileSideDirTemp = tileIntersection.dir;
-				}
-			}
-		}
-
-		for (let i = 0; i < engine.thinWalls.length; i++) {
-			const intersection = getIntersection(
-				engine.fPlayerX,
-				engine.fPlayerY,
-				1,
-				degToRad(engine.fPlayerAngle),
-				engine.thinWalls[i].xStart,
-				engine.thinWalls[i].yStart,
-				engine.thinWalls[i].xEnd,
-				engine.thinWalls[i].yEnd
-			);
-
-			if (intersection?.[0]) {
-				const dx = Math.abs(engine.fPlayerX - intersection[0]);
-				const dy = Math.abs(engine.fPlayerY - intersection[1]);
-				const d = Math.sqrt(dx * dx + dy * dy);
-
-				if (d <= record) return;
-			}
-		}
-
-		if (closest) {
-			if (
-				tileTypeTemp === 1 ||
-				tileTypeTemp === 2 ||
-				(engine.portalTileIndeces[0] === tileIndex && engine.portalTileSides[0] === tileSideDirTemp) ||
-				(engine.portalTileIndeces[1] === tileIndex && engine.portalTileSides[1] === tileSideDirTemp)
-			) {
-				return;
-			}
-			engine.portalTileIndeces[portalNum] = tileIndex;
-			engine.portalTileSides[portalNum] = tileSideDirTemp;
-			engine.portalSizeMultipliers[portalNum] = 0;
-		}
-	}
-
 	openDoor() {
 		const engine = this.engine;
 
@@ -176,9 +100,6 @@ export default class Actions {
 		const engine = this.engine;
 		document.addEventListener('mousedown', e => {
 			if (!engine.userIsInTab || engine.DEBUG) return;
-
-			if (e.button === 0) this.handlePortalShot(0);
-			else if (e.button === 2) this.handlePortalShot(1);
 		});
 
 		document.addEventListener('mousemove', e => {

@@ -171,24 +171,6 @@ export default class Engine {
 		this.tileSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
 		this.tileIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
 
-		this.portalSizeMultipliers = new Float32Array(2).fill(1);
-		this.portalTileSides = new Int8Array(2).fill(-1);
-		this.portalTileIndeces = new Int16Array(2).fill(-1);
-		this.portalColors = [
-			[0, 101, 255],
-			[255, 93, 0],
-		];
-
-		this.totalPortalRayLengths = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutXVals = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutYVals = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutAngs = new Float32Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutTypes = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutSides = new Uint8Array(this.PROJECTIONPLANEWIDTH);
-		this.portalOutIndeces = new Uint16Array(this.PROJECTIONPLANEWIDTH);
-
 		this.userIsInTab = false;
 		this.reticleOnWall = false;
 		this.isJumping = false;
@@ -247,13 +229,10 @@ export default class Engine {
 		}
 	}
 
-	drawCeiling(wallTop, castColumn, rayAng, wallTopPortal, rayAngPortal, portalNum) {
+	drawCeiling(wallTop, castColumn, rayAng) {
 		let targetIndex = wallTop * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
-		let targetIndexPortal =
-			wallTopPortal * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
-
-		for (let row = wallTopPortal || wallTop; row >= 0; row--) {
+		for (let row = wallTop; row >= 0; row--) {
 			const ratio = (this.WALL_HEIGHT - this.fPlayerHeight) / (this.fProjectionPlaneYCenter - row);
 
 			const diagDist = ~~(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
@@ -270,63 +249,7 @@ export default class Engine {
 			const cellX = ~~(xEnd / this.TILE_SIZE);
 			const cellY = ~~(yEnd / this.TILE_SIZE);
 
-			//----------------------------------------------------------------------------------
-
-			let xEndPortal;
-			let yEndPortal;
-			let cellXPortal;
-			let cellYPortal;
-
-			if (portalNum !== null && wallTopPortal && row > wallTop) {
-				xEndPortal = diagDist * Math.cos(rayAngPortal);
-				yEndPortal = diagDist * Math.sin(rayAngPortal);
-
-				xEndPortal = ~~(
-					xEndPortal +
-					this.portalOutXVals[castColumn] -
-					this.rayLengths[castColumn] * Math.cos(rayAngPortal)
-				);
-				yEndPortal = ~~(
-					yEndPortal +
-					this.portalOutYVals[castColumn] -
-					this.rayLengths[castColumn] * Math.sin(rayAngPortal)
-				);
-
-				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
-				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
-
-				if (
-					true ||
-					(cellXPortal < this.mapCols && cellYPortal < this.mapRows && cellXPortal >= 0 && cellYPortal >= 0)
-				) {
-					const tileRow = xEndPortal & (this.TILE_SIZE - 1);
-					const tileCol = yEndPortal & (this.TILE_SIZE - 1);
-
-					const sourceIndex =
-						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
-
-					const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint);
-					const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
-					const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
-					// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
-
-					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
-						red +
-						this.portalColors[portalNum][0] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
-						green +
-						this.portalColors[portalNum][1] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
-						blue +
-						this.portalColors[portalNum][2] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
-
-					targetIndexPortal -= this.bytesPerPixel * this.canvasWidth;
-				}
-			} else if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
+			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
 				const tileRow = xEnd & (this.TILE_SIZE - 1);
 				const tileCol = yEnd & (this.TILE_SIZE - 1);
 
@@ -336,7 +259,6 @@ export default class Engine {
 				const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint);
 				const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
 				const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
-				// const alpha = ~~this.fCeilingTexturePixels[sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
@@ -348,21 +270,11 @@ export default class Engine {
 		}
 	}
 
-	// getFloorTypeIndexFromRowCol(row, col) {
-	// 	const tileIndex = row * this.mapCols + col;
-	// 	let type = this.map[tileIndex];
-	// 	if (type < 6) type = 6;
-	// 	return type - 6;
-	// }
-
-	drawFloor(wallBottom, castColumn, rayAng, wallBottomPortal, rayAngPortal, portalNum) {
+	drawFloor(wallBottom, castColumn, rayAng) {
 		let targetIndex = wallBottom * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
-		let targetIndexPortal =
-			wallBottomPortal * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
-
 		let count = 0;
-		for (let row = wallBottomPortal || wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
+		for (let row = wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
 			const straightDistance =
 				(this.fPlayerHeight / (row - this.fProjectionPlaneYCenter)) * this.fPlayerDistanceToProjectionPlane;
 
@@ -379,83 +291,13 @@ export default class Engine {
 			let cellX = ~~(xEnd / this.TILE_SIZE);
 			let cellY = ~~(yEnd / this.TILE_SIZE);
 
-			// const fIndex = this.getFloorTypeIndexFromRowCol(cellY, cellX);
 			let fIndex = 0;
 
 			const tileIndex = cellY * this.mapCols + cellX;
 			let type = this.map[tileIndex];
 			if (type >= 6) fIndex = type - 6;
 
-			//-------------------------------------------------------------------------
-
-			let xEndPortal;
-			let yEndPortal;
-			let cellXPortal;
-			let cellYPortal;
-
-			if (portalNum !== null && wallBottomPortal && row < wallBottom) {
-				xEndPortal = actualDistance * Math.cos(rayAngPortal);
-				yEndPortal = actualDistance * Math.sin(rayAngPortal);
-
-				xEndPortal = ~~(
-					xEndPortal +
-					this.portalOutXVals[castColumn] -
-					this.rayLengths[castColumn] * Math.cos(rayAngPortal)
-				);
-				yEndPortal = ~~(
-					yEndPortal +
-					this.portalOutYVals[castColumn] -
-					this.rayLengths[castColumn] * Math.sin(rayAngPortal)
-				);
-
-				cellXPortal = ~~(xEndPortal / this.TILE_SIZE);
-				cellYPortal = ~~(yEndPortal / this.TILE_SIZE);
-
-				// const fIndexPortal = this.getFloorTypeIndexFromRowCol(cellYPortal, cellXPortal);
-				let fIndexPortal = 0;
-
-				const tileIndex = cellYPortal * this.mapCols + cellXPortal;
-				let type = this.map[tileIndex];
-				if (type >= 6) fIndexPortal = type - 6;
-
-				if (
-					cellXPortal < this.mapCols &&
-					cellYPortal < this.mapRows &&
-					cellXPortal >= 0 &&
-					cellYPortal >= 0
-				) {
-					const tileRow = xEndPortal & (this.TILE_SIZE - 1);
-					const tileCol = yEndPortal & (this.TILE_SIZE - 1);
-
-					const sourceIndex =
-						tileRow * this.fFloorTextureBufferList[fIndexPortal].width * this.bytesPerPixel +
-						this.bytesPerPixel * tileCol;
-
-					const red =
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex] * (brightnessLevel + this.redTint);
-					const green =
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 1] * (brightnessLevel + this.greenTint);
-					const blue =
-						this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 2] * (brightnessLevel + this.blueTint);
-					// const alpha = ~~this.fFloorTexturePixelsList[fIndexPortal][sourceIndex + 3];
-
-					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
-						red +
-						this.portalColors[portalNum][0] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
-						green +
-						this.portalColors[portalNum][1] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
-						blue +
-						this.portalColors[portalNum][2] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
-
-					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
-				}
-			} else if (cellX < this.mapCols && cellY < this.mapRows && cellX >= 0 && cellY >= 0) {
+			if (cellX < this.mapCols && cellY < this.mapRows && cellX >= 0 && cellY >= 0) {
 				const tileRow = xEnd & (this.TILE_SIZE - 1);
 				const tileCol = yEnd & (this.TILE_SIZE - 1);
 
@@ -468,7 +310,6 @@ export default class Engine {
 					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel + this.greenTint);
 				const blue =
 					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel + this.blueTint);
-				// const alpha = ~~this.fFloorTexturePixelsList[fIndex][sourceIndex + 3];
 
 				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
@@ -483,7 +324,6 @@ export default class Engine {
 
 	drawWallSliceRectangleTinted(
 		x,
-		// Regular ray
 		rectTop,
 		height,
 		xOffset,
@@ -491,17 +331,7 @@ export default class Engine {
 		textureBuffer,
 		texturePixels,
 		textureBufferPainting,
-		texturePixelsPainting,
-		textureBufferPaintingPortal,
-		texturePixelsPaintingPortal,
-		// Portal ray
-		rectTopPortal,
-		heightPortal,
-		xOffsetPortal,
-		brighnessLevelPortal,
-		textureBufferPortal,
-		texturePixelsPortal,
-		portalNum
+		texturePixelsPainting
 	) {
 		rectTop = Math.floor(rectTop);
 
@@ -516,131 +346,12 @@ export default class Engine {
 
 		if (heightToDraw < 0) return;
 
-		//----------------------------------------------------------------------
-
-		let sourceIndexPortal = null;
-		let lastSourceIndexPortal = null;
-		let targetIndexPortal = null;
-		let heightToDrawPortal = null;
-
-		if (rectTopPortal) {
-			rectTopPortal = Math.floor(rectTopPortal);
-			// xOffsetPortal = ~~xOffsetPortal;
-
-			sourceIndexPortal = this.bytesPerPixel * xOffsetPortal;
-			lastSourceIndexPortal =
-				sourceIndexPortal + textureBufferPortal.width * textureBufferPortal.height * this.bytesPerPixel;
-
-			targetIndexPortal = this.canvasWidth * this.bytesPerPixel * rectTopPortal + this.bytesPerPixel * x;
-
-			heightToDrawPortal = heightPortal;
-
-			if (rectTopPortal + heightToDrawPortal > this.canvasHeight)
-				heightToDrawPortal = this.canvasHeight - rectTopPortal;
-
-			if (heightToDrawPortal < 0) return;
-		}
-
 		let red;
 		let green;
 		let blue;
-		// let alpha;
 
 		let yError = 0;
 		let sourceRow;
-
-		let paintingSourceTopPortal = null;
-		let paintingSourceBottomPortal = null;
-		let paintingSourceLeftPortal = null;
-		let paintingSourceRightPortal = null;
-
-		let sourceIndexPaintingPortal = null;
-
-		let sourceRowPortal;
-
-		//------------------------Draw Portal Walls & Paintings-------------------------
-
-		if (sourceIndexPortal !== null && portalNum !== null) {
-			// Open portal on column
-			sourceRowPortal = ~~(sourceIndexPortal / (this.bytesPerPixel * textureBuffer.width));
-
-			if (textureBufferPaintingPortal) {
-				// Painting is present on column in portal
-				paintingSourceTopPortal = textureBufferPortal.height / 2 - textureBufferPaintingPortal.height / 2;
-				paintingSourceBottomPortal = textureBufferPortal.height / 2 + textureBufferPaintingPortal.height / 2;
-				paintingSourceLeftPortal = textureBufferPortal.width / 2 - textureBufferPaintingPortal.width / 2;
-				paintingSourceRightPortal = textureBufferPortal.width / 2 + textureBufferPaintingPortal.width / 2;
-
-				sourceIndexPaintingPortal = this.bytesPerPixel * (xOffsetPortal - paintingSourceLeftPortal);
-			}
-
-			loop1: while (true) {
-				yError += heightPortal;
-				if (
-					textureBufferPaintingPortal &&
-					sourceRowPortal > paintingSourceTopPortal - 1 &&
-					sourceRowPortal < paintingSourceBottomPortal &&
-					xOffsetPortal > paintingSourceLeftPortal - 1 &&
-					xOffsetPortal < paintingSourceRightPortal
-				) {
-					// Painting on column and within size of painting source
-					red =
-						texturePixelsPaintingPortal[sourceIndexPaintingPortal] * (brighnessLevelPortal + this.redTint);
-					green =
-						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 1] *
-						(brighnessLevelPortal + this.greenTint);
-					blue =
-						texturePixelsPaintingPortal[sourceIndexPaintingPortal + 2] *
-						(brighnessLevelPortal + this.blueTint);
-					// alpha = ~~texturePixelsPaintingPortal[sourceIndexPaintingPortal + 3];
-
-					sourceIndexPaintingPortal += this.bytesPerPixel * textureBufferPaintingPortal.width;
-				} else {
-					// Just draw wall
-					red = texturePixelsPortal[sourceIndexPortal] * (brighnessLevelPortal + this.redTint);
-					green = texturePixelsPortal[sourceIndexPortal + 1] * (brighnessLevelPortal + this.greenTint);
-					blue = texturePixelsPortal[sourceIndexPortal + 2] * (brighnessLevelPortal + this.blueTint);
-					// alpha = ~~texturePixelsPortal[sourceIndexPortal + 3];
-				}
-
-				while (yError >= textureBufferPortal.height) {
-					yError -= textureBufferPortal.height;
-					this.offscreenCanvasPixels.data[targetIndexPortal] = ~~(
-						red +
-						this.portalColors[portalNum][0] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 1] = ~~(
-						green +
-						this.portalColors[portalNum][1] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 2] = ~~(
-						blue +
-						this.portalColors[portalNum][2] * 0.2
-					);
-					this.offscreenCanvasPixels.data[targetIndexPortal + 3] = 255;
-					targetIndexPortal += this.bytesPerPixel * this.canvasWidth;
-
-					heightToDrawPortal--;
-					if (heightToDrawPortal < 1) {
-						break loop1;
-					}
-				}
-
-				sourceIndexPortal += this.bytesPerPixel * textureBufferPortal.width;
-				if (sourceIndexPortal > lastSourceIndexPortal) sourceIndexPortal = lastSourceIndexPortal;
-				sourceRowPortal = ~~(sourceIndexPortal / (this.bytesPerPixel * textureBufferPortal.width));
-			}
-			yError = 0;
-		}
-
-		//--------------------------------------------------------------------------
-
-		const circleCenter = this.TILE_SIZE / 2;
-		const dx = circleCenter - xOffset;
-		const radiusY = (circleCenter - 2) * (this.portalSizeMultipliers[portalNum] || 1);
-		const radiusX = radiusY * 0.7;
-		const effectRadiusY = radiusY + 2;
-		const effectRadiusX = radiusX + 2;
 
 		sourceRow = ~~(sourceIndex / (this.bytesPerPixel * textureBuffer.width));
 
@@ -650,11 +361,6 @@ export default class Engine {
 		let paintingSourceRight = null;
 
 		let sourceIndexPainting = null;
-
-		let yOffset;
-		let dy;
-		let inEllipse;
-		let inEffectEllipse;
 
 		if (textureBufferPainting) {
 			// Painting is present on column
@@ -669,12 +375,6 @@ export default class Engine {
 		while (true) {
 			yError += height;
 
-			yOffset = sourceIndex / (this.bytesPerPixel * textureBuffer.width);
-			dy = circleCenter - yOffset;
-			inEllipse = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY) <= 1;
-			inEffectEllipse =
-				(dx * dx) / (effectRadiusX * effectRadiusX) + (dy * dy) / (effectRadiusY * effectRadiusY) <= 1;
-
 			if (
 				textureBufferPainting &&
 				sourceRow > paintingSourceTop - 1 &&
@@ -686,67 +386,20 @@ export default class Engine {
 				red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint);
 				green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint);
 				blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint);
-				// alpha = ~~texturePixelsPainting[sourceIndexPainting + 3];
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
 				red = texturePixels[sourceIndex] * (brightnessLevel + this.redTint);
 				green = texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
 				blue = texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
-				// alpha = ~~texturePixels[sourceIndex + 3];
 			}
 
 			while (yError >= textureBuffer.height) {
 				yError -= textureBuffer.height;
-				if (sourceIndexPortal !== null && portalNum !== null && !inEllipse) {
-					// Portal on column but source index is not within portal ellipse
-					if (inEffectEllipse) {
-						// source index is within portal effect ellipse but outside of portal ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = ~~(
-							this.portalColors[portalNum][0] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~(
-							this.portalColors[portalNum][1] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~(
-							this.portalColors[portalNum][2] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-					} else {
-						// Fill area outside of effect ellipse with wall texture
-						this.offscreenCanvasPixels.data[targetIndex] = ~~red;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
-						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-					}
-				} else if (!sourceIndexPortal && portalNum !== null) {
-					// Closed portal
-					if (inEffectEllipse) {
-						// Use solid colors to fill inside of effect ellipse
-						this.offscreenCanvasPixels.data[targetIndex] = ~~(
-							this.portalColors[portalNum][0] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~(
-							this.portalColors[portalNum][1] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~(
-							this.portalColors[portalNum][2] * brightnessLevel
-						);
-						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-					} else {
-						// Fill area outside of effect ellipse with wall texture
-						this.offscreenCanvasPixels.data[targetIndex] = ~~red;
-						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
-						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
-						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-					}
-				} else if (!sourceIndexPortal) {
-					// No portal exists on column
-					this.offscreenCanvasPixels.data[targetIndex] = ~~red;
-					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
-					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
-					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-				}
+				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
 
 				heightToDraw--;
@@ -878,71 +531,6 @@ export default class Engine {
 		for (let i = 0; i < this.rayLengths.length; i++) {
 			if (this.rayLengths[i] === 0) return;
 			let dist = this.rayLengths[i] / this.fFishTable[i];
-			// For possible portal ray --------------------------------------
-			let totalPortalRayDist =
-				this.totalPortalRayLengths[i] > 0 ? this.totalPortalRayLengths[i] / this.fFishTable[i] : null;
-			let portalWallHeight = null;
-			let portalWallBottom = null;
-			let portalWallTop = null;
-			let portalWallOffset = 0;
-			let portalTextureBuffer = null;
-			let portalTexturePixels = null;
-			let portalBrightness = 0;
-			let portalNum = null;
-			let textureBufferPaintingPortal = null;
-			let texturePixelsPaintingPortal = null;
-
-			//----------------- Portals ---------------------------------------------
-			if (totalPortalRayDist) {
-				loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
-					const tileIndexPainting =
-						this.fPaintingDetails[j].row * this.mapCols + this.fPaintingDetails[j].col;
-					if (
-						this.portalOutIndeces[i] === tileIndexPainting &&
-						this.portalOutSides[i] === this.fPaintingDetails[j].side
-					) {
-						textureBufferPaintingPortal = this.fPaintingTextureBufferList[j];
-						texturePixelsPaintingPortal = this.fPaintingTexturePixelsList[j];
-						break loop;
-					}
-				}
-
-				const ratio = this.fPlayerDistanceToProjectionPlane / totalPortalRayDist;
-				const scale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / totalPortalRayDist;
-				portalWallBottom = ratio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
-				portalWallTop = portalWallBottom - scale;
-				portalWallHeight = portalWallBottom - portalWallTop;
-
-				portalWallOffset =
-					this.portalOutSides?.[i] === 0 || this.portalOutSides?.[i] === 2
-						? this.portalOutCollisionsX[i] & (this.TILE_SIZE - 1)
-						: this.portalOutCollisionsY[i] & (this.TILE_SIZE - 1);
-
-				if (this.portalOutSides?.[i] === 0 || this.portalOutSides?.[i] === 1)
-					portalWallOffset = this.TILE_SIZE - portalWallOffset - 1;
-
-				portalTextureBuffer = this.fWallTextureBufferList[this.portalOutTypes?.[i]];
-				portalTexturePixels = this.fWallTexturePixelsList[this.portalOutTypes?.[i]];
-
-				totalPortalRayDist = ~~totalPortalRayDist;
-				portalBrightness = 110 / totalPortalRayDist;
-
-				if (portalBrightness > 1.3) portalBrightness = 1.3;
-
-				if (this.portalOutSides?.[i] === 1 || this.portalOutSides?.[i] === 3) {
-					portalBrightness = portalBrightness * 0.8;
-				}
-			}
-
-			if (this.portalTileIndeces[0] === this.tileIndeces[i] && this.portalTileSides[0] === this.tileSides[i])
-				portalNum = 0;
-			else if (
-				this.portalTileIndeces[1] === this.tileIndeces[i] &&
-				this.portalTileSides[1] === this.tileSides[i]
-			)
-				portalNum = 1;
-
-			// ---------------------------------------------------------------
 
 			const ratio = this.fPlayerDistanceToProjectionPlane / dist;
 			const scale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / dist;
@@ -952,8 +540,6 @@ export default class Engine {
 
 			let textureBufferPainting = null;
 			let texturePixelsPainting = null;
-
-			//-------------Add separate texture buffer/pixels for painting inside of portal--------------
 
 			loop: for (let j = 0; j < this.fPaintingDetails.length; j++) {
 				const tileIndexPainting = this.fPaintingDetails[j].row * this.mapCols + this.fPaintingDetails[j].col;
@@ -966,8 +552,6 @@ export default class Engine {
 					break loop;
 				}
 			}
-
-			// -------------------------------------------------------------------------------------------
 
 			let adjustedAngle = this.rayAngles[i] + degToRad(this.fPlayerAngle);
 			if (adjustedAngle < 0) adjustedAngle += 2 * this.pi;
@@ -994,27 +578,12 @@ export default class Engine {
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
 			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel = brightnessLevel * 0.8;
 
-			this.drawFloor(
-				Math.floor(wallBottom),
-				i,
-				adjustedAngle,
-				Math.floor(portalWallBottom),
-				this.portalOutAngs[i],
-				portalNum
-			);
+			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
 
-			this.drawCeiling(
-				Math.floor(wallTop),
-				i,
-				adjustedAngle,
-				Math.floor(portalWallTop),
-				this.portalOutAngs[i],
-				portalNum
-			);
+			this.drawCeiling(Math.floor(wallTop), i, adjustedAngle);
 
 			this.drawWallSliceRectangleTinted(
 				i,
-				// Regular Ray
 				wallTop,
 				wallHeight + 1,
 				offset,
@@ -1022,17 +591,7 @@ export default class Engine {
 				textureBuffer,
 				texturePixels,
 				textureBufferPainting,
-				texturePixelsPainting,
-				textureBufferPaintingPortal,
-				texturePixelsPaintingPortal,
-				// Portal Ray
-				portalWallTop,
-				portalWallHeight + 1,
-				portalWallOffset,
-				portalBrightness,
-				portalTextureBuffer,
-				portalTexturePixels,
-				portalNum
+				texturePixelsPainting
 			);
 
 			// Objects
@@ -1198,143 +757,6 @@ export default class Engine {
 		};
 	}
 
-	setRayFromPortal(
-		i,
-		portalIntersectInX,
-		portalIntersectInY,
-		portalIndexOut,
-		portalTileSideOut,
-		portalTileSideIn,
-		rayInAng
-	) {
-		if (portalIndexOut >= 0) {
-			let offset;
-
-			switch (portalTileSideIn) {
-				case 0:
-					offset = this.TILE_SIZE - (portalIntersectInX & (this.TILE_SIZE - 1));
-					break;
-				case 1:
-					offset = this.TILE_SIZE - (portalIntersectInY & (this.TILE_SIZE - 1));
-					break;
-				case 2:
-					offset = portalIntersectInX & (this.TILE_SIZE - 1);
-					break;
-				case 3:
-					offset = portalIntersectInY & (this.TILE_SIZE - 1);
-					break;
-			}
-
-			const xStart = this.TILE_SIZE * (portalIndexOut % this.mapCols) - 1;
-			const yStart = this.TILE_SIZE * ~~(portalIndexOut / this.mapCols);
-
-			switch (portalTileSideOut) {
-				case 0:
-					this.portalOutXVals[i] = xStart + offset;
-					this.portalOutYVals[i] = yStart;
-					break;
-				case 1:
-					this.portalOutXVals[i] = xStart + this.TILE_SIZE;
-					this.portalOutYVals[i] = yStart + offset;
-					break;
-				case 2:
-					this.portalOutXVals[i] = xStart + this.TILE_SIZE - offset;
-					this.portalOutYVals[i] = yStart + this.TILE_SIZE;
-					break;
-				case 3:
-					this.portalOutXVals[i] = xStart;
-					this.portalOutYVals[i] = yStart + this.TILE_SIZE - offset;
-					break;
-			}
-
-			if (
-				(portalTileSideOut === 1 || portalTileSideOut === 3) &&
-				this.portalOutXVals[i] & (this.TILE_SIZE - 1 !== 0)
-			) {
-				this.portalOutXVals[i] += 1;
-			} else if (
-				(portalTileSideOut === 0 || portalTileSideOut === 2) &&
-				this.portalOutYVals[i] & (this.TILE_SIZE - 1 !== 0)
-			) {
-				this.portalOutYVals[i] += 1;
-			}
-
-			let tileSideDiff = portalTileSideIn - portalTileSideOut;
-			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
-			tileSideDiff = Math.abs(tileSideDiff);
-			let rayOutAng;
-
-			if (tileSideDiff === 0) rayOutAng = rayInAng + this.pi;
-			else if (tileSideDiff === 1) {
-				rayOutAng = rayInAng + (this.pi / 2) * tileSideDiffSign;
-			} else if (tileSideDiff === 2) {
-				rayOutAng = rayInAng;
-			} else if (tileSideDiff === 3) {
-				rayOutAng = rayInAng - (this.pi / 2) * tileSideDiffSign;
-			}
-
-			let portal2RayRecord = Infinity;
-			let portal2RayClosest = null;
-			let tileTypeTemp = 0;
-			let tileSideDirTemp = 0;
-			let tileIndexTemp = 0;
-
-			for (let row = 0; row < this.mapRows; row++) {
-				for (let col = 0; col < this.mapCols; col++) {
-					const tile = this.map[row * this.mapCols + col];
-					if (tile > 5) continue;
-
-					const tileIntersection = this.getIntersectionOfTile(
-						this.portalOutXVals[i],
-						this.portalOutYVals[i],
-						row,
-						col,
-						rayOutAng
-					);
-
-					if (tileIntersection.record < portal2RayRecord) {
-						portal2RayRecord = tileIntersection.record;
-						portal2RayClosest = tileIntersection.closest;
-
-						tileTypeTemp = tile;
-						tileSideDirTemp = tileIntersection.dir;
-						tileIndexTemp = row * this.mapCols + col;
-					}
-				}
-			}
-
-			if (portal2RayClosest) {
-				this.totalPortalRayLengths[i] = ~~(this.rayLengths[i] + portal2RayRecord);
-				this.portalOutCollisionsX[i] = portal2RayClosest[0];
-				this.portalOutCollisionsY[i] = portal2RayClosest[1];
-				this.portalOutTypes[i] = tileTypeTemp;
-				this.portalOutSides[i] = tileSideDirTemp;
-				this.portalOutIndeces[i] = tileIndexTemp;
-				this.portalOutAngs[i] = rayOutAng;
-
-				if (this.DEBUG) {
-					this.debugCtx.fillStyle = 'blue';
-					this.debugCtx.beginPath();
-					this.debugCtx.ellipse(portalIntersectInX, portalIntersectInY, 3, 3, 0, 0, 2 * this.pi);
-					this.debugCtx.fill();
-
-					this.debugCtx.fillStyle = 'orangeRed';
-					this.debugCtx.beginPath();
-					this.debugCtx.ellipse(this.portalOutXVals[i], this.portalOutYVals[i], 3, 3, 0, 0, 2 * this.pi);
-					this.debugCtx.fill();
-
-					this.debugCtx.strokeStyle =
-						i === this.rayAngles.length ? `rgba(0,255,0,0.7)` : `rgba(255,255,255,0.3)`;
-					this.debugCtx.beginPath();
-					this.debugCtx.moveTo(this.portalOutXVals[i], this.portalOutYVals[i]);
-					this.debugCtx.lineTo(portal2RayClosest[0], portal2RayClosest[1]);
-					this.debugCtx.lineWidth = 1;
-					this.debugCtx.stroke();
-				}
-			} else this.totalPortalRayLengths[i] = 0;
-		}
-	}
-
 	raycaster() {
 		let tileTypeTemp = 0;
 		let tileSideDirTemp = 0;
@@ -1432,31 +854,6 @@ export default class Engine {
 				this.tileTypes[i] = tileTypeTemp;
 				this.tileSides[i] = tileSideDirTemp;
 				this.tileIndeces[i] = tileIndex;
-
-				if (this.portalTileIndeces?.[0] === tileIndex && this.portalTileSides?.[0] === tileSideDirTemp) {
-					this.setRayFromPortal(
-						i,
-						closest[0],
-						closest[1],
-						this.portalTileIndeces[1],
-						this.portalTileSides[1],
-						tileSideDirTemp,
-						adjustedAngle
-					);
-				} else if (
-					this.portalTileIndeces?.[1] === tileIndex &&
-					this.portalTileSides?.[1] === tileSideDirTemp
-				) {
-					this.setRayFromPortal(
-						i,
-						closest[0],
-						closest[1],
-						this.portalTileIndeces[0],
-						this.portalTileSides[0],
-						tileSideDirTemp,
-						adjustedAngle
-					);
-				} else this.totalPortalRayLengths[i] = 0;
 			} else this.rayLengths[i] = 0;
 
 			// Draw rays on debug canvas
@@ -1623,70 +1020,6 @@ export default class Engine {
 		return;
 	}
 
-	handlePortalCollision(portalNum) {
-		const portalNumOut = portalNum === 0 ? 1 : 0;
-		const xStartOut = this.TILE_SIZE * (this.portalTileIndeces[portalNumOut] % this.mapCols);
-		const yStartOut = this.TILE_SIZE * ~~(this.portalTileIndeces[portalNumOut] / this.mapCols);
-
-		let offset;
-		let newPlayerX = null;
-		let newPlayerY = null;
-		switch (this.portalTileSides[portalNum]) {
-			case 0:
-				offset = this.TILE_SIZE - (this.fPlayerX & (this.TILE_SIZE - 1));
-				break;
-			case 1:
-				offset = this.TILE_SIZE - (this.fPlayerY & (this.TILE_SIZE - 1));
-				break;
-			case 2:
-				offset = this.fPlayerX & (this.TILE_SIZE - 1);
-				break;
-			case 3:
-				offset = this.fPlayerY & (this.TILE_SIZE - 1);
-				break;
-		}
-
-		switch (this.portalTileSides[portalNumOut]) {
-			case 0:
-				newPlayerX = xStartOut + offset;
-				newPlayerY = yStartOut;
-				break;
-			case 1:
-				newPlayerX = xStartOut + this.TILE_SIZE;
-				newPlayerY = yStartOut + offset;
-				break;
-			case 2:
-				newPlayerX = xStartOut + this.TILE_SIZE - offset;
-				newPlayerY = yStartOut + this.TILE_SIZE;
-				break;
-			case 3:
-				newPlayerX = xStartOut;
-				newPlayerY = yStartOut + this.TILE_SIZE - offset;
-				break;
-		}
-
-		if (newPlayerX && newPlayerY) {
-			this.fPlayerX = newPlayerX;
-			this.fPlayerY = newPlayerY;
-
-			const tileSideDiff = this.portalTileSides[portalNum] - this.portalTileSides[portalNumOut];
-			const tileSideDiffSign = tileSideDiff >= 0 ? 1 : -1;
-			let portalInAng = degToRad(this.fPlayerAngle);
-			let portalOutAng;
-
-			if (tileSideDiff === 0) portalOutAng = portalInAng + this.pi;
-			else if (Math.abs(tileSideDiff) === 1) {
-				portalOutAng = portalInAng + (this.pi / 2) * tileSideDiffSign;
-			} else if (Math.abs(tileSideDiff) === 2) {
-				portalOutAng = portalInAng;
-			} else if (Math.abs(tileSideDiff) === 3) {
-				portalOutAng = portalInAng - (this.pi / 2) * tileSideDiffSign;
-			}
-
-			this.fPlayerAngle = radToDeg(portalOutAng);
-		}
-	}
-
 	getXspeed = () => this.fPlayerMoveSpeed * Math.cos(degToRad(this.fPlayerMoveDir));
 
 	getYspeed = () => this.fPlayerMoveSpeed * Math.sin(degToRad(this.fPlayerMoveDir));
@@ -1746,22 +1079,6 @@ export default class Engine {
 								if (playerWallTileDiffCol > 0 && (moveDir > 270 || moveDir < 90)) break loop1;
 								else if (playerWallTileDiffCol < 0 && moveDir < 270 && moveDir > 90) break loop1;
 
-								const intersectSide = playerWallTileDiffCol > 0 ? 1 : 3;
-								if (
-									this.portalTileIndeces[1] >= 0 &&
-									tileIndex === this.portalTileIndeces[0] &&
-									this.portalTileSides[0] === intersectSide
-								) {
-									this.handlePortalCollision(0);
-									return;
-								} else if (
-									this.portalTileIndeces[0] >= 0 &&
-									tileIndex === this.portalTileIndeces[1] &&
-									this.portalTileSides[1] === intersectSide
-								) {
-									this.handlePortalCollision(1);
-									return;
-								}
 								newPlayerY = this.fPlayerY + this.getYspeed();
 							} else if (angleToWallCenter >= 45 && angleToWallCenter < 90) {
 								// On top or bottom of wall
@@ -1769,22 +1086,6 @@ export default class Engine {
 								if (playerWallTileDiffRow > 0 && moveDir > 0 && moveDir < 180) break loop1;
 								else if (playerWallTileDiffRow < 0 && moveDir > 180 && moveDir < 360) break loop1;
 
-								const intersectSide = playerWallTileDiffRow > 0 ? 2 : 0;
-								if (
-									this.portalTileIndeces[1] >= 0 &&
-									tileIndex === this.portalTileIndeces[0] &&
-									this.portalTileSides[0] === intersectSide
-								) {
-									this.handlePortalCollision(0);
-									return;
-								} else if (
-									this.portalTileIndeces[0] >= 0 &&
-									tileIndex === this.portalTileIndeces[1] &&
-									this.portalTileSides[1] === intersectSide
-								) {
-									this.handlePortalCollision(1);
-									return;
-								}
 								newPlayerX = this.fPlayerX + this.getXspeed();
 							}
 						}
@@ -1920,7 +1221,7 @@ export default class Engine {
 		if (maps[i]?.objects?.length) {
 			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
 			this.objects = maps[i].objects;
-		}
+		} else this.objects = [];
 
 		if (maps[i]?.thinWalls?.length) {
 			this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
@@ -1953,7 +1254,7 @@ export default class Engine {
 					isOpen: wall.isOpen,
 				};
 			});
-		}
+		} else this.thinWalls = [];
 
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapNum = i;
@@ -1964,7 +1265,6 @@ export default class Engine {
 		this.mapHeight = this.TILE_SIZE * this.mapRows;
 		this.fPlayerX = this.fPlayerX;
 		this.fPlayerY = this.fPlayerY;
-		this.portalTileIndeces.fill(-1);
 
 		if (this.DEBUG && this.debugCanvas) {
 			this.debugCanvas.width = this.mapWidth;
@@ -2032,15 +1332,6 @@ export default class Engine {
 		if (this.isJumping) this.jump();
 		if (this.isCrouching) this.crouch();
 		if (this.isStanding) this.stand();
-
-		if (this.portalSizeMultipliers[0] < 1) {
-			this.portalSizeMultipliers[0] += 0.02 * this.fGameSpeed;
-			if (this.portalSizeMultipliers[0] >= 1) this.portalSizeMultipliers[0] = 1;
-		}
-		if (this.portalSizeMultipliers[1] < 1) {
-			this.portalSizeMultipliers[1] += 0.02 * this.fGameSpeed;
-			if (this.portalSizeMultipliers[1] >= 1) this.portalSizeMultipliers[1] = 1;
-		}
 
 		this.move();
 		if (this.DEBUG) this.draw2d();
