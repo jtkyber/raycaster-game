@@ -39,14 +39,14 @@ export default class Engine {
 		this.fThinWallTextureBufferList;
 		this.fThinWallTexturePixelsList;
 
-		this.objects;
+		this.objects = [];
 		this.objectRefs = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectOffsets = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectRayLengths = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsX = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsY = new Array(this.PROJECTIONPLANEWIDTH);
 
-		this.thinWalls;
+		this.thinWalls = [];
 		this.thinWallRefs = new Array(this.PROJECTIONPLANEWIDTH);
 		this.thinWallOffsets = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.thinWallRayLengths = new Uint16Array(this.PROJECTIONPLANEWIDTH);
@@ -1916,38 +1916,44 @@ export default class Engine {
 
 		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
 		this.onFloorTextureLoaded(maps[i].floorTextures);
-		this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
-		this.objects = maps[i].objects;
-		this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
-		this.thinWalls = maps[i].thinWalls.map(wall => {
-			let xStartTemp = wall.colStart * this.TILE_SIZE;
-			let yStartTemp = wall.rowStart * this.TILE_SIZE;
-			let xEndTemp = wall.colEnd * this.TILE_SIZE;
-			let yEndTemp = wall.rowEnd * this.TILE_SIZE;
 
-			if (yStartTemp < yEndTemp) {
-				xStartTemp += this.TILE_SIZE / 2;
-				xEndTemp += this.TILE_SIZE / 2;
-			} else if (yEndTemp < yStartTemp) {
-				xStartTemp += this.TILE_SIZE / 2;
-				xEndTemp += this.TILE_SIZE / 2;
-			} else if (xStartTemp < xEndTemp) {
-				yStartTemp += this.TILE_SIZE / 2;
-				yEndTemp += this.TILE_SIZE / 2;
-			} else if (xEndTemp < xStartTemp) {
-				yStartTemp += this.TILE_SIZE / 2;
-				yEndTemp += this.TILE_SIZE / 2;
-			}
+		if (maps[i]?.objects?.length) {
+			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
+			this.objects = maps[i].objects;
+		}
 
-			return {
-				texture: wall.texture,
-				xStart: xStartTemp,
-				yStart: yStartTemp,
-				xEnd: xEndTemp,
-				yEnd: yEndTemp,
-				isOpen: wall.isOpen,
-			};
-		});
+		if (maps[i]?.thinWalls?.length) {
+			this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
+			this.thinWalls = maps[i].thinWalls.map(wall => {
+				let xStartTemp = wall.colStart * this.TILE_SIZE;
+				let yStartTemp = wall.rowStart * this.TILE_SIZE;
+				let xEndTemp = wall.colEnd * this.TILE_SIZE;
+				let yEndTemp = wall.rowEnd * this.TILE_SIZE;
+
+				if (yStartTemp < yEndTemp) {
+					xStartTemp += this.TILE_SIZE / 2;
+					xEndTemp += this.TILE_SIZE / 2;
+				} else if (yEndTemp < yStartTemp) {
+					xStartTemp += this.TILE_SIZE / 2;
+					xEndTemp += this.TILE_SIZE / 2;
+				} else if (xStartTemp < xEndTemp) {
+					yStartTemp += this.TILE_SIZE / 2;
+					yEndTemp += this.TILE_SIZE / 2;
+				} else if (xEndTemp < xStartTemp) {
+					yStartTemp += this.TILE_SIZE / 2;
+					yEndTemp += this.TILE_SIZE / 2;
+				}
+
+				return {
+					texture: wall.texture,
+					xStart: xStartTemp,
+					yStart: yStartTemp,
+					xEnd: xEndTemp,
+					yEnd: yEndTemp,
+					isOpen: wall.isOpen,
+				};
+			});
+		}
 
 		this.map = new Uint8Array(maps[i].map.flat());
 		this.mapNum = i;
