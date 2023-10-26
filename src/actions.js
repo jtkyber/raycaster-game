@@ -4,23 +4,107 @@ import { maps } from './maps.js';
 export default class Actions {
 	constructor(engine) {
 		this.engine = engine;
+		this.minUseDist = 120;
 	}
 
-	openDoor() {
+	openDoor(rowFound, colFound, tileIndex) {
 		const engine = this.engine;
+		engine.map[rowFound * engine.mapCols + colFound] = 2;
+		engine.levelTransition = true;
 
-		if (!engine.reticleOnWall) return;
-		let tileTypeTemp = 0;
-		let tileIndex = 0;
-		let closest = null;
+		const newTileIndex = engine.doorMap[tileIndex].indexTo;
+		const newTileSide = engine.doorMap[tileIndex].side;
+		const newMapNum = engine.doorMap[tileIndex].mapTo;
+		const newMapCols = maps[newMapNum].map[0].length;
+		let x = engine.TILE_SIZE * (newTileIndex % newMapCols);
+		let y = engine.TILE_SIZE * Math.floor(newTileIndex / newMapCols);
+		let newPlayerAngle = 0;
+		const offset = 20;
+
+		switch (newTileSide) {
+			case 0:
+				x = x + engine.TILE_SIZE / 2;
+				y = y - offset;
+				newPlayerAngle = 270;
+				break;
+			case 1:
+				x = x + engine.TILE_SIZE + offset;
+				y = y + engine.TILE_SIZE / 2;
+				newPlayerAngle = 0;
+				break;
+			case 2:
+				x = x + engine.TILE_SIZE / 2;
+				y = y + engine.TILE_SIZE + offset;
+				newPlayerAngle = 90;
+				break;
+			case 3:
+				x = x - engine.TILE_SIZE - offset;
+				y = y + engine.TILE_SIZE / 2;
+				newPlayerAngle = 180;
+				break;
+		}
+
+		const interval = setInterval(() => {
+			if (!engine.levelTransition) {
+				engine.fPlayerX = x;
+				engine.fPlayerY = y;
+				engine.fPlayerAngle = newPlayerAngle;
+				engine.setNewMapData(newMapNum);
+				clearInterval(interval);
+			}
+		}, 50);
+	}
+
+	checkThinWalls() {
+		const engine = this.engine;
 		let record = Infinity;
+		let thinWallIndex = null;
+
+		for (let i = 0; i < engine.thinWalls.length; i++) {
+			const intersection = getIntersection(
+				engine.fPlayerX,
+				engine.fPlayerY,
+				1,
+				degToRad(engine.fPlayerAngle),
+				engine.thinWalls[i].xStart,
+				engine.thinWalls[i].yStart,
+				engine.thinWalls[i].xEnd,
+				engine.thinWalls[i].yEnd
+			);
+
+			if (intersection?.[0]) {
+				const dx = Math.abs(engine.fPlayerX - intersection[0]);
+				const dy = Math.abs(engine.fPlayerY - intersection[1]);
+				const d = Math.sqrt(dx * dx + dy * dy);
+				record = Math.min(d, record);
+
+				if (d <= record) {
+					record = d;
+					thinWallIndex = i;
+				}
+			}
+		}
+
+		if (record < this.minUseDist) {
+			return {
+				record: record,
+				index: thinWallIndex,
+			};
+		}
+	}
+
+	checkDoors() {
+		const engine = this.engine;
+		if (!engine.reticleOnWall) return;
+		let record = Infinity;
+		let rowFound = null;
+		let colFound = null;
+		let tileIndex = null;
 
 		let adjustedAngle = engine.fPlayerAngle;
 		if (adjustedAngle < 0) adjustedAngle += 360;
 		const playerQuadrant = Math.floor(adjustedAngle / 90);
 		const sidesToCheck = engine.getSidesToCheck(playerQuadrant);
-		let rowFound;
-		let colFound;
 
 		for (let row = 0; row < engine.mapRows; row++) {
 			for (let col = 0; col < engine.mapCols; col++) {
@@ -39,60 +123,46 @@ export default class Actions {
 				if (tileIntersection.record < record) {
 					tileIndex = row * engine.mapCols + col;
 					record = tileIntersection.record;
-					closest = tileIntersection.closest;
-
-					tileTypeTemp = tile;
 					rowFound = row;
 					colFound = col;
 				}
 			}
 		}
 
-		if (engine.doorMap[tileIndex] && record < 120) {
-			engine.map[rowFound * engine.mapCols + colFound] = 2;
-			engine.levelTransition = true;
+		if (engine.doorMap[tileIndex] && record < this.minUseDist) {
+			return {
+				record: record,
+				rowFound: rowFound,
+				colFound: colFound,
+				tileIndex: tileIndex,
+			};
+		}
+		return;
+	}
 
-			const newTileIndex = engine.doorMap[tileIndex].indexTo;
-			const newTileSide = engine.doorMap[tileIndex].side;
-			const newMapNum = engine.doorMap[tileIndex].mapTo;
-			const newMapCols = maps[newMapNum].map[0].length;
-			let x = engine.TILE_SIZE * (newTileIndex % newMapCols);
-			let y = engine.TILE_SIZE * Math.floor(newTileIndex / newMapCols);
-			let newPlayerAngle = 0;
-			const offset = 20;
+	handleUseBtn() {
+		let record = Infinity;
+		let action = '';
 
-			switch (newTileSide) {
-				case 0:
-					x = x + engine.TILE_SIZE / 2;
-					y = y - offset;
-					newPlayerAngle = 270;
-					break;
-				case 1:
-					x = x + engine.TILE_SIZE + offset;
-					y = y + engine.TILE_SIZE / 2;
-					newPlayerAngle = 0;
-					break;
-				case 2:
-					x = x + engine.TILE_SIZE / 2;
-					y = y + engine.TILE_SIZE + offset;
-					newPlayerAngle = 90;
-					break;
-				case 3:
-					x = x - engine.TILE_SIZE - offset;
-					y = y + engine.TILE_SIZE / 2;
-					newPlayerAngle = 180;
-					break;
-			}
+		const doorData = this.checkDoors();
+		if (doorData?.record < record) {
+			record = doorData.record;
+			action = 'openDoor';
+		}
 
-			const interval = setInterval(() => {
-				if (!engine.levelTransition) {
-					engine.fPlayerX = x;
-					engine.fPlayerY = y;
-					engine.fPlayerAngle = newPlayerAngle;
-					engine.setNewMapData(newMapNum);
-					clearInterval(interval);
-				}
-			}, 50);
+		const thinWallData = this.checkThinWalls();
+		if (thinWallData?.record < record) {
+			record = thinWallData.record;
+			action = 'operateThinWall';
+		}
+
+		switch (action) {
+			case 'openDoor':
+				this.openDoor(doorData.rowFound, doorData.colFound, doorData.tileIndex);
+				break;
+			case 'operateThinWall':
+				this.engine.activeThinWallId = thinWallData.index;
+				break;
 		}
 	}
 
@@ -173,7 +243,7 @@ export default class Actions {
 			}
 
 			if (e.code === 'KeyE') {
-				this.openDoor();
+				this.handleUseBtn();
 			}
 		});
 	}

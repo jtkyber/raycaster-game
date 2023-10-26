@@ -39,9 +39,36 @@ export const maps = [
                 rowEnd: 3,
                 colEnd: 15,
                 isOpen: false,
+                operation: 'door'
+            },
+            {
+                texture: 'test2',
+                rowStart: 11,
+                colStart: 15,
+                rowEnd: 13,
+                colEnd: 15,
+                isOpen: false,
+            },
+            {
+                texture: 'test',
+                rowStart: 6,
+                colStart: 2,
+                rowEnd: 6,
+                colEnd: 1,
+                isOpen: false,
             },
         ],
         objects: [
+            {
+                type: 'barrel',
+                x: 1420,
+                y: 100
+            },
+            {
+                type: 'barrel',
+                x: 1420,
+                y: 280
+            },
             {
                 type: 'barrel',
                 x: 940,
@@ -333,4 +360,5 @@ export const texturePaths = [
 	'src/assets/objects/table.png',
 	// Thin Walls
 	'src/assets/thinWalls/test.png',
+	'src/assets/thinWalls/test2.png',
 ];

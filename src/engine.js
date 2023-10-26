@@ -53,6 +53,8 @@ export default class Engine {
 		this.thinWallCollisionsX = new Float32Array(this.PROJECTIONPLANEWIDTH);
 		this.thinWallCollisionsY = new Float32Array(this.PROJECTIONPLANEWIDTH);
 
+		this.activeThinWallId = null;
+
 		this.bytesPerPixel = 4;
 		this.pi = Math.PI;
 
@@ -434,14 +436,15 @@ export default class Engine {
 			const blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness;
 			const alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
 
-			// Blend pixel color values with transparent thin wall color values
-			const redBlend = (alpha / 255) * red + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex];
-			const greenBlend =
-				(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
-			const blueBlend =
-				(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
-
 			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
+				// Blend pixel color values with transparent thin wall color values
+				const redBlend =
+					(alpha / 255) * red + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex];
+				const greenBlend =
+					(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
+				const blueBlend =
+					(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
+
 				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
 				this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
@@ -1178,6 +1181,8 @@ export default class Engine {
 
 				return {
 					texture: wall.texture,
+					xStartOriginal: xStartTemp,
+					yStartOriginal: yStartTemp,
 					xStart: xStartTemp,
 					yStart: yStartTemp,
 					xEnd: xEndTemp,
@@ -1256,6 +1261,55 @@ export default class Engine {
 		}
 	}
 
+	operateThinWall(i) {
+		const thinWall = this.thinWalls[i];
+		const slideSpeed = this.fGameSpeed / 2;
+
+		if (thinWall.xEnd - thinWall.xStart !== 0) {
+			const length = Math.abs(thinWall.xEnd - thinWall.xStart);
+			const moveDir = thinWall.xEnd > thinWall.xStart ? 1 : -1;
+
+			if (!thinWall.isOpen) {
+				this.thinWalls[i].xStart -= slideSpeed * moveDir;
+				this.thinWalls[i].xEnd -= slideSpeed * moveDir;
+				if (Math.abs(this.thinWalls[i].xStart - this.thinWalls[i].xStartOriginal) >= length - 14) {
+					this.activeThinWallId = null;
+					this.thinWalls[i].isOpen = true;
+					this.thinWalls[i].xStart = this.thinWalls[i].xStartOriginal - (length - 14) * moveDir;
+				}
+			} else {
+				this.thinWalls[i].xStart += slideSpeed * moveDir;
+				this.thinWalls[i].xEnd += slideSpeed * moveDir;
+				if (Math.abs(this.thinWalls[i].xEnd - this.thinWalls[i].xStartOriginal) >= length) {
+					this.activeThinWallId = null;
+					this.thinWalls[i].isOpen = false;
+					this.thinWalls[i].xStart = this.thinWalls[i].xStartOriginal;
+				}
+			}
+		} else {
+			const length = Math.abs(thinWall.yEnd - thinWall.yStart);
+			const moveDir = thinWall.yEnd > thinWall.yStart ? 1 : -1;
+
+			if (!thinWall.isOpen) {
+				this.thinWalls[i].yStart -= slideSpeed * moveDir;
+				this.thinWalls[i].yEnd -= slideSpeed * moveDir;
+				if (Math.abs(this.thinWalls[i].yStart - this.thinWalls[i].yStartOriginal) >= length - 14) {
+					this.activeThinWallId = null;
+					this.thinWalls[i].isOpen = true;
+					this.thinWalls[i].yStart = this.thinWalls[i].yStartOriginal - (length - 14) * moveDir;
+				}
+			} else {
+				this.thinWalls[i].yStart += slideSpeed * moveDir;
+				this.thinWalls[i].yEnd += slideSpeed * moveDir;
+				if (Math.abs(this.thinWalls[i].yEnd - this.thinWalls[i].yStartOriginal) >= length) {
+					this.activeThinWallId = null;
+					this.thinWalls[i].isOpen = false;
+					this.thinWalls[i].yStart = this.thinWalls[i].yStartOriginal;
+				}
+			}
+		}
+	}
+
 	update() {
 		if (this.DEBUG && this.debugCtx)
 			this.debugCtx.clearRect(0, 0, this.debugCanvasWidth, this.debugCanvasHeight);
@@ -1263,6 +1317,7 @@ export default class Engine {
 		if (this.isJumping) this.jump();
 		if (this.isCrouching) this.crouch();
 		if (this.isStanding) this.stand();
+		if (this.activeThinWallId !== null) this.operateThinWall(this.activeThinWallId);
 
 		this.move();
 		if (this.DEBUG) this.draw2d();
