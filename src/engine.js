@@ -570,6 +570,14 @@ export default class Engine {
 				const thinWallTop = thinWallBottom - thinWallScale;
 				const thinWallHeight = thinWallBottom - thinWallTop;
 
+				if (
+					i === this.PROJECTIONPLANEWIDTH / 2 &&
+					thinWallTop <= this.PROJECTIONPLANEHEIGHT / 2 &&
+					thinWallBottom >= this.PROJECTIONPLANEHEIGHT / 2
+				) {
+					this.reticleOnWall = true;
+				} else if (i === this.PROJECTIONPLANEWIDTH / 2) this.reticleOnWall = false;
+
 				this.drawThinWallStrip(
 					i,
 					Math.floor(thinWallTop),

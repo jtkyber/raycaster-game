@@ -57,6 +57,8 @@ export default class Actions {
 
 	checkThinWalls() {
 		const engine = this.engine;
+		if (!engine.reticleOnWall) return;
+
 		let record = Infinity;
 		let thinWallIndex = null;
 
