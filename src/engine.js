@@ -81,7 +81,7 @@ export default class Engine {
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
 		this.fPlayerX = 100;
-		this.fPlayerY = 1200;
+		this.fPlayerY = 100;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
