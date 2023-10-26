@@ -81,7 +81,7 @@ export default class Engine {
 		this.fProjectionPlaneYCenter = this.PROJECTIONPLANEHEIGHT / 2;
 
 		this.fPlayerX = 100;
-		this.fPlayerY = 100;
+		this.fPlayerY = 1200;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
 		this.fPlayerFov = 60;
@@ -1250,12 +1250,12 @@ export default class Engine {
 
 	fade() {
 		if (this.levelTransition) {
-			if (this.levelTransitionFadeAmt < 1) this.levelTransitionFadeAmt += 0.05;
+			if (this.levelTransitionFadeAmt < 1) this.levelTransitionFadeAmt += this.fGameSpeed / 80;
 			else this.levelTransition = false;
 			this.ctx.fillStyle = `rgba(0, 0, 0, ${this.levelTransitionFadeAmt})`;
 			this.ctx.fillRect(0, 0, this.PROJECTIONPLANEWIDTH, this.PROJECTIONPLANEHEIGHT);
 		} else if (this.levelTransitionFadeAmt > 0) {
-			this.levelTransitionFadeAmt -= 0.05;
+			this.levelTransitionFadeAmt -= this.fGameSpeed / 80;
 			this.ctx.fillStyle = `rgba(0, 0, 0, ${this.levelTransitionFadeAmt})`;
 			this.ctx.fillRect(0, 0, this.PROJECTIONPLANEWIDTH, this.PROJECTIONPLANEHEIGHT);
 		}
