@@ -5,6 +5,7 @@ export default class Actions {
 	constructor(engine) {
 		this.engine = engine;
 		this.minUseDist = 120;
+		this.keysPressed = [];
 	}
 
 	openDoor(rowFound, colFound, tileIndex) {
@@ -191,6 +192,19 @@ export default class Actions {
 		});
 
 		document.addEventListener('keydown', e => {
+			if (!this.keysPressed.includes(e.code)) {
+				this.keysPressed.push(e.code);
+				if (
+					!(
+						this.keysPressed.includes('ControlLeft') &&
+						this.keysPressed.includes('ShiftLeft') &&
+						this.keysPressed.includes('KeyI')
+					)
+				) {
+					e.preventDefault();
+				}
+			}
+
 			if (e.code === 'KeyW') {
 				engine.fKeyForward = true;
 				engine.fKeyBack = false;
@@ -223,6 +237,26 @@ export default class Actions {
 		});
 
 		document.addEventListener('keyup', e => {
+			e.preventDefault();
+
+			const index = this.keysPressed.indexOf(e.code);
+			if (index > -1) this.keysPressed.splice(index, 1);
+
+			if (e.code === 'Tab') {
+				if (this.engine.inventoryOpen) {
+					this.engine.inventoryOpen = false;
+					this.engine.lockPointer();
+				} else {
+					this.engine.inventoryOpen = true;
+					document.exitPointerLock();
+				}
+
+				this.engine.fKeyForward = false;
+				this.engine.fKeyBack = false;
+				this.engine.fKeyLeft = false;
+				this.engine.fKeyRight = false;
+			}
+
 			if (!engine.userIsInTab && !engine.DEBUG) return;
 
 			if (e.code === 'KeyW') {

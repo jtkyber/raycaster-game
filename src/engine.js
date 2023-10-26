@@ -1,12 +1,12 @@
 import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/calc.js';
-import { maps, texturePaths } from './maps.js';
+import { itemNames, maps, texturePaths } from './maps.js';
 
 export default class Engine {
 	constructor() {
 		this.canvas = document.getElementById('canvas');
 		this.canvasWidth = this.canvas.width;
 		this.canvasHeight = this.canvas.height;
-		this.ctx = this.canvas.getContext('2d', { alpha: false });
+		this.ctx = this.canvas.getContext('2d', { alpha: true });
 
 		this.offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
 		this.offscreenCanvasContext = this.offscreenCanvas.getContext('2d', { alpha: false });
@@ -38,6 +38,9 @@ export default class Engine {
 
 		this.fThinWallTextureBufferList;
 		this.fThinWallTexturePixelsList;
+
+		this.itemImages = [];
+		this.itemNames = itemNames;
 
 		this.objects = [];
 		this.objectRefs = new Array(this.PROJECTIONPLANEWIDTH);
@@ -144,8 +147,38 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
+		this.inventoryOpen = true;
+		this.inventory = [
+			{
+				itemId: 0,
+				name: 'apple',
+				slotIdStartCol: 0,
+				slotIdStartRow: 0,
+				slotCols: 1,
+				slotRows: 1,
+			},
+			{
+				itemId: 2,
+				name: 'barrelItem',
+				slotIdStartCol: 0,
+				slotIdStartRow: 1,
+				slotCols: 3,
+				slotRows: 3,
+			},
+		];
+		/*
+			{
+				itemId: number
+				name: string
+				slotIdStartX: number
+				slotIdStartY: number
+				slotsW: number,
+				slotsH: number,
+			}
+		*/
+
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 		this.consoleValues = [];
 	}
 
@@ -1152,6 +1185,16 @@ export default class Engine {
 		}
 	}
 
+	onItemTexturesLoaded(imgNames) {
+		this.fThinWallTextureBufferList = new Array(imgNames.length);
+		this.fThinWallTexturePixelsList = new Array(imgNames.length);
+
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.itemImages[i] = img;
+		}
+	}
+
 	setNewMapData(i = this.mapNum) {
 		this.onWallTextureLoaded(maps[i].wallTextures);
 		this.onPaintingTexturesLoaded(maps[i].paintings);
@@ -1159,6 +1202,8 @@ export default class Engine {
 
 		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
 		this.onFloorTextureLoaded(maps[i].floorTextures);
+
+		this.onItemTexturesLoaded(this.itemNames);
 
 		if (maps[i]?.objects?.length) {
 			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
@@ -1327,7 +1372,7 @@ export default class Engine {
 		if (this.isStanding) this.stand();
 		if (this.activeThinWallId !== null) this.operateThinWall(this.activeThinWallId);
 
-		this.move();
+		if (!this.inventoryOpen) this.move();
 		if (this.DEBUG) this.draw2d();
 		this.raycaster();
 		this.draw3d();
@@ -1378,6 +1423,30 @@ export default class Engine {
 		this.setNewMapData();
 	}
 
+	lockPointer() {
+		if (!this.userIsInTab && !this.DEBUG) {
+			this.canvas.requestPointerLock =
+				this.canvas.requestPointerLock ||
+				this.canvas.mozRequestPointerLock ||
+				this.canvas.webkitRequestPointerLock;
+
+			const promise = this.canvas.requestPointerLock({ unadjustedMovement: true });
+
+			if (!promise) {
+				console.log('Disabling mouse acceleration is not supported');
+				return this.canvas.requestPointerLock();
+			}
+
+			return promise
+				.then(() => console.log('Pointer is locked'))
+				.catch(err => {
+					if (err.name === 'NotSupportedError') {
+						return this.canvas.requestPointerLock();
+					}
+				});
+		}
+	}
+
 	async init() {
 		await this.preloadTextures();
 		this.setAngles();
@@ -1408,27 +1477,7 @@ export default class Engine {
 		);
 
 		document.addEventListener('mousedown', () => {
-			if (!this.userIsInTab && !this.DEBUG) {
-				this.canvas.requestPointerLock =
-					this.canvas.requestPointerLock ||
-					this.canvas.mozRequestPointerLock ||
-					this.canvas.webkitRequestPointerLock;
-
-				const promise = this.canvas.requestPointerLock({ unadjustedMovement: true });
-
-				if (!promise) {
-					console.log('Disabling mouse acceleration is not supported');
-					return this.canvas.requestPointerLock();
-				}
-
-				return promise
-					.then(() => console.log('Pointer is locked'))
-					.catch(err => {
-						if (err.name === 'NotSupportedError') {
-							return this.canvas.requestPointerLock();
-						}
-					});
-			}
+			if (!this.inventoryOpen) this.lockPointer();
 		});
 
 		document.addEventListener('contextmenu', e => e.preventDefault());

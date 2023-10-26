@@ -67,11 +67,6 @@ export const maps = [
                 y: 80
             },
             {
-                type: 'note',
-                x: 936,
-                y: 96
-            },
-            {
                 type: 'barrel',
                 x: 410,
                 y: 820
@@ -360,9 +355,15 @@ export const texturePaths = [
 	'src/assets/objects/barrel.png',
 	'src/assets/objects/redbull.png',
 	'src/assets/objects/elmo.png',
-	'src/assets/objects/note.png',
 	'src/assets/objects/table.png',
 	// Thin Walls
 	'src/assets/thinWalls/test.png',
 	'src/assets/thinWalls/test2.png',
+	// Items
+	'src/assets/items/apple.png',
+	'src/assets/items/stand.png',
+	'src/assets/items/note.png',
+	'src/assets/items/barrelItem.png',
 ];
+
+export const itemNames = ['apple', 'note', 'barrelItem'];
