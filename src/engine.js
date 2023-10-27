@@ -40,7 +40,7 @@ export default class Engine {
 		this.fThinWallTexturePixelsList;
 
 		this.fItemTextureBufferList;
-		this.fItemTextureBufferList;
+		this.fItemTexturePixelList;
 
 		this.items = [];
 		this.objects = [];
@@ -149,15 +149,23 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
+		this.inventorySlotCols = 6;
+		this.inventorySlotRows = 8;
 		this.inventoryOpen = false;
 		this.inventory = [
 			{
-				itemId: 0,
 				name: 'apple',
 				slotIdStartCol: 0,
 				slotIdStartRow: 0,
 				slotCols: 1,
 				slotRows: 1,
+			},
+			{
+				name: 'redbull',
+				slotIdStartCol: 3,
+				slotIdStartRow: 0,
+				slotCols: 1,
+				slotRows: 2,
 			},
 		];
 		/*
@@ -412,9 +420,9 @@ export default class Engine {
 			let blue = texturePixels[sourceIndex + 2] * brightness;
 			let alpha = texturePixels[sourceIndex + 3];
 			if (inReticle) {
-				red += 50;
-				green += 50;
-				blue += 50;
+				red += 70;
+				green += 70;
+				blue += 70;
 			}
 
 			while (yError >= textureBuffer.height) {
@@ -1284,12 +1292,12 @@ export default class Engine {
 		this.onFloorTextureLoaded(maps[i].floorTextures);
 
 		if (maps[i]?.items?.length) {
-			this.onItemTexturesLoaded(maps[i].items.map(item => item.type));
+			this.onItemTexturesLoaded(maps[i].items.map(item => item.name));
 			this.items = maps[i].items;
 		} else this.items = [];
 
 		if (maps[i]?.objects?.length) {
-			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.type));
+			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.name));
 			this.objects = maps[i].objects;
 		} else this.objects = [];
 

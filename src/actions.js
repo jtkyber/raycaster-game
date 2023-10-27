@@ -6,6 +6,7 @@ export default class Actions {
 		this.engine = engine;
 		this.minUseDist = 120;
 		this.keysPressed = [];
+		this.functionToRun = null;
 	}
 
 	openDoor(rowFound, colFound, tileIndex) {
@@ -179,9 +180,9 @@ export default class Actions {
 				const dx = Math.abs(engine.fPlayerX - intersection[0]);
 				const dy = Math.abs(engine.fPlayerY - intersection[1]);
 				const d = Math.sqrt(dx * dx + dy * dy);
-				record = Math.min(d, record);
 
 				if (d <= record && engine.items[i].inReticle) {
+					record = Math.min(d, record);
 					record = d;
 					ItemIndex = i;
 				}
@@ -193,6 +194,56 @@ export default class Actions {
 				record: record,
 				index: ItemIndex,
 			};
+		}
+	}
+
+	findSpotForItem(newItemIndex) {
+		const inventory = this.engine.inventory;
+		const newItemCols = this.engine.items[newItemIndex].inventoryCols;
+		const newItemRows = this.engine.items[newItemIndex].inventoryRows;
+
+		for (let j = 0; j < this.engine.inventorySlotRows; j++) {
+			loop: for (let i = 0; i < this.engine.inventorySlotCols; i++) {
+				let spaceFound = true;
+				const newItemEndCol = i + (newItemCols - 1);
+				const newItemEndRow = j + (newItemRows - 1);
+
+				if (
+					newItemEndCol > this.engine.inventorySlotCols - 1 ||
+					newItemEndRow > this.engine.inventorySlotRows - 1
+				) {
+					break loop;
+				}
+
+				for (let k = 0; k < inventory.length; k++) {
+					const endCol = inventory[k].slotIdStartCol + (inventory[k].slotCols - 1);
+					const endRow = inventory[k].slotIdStartRow + (inventory[k].slotRows - 1);
+
+					if (
+						i <= endCol &&
+						newItemEndCol >= inventory[k].slotIdStartCol &&
+						j <= endRow &&
+						newItemEndRow >= inventory[k].slotIdStartRow
+					) {
+						spaceFound = false;
+					}
+				}
+
+				if (spaceFound) {
+					this.engine.inventory.push({
+						name: this.engine.items[newItemIndex].name,
+						slotIdStartCol: i,
+						slotIdStartRow: j,
+						slotCols: newItemCols,
+						slotRows: newItemRows,
+					});
+					this.engine.items.splice(newItemIndex, 1);
+					this.engine.fItemTextureBufferList.splice(newItemIndex, 1);
+					this.engine.fItemTexturePixelsList.splice(newItemIndex, 1);
+
+					return;
+				}
+			}
 		}
 	}
 
@@ -226,9 +277,15 @@ export default class Actions {
 				this.engine.activeThinWallId = thinWallData.index;
 				break;
 			case 'grabItem':
-				console.log('Item Grabbed');
+				this.findSpotForItem(itemData.index);
 				break;
 		}
+	}
+
+	runNextFunction() {
+		if (!this.functionToRun) return;
+		this.functionToRun();
+		this.functionToRun = null;
 	}
 
 	init() {
@@ -261,7 +318,8 @@ export default class Actions {
 						this.keysPressed.includes('ControlLeft') &&
 						this.keysPressed.includes('ShiftLeft') &&
 						this.keysPressed.includes('KeyI')
-					)
+					) &&
+					!this.keysPressed.includes('F5')
 				) {
 					e.preventDefault();
 				}
@@ -341,7 +399,9 @@ export default class Actions {
 			}
 
 			if (e.code === 'KeyE') {
-				this.handleUseBtn();
+				// this.handleUseBtn();
+
+				this.functionToRun = this.handleUseBtn;
 			}
 		});
 	}

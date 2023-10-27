@@ -34,6 +34,7 @@ const gameLoop = () => {
 
 	alterOffscreenCanvasPixels();
 	drawOntoCanvas();
+	actions.runNextFunction();
 
 	deltaTime = Date.now() - timestamp;
 

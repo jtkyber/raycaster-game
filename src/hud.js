@@ -24,28 +24,23 @@ export default class Hud {
 		}
 	}
 
-	findSpotForItem() {
-		for (let i = 0; i < slotCountW; i++) {
-			for (let j = 0; j < slotCountH; j++) {}
-		}
-	}
-
 	drawInventory(clientX, clientY) {
 		const inventory = this.engine.inventory;
 		const ctx = this.ctx;
 		const slotSize = ~~(this.canvasWidth / 20);
-		const slotCountW = 8;
-		const slotCountH = 8;
-		const inventoryW = slotCountW * slotSize;
-		const inventoryH = slotCountH * slotSize;
+		const inventoryW = this.engine.inventorySlotCols * slotSize;
+		const inventoryH = this.engine.inventorySlotRows * slotSize;
 		const inventoryStartW = this.canvasWidth / 2 - inventoryW / 2;
 		const inventoryStartH = this.canvasHeight / 2 - inventoryH / 2;
 
 		ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
 		ctx.lineWidth = 1;
 		ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-		for (let i = 0; i < slotCountW; i++) {
-			for (let j = 0; j < slotCountH; j++) {
+		ctx.beginPath();
+		ctx.fillRect(inventoryStartW, inventoryStartH, inventoryW, inventoryH);
+		for (let i = 0; i < this.engine.inventorySlotCols; i++) {
+			for (let j = 0; j < this.engine.inventorySlotRows; j++) {
+				ctx.beginPath();
 				const slotX = i * slotSize + inventoryStartW;
 				const slotY = j * slotSize + inventoryStartH;
 
@@ -64,9 +59,7 @@ export default class Hud {
 						const newH = img.height * scaleFactor - 4;
 						const x = slotX + (slotSize * slotCols) / 2 - newW / 2;
 						const y = slotY + (slotSize * slotRows) / 2 - newH / 2;
-						ctx.beginPath();
 						ctx.rect(slotX, slotY, slotSize * slotCols, slotSize * slotRows);
-						ctx.fill();
 						ctx.stroke();
 						ctx.drawImage(img, x, y, newW, newH);
 					}
@@ -84,7 +77,6 @@ export default class Hud {
 				if (!slotFilled) {
 					ctx.beginPath();
 					ctx.rect(slotX, slotY, slotSize, slotSize);
-					ctx.fill();
 					ctx.stroke();
 				}
 			}
@@ -118,6 +110,7 @@ export default class Hud {
 
 	drawReticle() {
 		this.ctx.fillStyle = 'rgb(255, 255, 255)';
+		this.ctx.beginPath();
 		this.ctx.ellipse(
 			~~(this.canvasWidth / 2),
 			~~(this.canvasHeight / 2),

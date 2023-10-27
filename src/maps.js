@@ -52,58 +52,80 @@ export const maps = [
         ],
         items: [
             {
-                type: 'apple',
+                name: 'apple',
                 x: 300,
                 y: 220,
                 category: 'food',
-                inReticle: false
+                inReticle: false,
+                inventoryCols: 1,
+                inventoryRows: 1,
             },
             {
-                type: 'note',
+                name: 'note',
                 x: 950,
                 y: 90,
                 category: 'note',
-                inReticle: false
+                inReticle: false,
+                inventoryCols: 1,
+                inventoryRows: 1,
+            },
+            {
+                name: 'pickaxe',
+                x: 400,
+                y: 90,
+                category: 'tool',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 3,
+            },
+            {
+                name: 'bread',
+                x: 500,
+                y: 170,
+                category: 'food',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 1,
             }
         ],
         objects: [
             {
-                type: 'barrel',
+                name: 'barrel',
                 x: 1420,
                 y: 100
             },
             {
-                type: 'barrel',
+                name: 'barrel',
                 x: 1420,
                 y: 280
             },
             {
-                type: 'barrel',
+                name: 'barrel',
                 x: 940,
                 y: 80
             },
             {
-                type: 'barrel',
+                name: 'barrel',
                 x: 410,
                 y: 820
             },
             {
-                type: 'barrel',
+                name: 'barrel',
                 x: 546,
                 y: 820
             },
             {
-                type: 'table',
+                name: 'table',
                 x: 1370,
                 y: 640
             },
             {
-                type: 'table',
+                name: 'table',
                 x: 1370,
                 y: 900
             },
             {
-                type: 'table',
+                name: 'table',
                 x: 1370,
                 y: 1160
             },
@@ -217,7 +239,7 @@ export const maps = [
         ],
         objects: [
             {
-                type: 'elmo',
+                name: 'elmo',
                 x: 1042,
                 y: 86
             }
@@ -377,6 +399,8 @@ export const texturePaths = [
 	'src/assets/thinWalls/test2.png',
 	// Items
 	'src/assets/items/apple.png',
-	'src/assets/items/stand.png',
+	'src/assets/items/pickaxe.png',
 	'src/assets/items/note.png',
+	'src/assets/items/redbull.png',
+	'src/assets/items/bread.png',
 ];
