@@ -15,16 +15,14 @@ let clientY = 0;
 
 const alterOffscreenCanvasPixels = () => {
 	engine.update();
-	hud.drawReticle();
-
 	engine.ctx.putImageData(engine.offscreenCanvasPixels, 0, 0);
 };
 
 const drawOntoCanvas = () => {
+	hud.drawReticle();
 	engine.fade();
 	hud.drawFps();
 	if (engine.inventoryOpen) hud.drawInventory(clientX, clientY);
-
 	if (engine.consoleValues.length) hud.drawEngineConsole(engine.consoleValues);
 };
 
