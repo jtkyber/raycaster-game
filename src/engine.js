@@ -536,6 +536,7 @@ export default class Engine {
 				const d = Math.sqrt(dx * dx + dy * dy);
 
 				if (d <= 120) this.items[i].inReticle = true;
+				else this.items[i].inReticle = false;
 			} else this.items[i].inReticle = false;
 		}
 
