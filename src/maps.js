@@ -50,6 +50,22 @@ export const maps = [
                 isOpen: false,
             }
         ],
+        items: [
+            {
+                type: 'apple',
+                x: 300,
+                y: 220,
+                category: 'food',
+                inReticle: false
+            },
+            {
+                type: 'note',
+                x: 950,
+                y: 90,
+                category: 'note',
+                inReticle: false
+            }
+        ],
         objects: [
             {
                 type: 'barrel',
@@ -363,7 +379,4 @@ export const texturePaths = [
 	'src/assets/items/apple.png',
 	'src/assets/items/stand.png',
 	'src/assets/items/note.png',
-	'src/assets/items/barrelItem.png',
 ];
-
-export const itemNames = ['apple', 'note', 'barrelItem'];

@@ -143,6 +143,59 @@ export default class Actions {
 		return;
 	}
 
+	checkItems() {
+		const engine = this.engine;
+		let record = Infinity;
+		let ItemIndex = null;
+
+		for (let i = 0; i < engine.items.length; i++) {
+			// Get perpendicular line coords
+			const deltaY = engine.items[i].y - engine.fPlayerY;
+			const deltaX = engine.items[i].x - engine.fPlayerX;
+			const slope = deltaY / deltaX;
+			const perpSlope = -(1 / slope);
+			const angle = Math.atan(perpSlope);
+			let x1;
+			let y1;
+			let x2;
+			let y2;
+			x1 = engine.items[i].x - (engine.fItemTextureBufferList[i].width / 2) * Math.cos(angle);
+			y1 = engine.items[i].y - (engine.fItemTextureBufferList[i].width / 2) * Math.sin(angle);
+			x2 = engine.items[i].x + (engine.fItemTextureBufferList[i].width / 2) * Math.cos(angle);
+			y2 = engine.items[i].y + (engine.fItemTextureBufferList[i].width / 2) * Math.sin(angle);
+
+			const intersection = getIntersection(
+				engine.fPlayerX,
+				engine.fPlayerY,
+				1,
+				degToRad(engine.fPlayerAngle),
+				x1,
+				y1,
+				x2,
+				y2
+			);
+
+			if (intersection?.[0]) {
+				const dx = Math.abs(engine.fPlayerX - intersection[0]);
+				const dy = Math.abs(engine.fPlayerY - intersection[1]);
+				const d = Math.sqrt(dx * dx + dy * dy);
+				record = Math.min(d, record);
+
+				if (d <= record && engine.items[i].inReticle) {
+					record = d;
+					ItemIndex = i;
+				}
+			}
+		}
+
+		if (record < this.minUseDist) {
+			return {
+				record: record,
+				index: ItemIndex,
+			};
+		}
+	}
+
 	handleUseBtn() {
 		let record = Infinity;
 		let action = '';
@@ -159,12 +212,21 @@ export default class Actions {
 			action = 'operateThinWall';
 		}
 
+		const itemData = this.checkItems();
+		if (itemData?.record < record) {
+			record = itemData.record;
+			action = 'grabItem';
+		}
+
 		switch (action) {
 			case 'openDoor':
 				this.openDoor(doorData.rowFound, doorData.colFound, doorData.tileIndex);
 				break;
 			case 'operateThinWall':
 				this.engine.activeThinWallId = thinWallData.index;
+				break;
+			case 'grabItem':
+				console.log('Item Grabbed');
 				break;
 		}
 	}

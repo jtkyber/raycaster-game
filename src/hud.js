@@ -24,6 +24,12 @@ export default class Hud {
 		}
 	}
 
+	findSpotForItem() {
+		for (let i = 0; i < slotCountW; i++) {
+			for (let j = 0; j < slotCountH; j++) {}
+		}
+	}
+
 	drawInventory(clientX, clientY) {
 		const inventory = this.engine.inventory;
 		const ctx = this.ctx;
@@ -46,7 +52,8 @@ export default class Hud {
 				let slotFilled = false;
 				for (let k = 0; k < inventory.length; k++) {
 					if (inventory[k].slotIdStartCol === i && inventory[k].slotIdStartRow === j) {
-						const img = this.engine.itemImages[inventory[k].itemId];
+						const img = this.engine.textures[inventory[k].name];
+
 						const slotCols = inventory[k].slotCols;
 						const slotRows = inventory[k].slotRows;
 						const scaleFactor = Math.min(
