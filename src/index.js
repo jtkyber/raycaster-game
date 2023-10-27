@@ -10,8 +10,6 @@ const fpsInterval = 1000 / 60;
 let animationFrameId;
 let deltaTime = 0;
 let timestamp = 0;
-let clientX = 0;
-let clientY = 0;
 
 const alterOffscreenCanvasPixels = () => {
 	engine.update();
@@ -22,7 +20,7 @@ const drawOntoCanvas = () => {
 	hud.drawReticle();
 	engine.fade();
 	hud.drawFps();
-	if (engine.inventoryOpen) hud.drawInventory(clientX, clientY);
+	if (engine.inventoryOpen) hud.drawInventory();
 	if (engine.consoleValues.length) hud.drawEngineConsole(engine.consoleValues);
 };
 
@@ -35,6 +33,12 @@ const gameLoop = () => {
 	alterOffscreenCanvasPixels();
 	drawOntoCanvas();
 	actions.runNextFunction();
+
+	if (engine.inventoryOpen) hud.drawCursor();
+	else {
+		hud.cursorX = engine.canvasWidth / 2;
+		hud.cursorY = engine.canvasHeight / 2;
+	}
 
 	deltaTime = Date.now() - timestamp;
 
@@ -62,7 +66,13 @@ const setUp = async () => {
 setUp();
 
 document.onmousemove = e => {
-	if (!engine.inventoryOpen) return;
-	clientX = e.clientX;
-	clientY = e.clientY;
+	if (engine.inventoryOpen && engine.userIsInTab) {
+		const newX = hud.cursorX + e.movementX / 4;
+		const newY = hud.cursorY + e.movementY / 4;
+
+		if (newX >= 0 && newX <= engine.canvasWidth && newY >= 0 && newY <= engine.canvasHeight) {
+			hud.cursorX += e.movementX / 3;
+			hud.cursorY += e.movementY / 3;
+		}
+	}
 };

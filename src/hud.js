@@ -7,6 +7,23 @@ export default class Hud {
 		this.canvasPixels = engine.ctx.getImageData(0, 0, engine.canvasWidth, engine.canvasWidth);
 		this.showFps = true;
 		this.framesCounted = 0;
+		this.cursorX = this.canvasWidth / 2;
+		this.cursorY = this.canvasHeight / 2;
+	}
+
+	drawCursor() {
+		this.ctx.fillStyle = 'rgb(255, 0, 0)';
+		this.ctx.beginPath();
+		this.ctx.ellipse(
+			this.cursorX,
+			this.cursorY,
+			this.canvasHeight / 150,
+			this.canvasHeight / 150,
+			2 * Math.PI,
+			0,
+			2 * Math.PI
+		);
+		this.ctx.fill();
 	}
 
 	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
@@ -24,25 +41,25 @@ export default class Hud {
 		}
 	}
 
-	drawInventory(clientX, clientY) {
+	drawInventory() {
 		const inventory = this.engine.inventory;
 		const ctx = this.ctx;
 		const slotSize = ~~(this.canvasWidth / 20);
 		const inventoryW = this.engine.inventorySlotCols * slotSize;
 		const inventoryH = this.engine.inventorySlotRows * slotSize;
-		const inventoryStartW = this.canvasWidth / 2 - inventoryW / 2;
-		const inventoryStartH = this.canvasHeight / 2 - inventoryH / 2;
+		const inventoryStartX = this.canvasWidth / 2 - inventoryW / 2;
+		const inventoryStartY = this.canvasHeight / 2 - inventoryH / 2;
 
 		ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
 		ctx.lineWidth = 1;
 		ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
 		ctx.beginPath();
-		ctx.fillRect(inventoryStartW, inventoryStartH, inventoryW, inventoryH);
+		ctx.fillRect(inventoryStartX, inventoryStartY, inventoryW, inventoryH);
 		for (let i = 0; i < this.engine.inventorySlotCols; i++) {
 			for (let j = 0; j < this.engine.inventorySlotRows; j++) {
 				ctx.beginPath();
-				const slotX = i * slotSize + inventoryStartW;
-				const slotY = j * slotSize + inventoryStartH;
+				const slotX = i * slotSize + inventoryStartX;
+				const slotY = j * slotSize + inventoryStartY;
 
 				let slotFilled = false;
 				for (let k = 0; k < inventory.length; k++) {
@@ -62,6 +79,16 @@ export default class Hud {
 						ctx.rect(slotX, slotY, slotSize * slotCols, slotSize * slotRows);
 						ctx.stroke();
 						ctx.drawImage(img, x, y, newW, newH);
+						if (
+							this.cursorX >= slotX &&
+							this.cursorX <= slotX + slotSize * slotCols &&
+							this.cursorY >= slotY &&
+							this.cursorY <= slotY + slotSize * slotRows
+						) {
+							ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+							ctx.beginPath();
+							ctx.fillRect(slotX, slotY, slotSize * slotCols, slotSize * slotRows);
+						}
 					}
 
 					if (
@@ -84,7 +111,7 @@ export default class Hud {
 
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.rect(inventoryStartW, inventoryStartH, inventoryW, inventoryH);
+		ctx.rect(inventoryStartX, inventoryStartY, inventoryW, inventoryH);
 		ctx.stroke();
 	}
 

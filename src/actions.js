@@ -297,15 +297,17 @@ export default class Actions {
 		document.addEventListener('mousemove', e => {
 			if (!engine.userIsInTab) return;
 			if (!engine.DEBUG) {
-				engine.fPlayerAngle += e.movementX / 20;
-				engine.fProjectionPlaneYCenter -= e.movementY / 4;
-				if (engine.fProjectionPlaneYCenter < -engine.PROJECTIONPLANEHEIGHT / 2) {
-					engine.fProjectionPlaneYCenter = -engine.PROJECTIONPLANEHEIGHT / 2;
-				} else if (
-					engine.fProjectionPlaneYCenter >
-					engine.PROJECTIONPLANEHEIGHT + engine.PROJECTIONPLANEHEIGHT / 2
-				) {
-					engine.fProjectionPlaneYCenter = engine.PROJECTIONPLANEHEIGHT + engine.PROJECTIONPLANEHEIGHT / 2;
+				if (!engine.inventoryOpen) {
+					engine.fPlayerAngle += e.movementX / 20;
+					engine.fProjectionPlaneYCenter -= e.movementY / 4;
+					if (engine.fProjectionPlaneYCenter < -engine.PROJECTIONPLANEHEIGHT / 2) {
+						engine.fProjectionPlaneYCenter = -engine.PROJECTIONPLANEHEIGHT / 2;
+					} else if (
+						engine.fProjectionPlaneYCenter >
+						engine.PROJECTIONPLANEHEIGHT + engine.PROJECTIONPLANEHEIGHT / 2
+					) {
+						engine.fProjectionPlaneYCenter = engine.PROJECTIONPLANEHEIGHT + engine.PROJECTIONPLANEHEIGHT / 2;
+					}
 				}
 			}
 		});
@@ -363,13 +365,8 @@ export default class Actions {
 			if (index > -1) this.keysPressed.splice(index, 1);
 
 			if (e.code === 'Tab') {
-				if (this.engine.inventoryOpen) {
-					this.engine.inventoryOpen = false;
-					this.engine.lockPointer();
-				} else {
-					this.engine.inventoryOpen = true;
-					document.exitPointerLock();
-				}
+				if (this.engine.inventoryOpen) this.engine.inventoryOpen = false;
+				else this.engine.inventoryOpen = true;
 
 				this.engine.fKeyForward = false;
 				this.engine.fKeyBack = false;
@@ -399,8 +396,6 @@ export default class Actions {
 			}
 
 			if (e.code === 'KeyE') {
-				// this.handleUseBtn();
-
 				this.functionToRun = this.handleUseBtn;
 			}
 		});
