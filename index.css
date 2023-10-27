@@ -20,9 +20,10 @@ body {
 	height: 100%;
 	display: flex;
 	flex-flow: column nowrap;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: center;
 	gap: 1rem;
+	margin-top: 2rem;
 }
 
 #canvas {
@@ -68,6 +69,8 @@ body {
 @media (min-aspect-ratio: 2/1) {
 	.container {
 		flex-flow: row nowrap;
+		justify-content: center;
+		margin-top: 0;
 	}
 	#canvas {
 		width: 1300px;

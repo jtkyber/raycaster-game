@@ -149,7 +149,7 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
-		this.inventoryOpen = true;
+		this.inventoryOpen = false;
 		this.inventory = [
 			{
 				itemId: 0,
@@ -172,7 +172,7 @@ export default class Engine {
 		*/
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
 	}
 
