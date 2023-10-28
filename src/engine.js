@@ -170,16 +170,6 @@ export default class Engine {
 				category: 'food',
 			},
 		];
-		/*
-			{
-				itemId: number
-				name: string
-				slotIdStartX: number
-				slotIdStartY: number
-				slotsW: number,
-				slotsH: number,
-			}
-		*/
 
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
@@ -726,6 +716,21 @@ export default class Engine {
 			this.debugCtx.fill();
 		}
 
+		for (let i = 0; i < this.items.length; i++) {
+			this.debugCtx.fillStyle = `rgb(0, 255, 0)`;
+			this.debugCtx.beginPath();
+			this.debugCtx.ellipse(
+				this.items[i].x,
+				this.items[i].y,
+				this.fItemTextureBufferList[i].width / 2,
+				this.fItemTextureBufferList[i].width / 2,
+				2 * this.pi,
+				0,
+				2 * this.pi
+			);
+			this.debugCtx.fill();
+		}
+
 		for (let i = 0; i < this.thinWalls.length; i++) {
 			const wall = this.thinWalls[i];
 
@@ -1008,7 +1013,7 @@ export default class Engine {
 						});
 
 						if (this.DEBUG && d < thinWallRecord) {
-							this.debugCtx.strokeStyle = `rgba(0,100,255,0.3)`;
+							this.debugCtx.strokeStyle = isItem ? `rgba(0,255,0,0.3)` : `rgba(0,100,255,0.3)`;
 							this.debugCtx.beginPath();
 							this.debugCtx.moveTo(this.fPlayerX, this.fPlayerY);
 							this.debugCtx.lineTo(intersection[0], intersection[1]);
@@ -1472,7 +1477,7 @@ export default class Engine {
 		this.draw3d();
 
 		if (this.DEBUG && this.debugCtx) {
-			this.debugCtx.fillStyle = `rgba(0,255,0,1)`;
+			this.debugCtx.fillStyle = `rgba(255,255,255,1)`;
 			this.debugCtx.beginPath();
 			this.debugCtx.ellipse(this.fPlayerX, this.fPlayerY, 4, 4, 0, 0, 2 * this.pi);
 			this.debugCtx.fill();

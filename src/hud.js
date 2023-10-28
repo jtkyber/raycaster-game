@@ -1,5 +1,3 @@
-import { degToRad } from '../utils/calc.js';
-
 export default class Hud {
 	constructor(engine) {
 		this.engine = engine;
@@ -20,19 +18,22 @@ export default class Hud {
 	}
 
 	drawCursor() {
-		if (this.inventoryIndexSelected) return;
-		this.ctx.strokeStyle = 'rgb(255, 0, 0)';
+		if (this.inventoryIndexSelected !== null) return;
+		this.ctx.lineWidth = 2;
+		this.ctx.strokeStyle = 'rgb(0, 0, 0)';
+		this.ctx.fillStyle = 'rgb(255, 255, 255)';
 		this.ctx.beginPath();
 		this.ctx.ellipse(
 			this.cursorX,
 			this.cursorY,
-			this.canvasHeight / 150,
-			this.canvasHeight / 150,
+			this.canvasHeight / 200,
+			this.canvasHeight / 200,
 			2 * Math.PI,
 			0,
 			2 * Math.PI
 		);
 		this.ctx.stroke();
+		this.ctx.fill();
 	}
 
 	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
