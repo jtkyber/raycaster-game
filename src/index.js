@@ -20,7 +20,11 @@ const drawOntoCanvas = () => {
 	hud.drawReticle();
 	engine.fade();
 	hud.drawFps();
-	if (engine.inventoryOpen) hud.drawInventory();
+	if (engine.inventoryOpen) {
+		hud.drawInventory();
+		if (hud.inventoryIndexSelected !== null) hud.drawSelectedInventoryItem();
+	}
+
 	if (engine.consoleValues.length) hud.drawEngineConsole(engine.consoleValues);
 };
 
@@ -38,6 +42,8 @@ const gameLoop = () => {
 	else {
 		hud.cursorX = engine.canvasWidth / 2;
 		hud.cursorY = engine.canvasHeight / 2;
+		hud.inventoryIndexSelected = null;
+		hud.itemCanBePlaced = false;
 	}
 
 	deltaTime = Date.now() - timestamp;
@@ -74,5 +80,17 @@ document.onmousemove = e => {
 			hud.cursorX += e.movementX / 3;
 			hud.cursorY += e.movementY / 3;
 		}
+	}
+};
+
+document.onmousedown = e => {
+	if (engine.inventoryOpen && engine.userIsInTab) {
+		if (hud.inventoryIndexSelected === null) hud.setItemSelected();
+	}
+};
+
+document.onmouseup = e => {
+	if (engine.inventoryOpen && engine.userIsInTab) {
+		if (hud.inventoryIndexSelected !== null) hud.placeSelectedInventoryItem();
 	}
 };

@@ -9,10 +9,16 @@ export default class Hud {
 		this.framesCounted = 0;
 		this.cursorX = this.canvasWidth / 2;
 		this.cursorY = this.canvasHeight / 2;
+		this.inventorySlotSize = ~~(this.canvasWidth / 20);
+		this.inventoryIndexSelected = null;
+		this.itemCanBePlaced = false;
+		this.itemPlacementCol = 0;
+		this.itemPlacementRow = 0;
 	}
 
 	drawCursor() {
-		this.ctx.fillStyle = 'rgb(255, 0, 0)';
+		if (this.inventoryIndexSelected) return;
+		this.ctx.strokeStyle = 'rgb(255, 0, 0)';
 		this.ctx.beginPath();
 		this.ctx.ellipse(
 			this.cursorX,
@@ -23,7 +29,7 @@ export default class Hud {
 			0,
 			2 * Math.PI
 		);
-		this.ctx.fill();
+		this.ctx.stroke();
 	}
 
 	drawFillRectangle(x, y, width, height, red, green, blue, alpha) {
@@ -41,12 +47,116 @@ export default class Hud {
 		}
 	}
 
+	setItemSelected() {
+		const inventory = this.engine.inventory;
+		const inventoryW = this.engine.inventorySlotCols * this.inventorySlotSize;
+		const inventoryH = this.engine.inventorySlotRows * this.inventorySlotSize;
+
+		const inventoryStartX = this.canvasWidth / 2 - inventoryW / 2;
+		const inventoryStartY = this.canvasHeight / 2 - inventoryH / 2;
+		if (
+			this.cursorX < inventoryStartX ||
+			this.cursorX > inventoryStartX + inventoryW ||
+			this.cursorY < inventoryStartY ||
+			this.cursorY > inventoryStartY + inventoryH
+		) {
+			return;
+		}
+
+		for (let i = 0; i < inventory.length; i++) {
+			const xStart = inventoryStartX + inventory[i].slotIdStartCol * this.inventorySlotSize;
+			const yStart = inventoryStartY + inventory[i].slotIdStartRow * this.inventorySlotSize;
+			const xEnd = xStart + inventory[i].slotCols * this.inventorySlotSize;
+			const yEnd = yStart + inventory[i].slotRows * this.inventorySlotSize;
+
+			if (this.cursorX >= xStart && this.cursorX <= xEnd && this.cursorY >= yStart && this.cursorY <= yEnd) {
+				this.inventoryIndexSelected = i;
+			}
+		}
+	}
+
+	drawSelectedInventoryItem() {
+		const inventory = this.engine.inventory;
+		const item = inventory[this.inventoryIndexSelected];
+		const img = this.engine.textures[item.name];
+
+		const inventoryW = this.engine.inventorySlotCols * this.inventorySlotSize;
+		const inventoryH = this.engine.inventorySlotRows * this.inventorySlotSize;
+		const inventoryStartX = this.canvasWidth / 2 - inventoryW / 2;
+		const inventoryStartY = this.canvasHeight / 2 - inventoryH / 2;
+
+		const slotCols = item.slotCols;
+		const slotRows = item.slotRows;
+		const scaleFactor = Math.min(
+			(this.inventorySlotSize * slotCols) / img.width,
+			(this.inventorySlotSize * slotRows) / img.height
+		);
+		const newW = img.width * scaleFactor - 4;
+		const newH = img.height * scaleFactor - 4;
+
+		const colStartNew = Math.round((this.cursorX - inventoryStartX - newW / 2) / this.inventorySlotSize);
+		const rowStartNew = Math.round((this.cursorY - inventoryStartY - newH / 2) / this.inventorySlotSize);
+		const colEndNew = colStartNew + (item.slotCols - 1);
+		const rowEndNew = rowStartNew + (item.slotRows - 1);
+
+		let spaceFound = true;
+		for (let i = 0; i < inventory.length; i++) {
+			const endCol = inventory[i].slotIdStartCol + (inventory[i].slotCols - 1);
+			const endRow = inventory[i].slotIdStartRow + (inventory[i].slotRows - 1);
+
+			if (
+				i !== this.inventoryIndexSelected &&
+				colStartNew <= endCol &&
+				colEndNew >= inventory[i].slotIdStartCol &&
+				rowStartNew <= endRow &&
+				rowEndNew >= inventory[i].slotIdStartRow
+			) {
+				spaceFound = false;
+			}
+		}
+
+		const slotX = colStartNew * this.inventorySlotSize + inventoryStartX;
+		const slotY = rowStartNew * this.inventorySlotSize + inventoryStartY;
+		const slotXEnd = colEndNew * this.inventorySlotSize + inventoryStartX;
+		const slotYEnd = rowEndNew * this.inventorySlotSize + inventoryStartY;
+
+		if (
+			spaceFound &&
+			slotX >= inventoryStartX &&
+			slotXEnd <= inventoryStartX + (inventoryW - this.inventorySlotSize) &&
+			slotY >= inventoryStartY &&
+			slotYEnd <= inventoryStartY + (inventoryH - this.inventorySlotSize)
+		) {
+			this.itemPlacementCol = colStartNew;
+			this.itemPlacementRow = rowStartNew;
+			this.itemCanBePlaced = true;
+			this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+			this.ctx.beginPath();
+			this.ctx.fillRect(slotX, slotY, this.inventorySlotSize * slotCols, this.inventorySlotSize * slotRows);
+		} else {
+			this.itemCanBePlaced = false;
+		}
+
+		this.ctx.beginPath();
+		this.ctx.drawImage(img, this.cursorX - newW / 2, this.cursorY - newH / 2, newW, newH);
+	}
+
+	placeSelectedInventoryItem() {
+		if (this.itemCanBePlaced) {
+			this.engine.inventory[this.inventoryIndexSelected].slotIdStartCol = this.itemPlacementCol;
+			this.engine.inventory[this.inventoryIndexSelected].slotIdStartRow = this.itemPlacementRow;
+			this.itemCanBePlaced = false;
+			this.inventoryIndexSelected = null;
+		} else {
+			this.inventoryIndexSelected = null;
+		}
+	}
+
 	drawInventory() {
 		const inventory = this.engine.inventory;
 		const ctx = this.ctx;
-		const slotSize = ~~(this.canvasWidth / 20);
-		const inventoryW = this.engine.inventorySlotCols * slotSize;
-		const inventoryH = this.engine.inventorySlotRows * slotSize;
+		const inventoryW = this.engine.inventorySlotCols * this.inventorySlotSize;
+		const inventoryH = this.engine.inventorySlotRows * this.inventorySlotSize;
 		const inventoryStartX = this.canvasWidth / 2 - inventoryW / 2;
 		const inventoryStartY = this.canvasHeight / 2 - inventoryH / 2;
 
@@ -58,36 +168,43 @@ export default class Hud {
 		for (let i = 0; i < this.engine.inventorySlotCols; i++) {
 			for (let j = 0; j < this.engine.inventorySlotRows; j++) {
 				ctx.beginPath();
-				const slotX = i * slotSize + inventoryStartX;
-				const slotY = j * slotSize + inventoryStartY;
+				const slotX = i * this.inventorySlotSize + inventoryStartX;
+				const slotY = j * this.inventorySlotSize + inventoryStartY;
 
 				let slotFilled = false;
 				for (let k = 0; k < inventory.length; k++) {
+					if (k === this.inventoryIndexSelected) continue;
 					if (inventory[k].slotIdStartCol === i && inventory[k].slotIdStartRow === j) {
 						const img = this.engine.textures[inventory[k].name];
 
 						const slotCols = inventory[k].slotCols;
 						const slotRows = inventory[k].slotRows;
 						const scaleFactor = Math.min(
-							(slotSize * slotCols) / img.width,
-							(slotSize * slotRows) / img.height
+							(this.inventorySlotSize * slotCols) / img.width,
+							(this.inventorySlotSize * slotRows) / img.height
 						);
 						const newW = img.width * scaleFactor - 4;
 						const newH = img.height * scaleFactor - 4;
-						const x = slotX + (slotSize * slotCols) / 2 - newW / 2;
-						const y = slotY + (slotSize * slotRows) / 2 - newH / 2;
-						ctx.rect(slotX, slotY, slotSize * slotCols, slotSize * slotRows);
+						const x = slotX + (this.inventorySlotSize * slotCols) / 2 - newW / 2;
+						const y = slotY + (this.inventorySlotSize * slotRows) / 2 - newH / 2;
+						ctx.rect(slotX, slotY, this.inventorySlotSize * slotCols, this.inventorySlotSize * slotRows);
 						ctx.stroke();
 						ctx.drawImage(img, x, y, newW, newH);
 						if (
+							this.inventoryIndexSelected === null &&
 							this.cursorX >= slotX &&
-							this.cursorX <= slotX + slotSize * slotCols &&
+							this.cursorX <= slotX + this.inventorySlotSize * slotCols &&
 							this.cursorY >= slotY &&
-							this.cursorY <= slotY + slotSize * slotRows
+							this.cursorY <= slotY + this.inventorySlotSize * slotRows
 						) {
 							ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
 							ctx.beginPath();
-							ctx.fillRect(slotX, slotY, slotSize * slotCols, slotSize * slotRows);
+							ctx.fillRect(
+								slotX,
+								slotY,
+								this.inventorySlotSize * slotCols,
+								this.inventorySlotSize * slotRows
+							);
 						}
 					}
 
@@ -103,7 +220,7 @@ export default class Hud {
 
 				if (!slotFilled) {
 					ctx.beginPath();
-					ctx.rect(slotX, slotY, slotSize, slotSize);
+					ctx.rect(slotX, slotY, this.inventorySlotSize, this.inventorySlotSize);
 					ctx.stroke();
 				}
 			}

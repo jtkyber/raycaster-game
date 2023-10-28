@@ -1569,7 +1569,7 @@ export default class Engine {
 		);
 
 		document.addEventListener('mousedown', () => {
-			if (!this.inventoryOpen) this.lockPointer();
+			this.lockPointer();
 		});
 
 		document.addEventListener('contextmenu', e => e.preventDefault());
