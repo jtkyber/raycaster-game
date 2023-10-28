@@ -1,3 +1,5 @@
+import { degToRad } from '../utils/calc.js';
+
 export default class Hud {
 	constructor(engine) {
 		this.engine = engine;
@@ -12,6 +14,7 @@ export default class Hud {
 		this.inventorySlotSize = ~~(this.canvasWidth / 20);
 		this.inventoryIndexSelected = null;
 		this.itemCanBePlaced = false;
+		this.itemOutsideOfInventory = false;
 		this.itemPlacementCol = 0;
 		this.itemPlacementRow = 0;
 	}
@@ -120,21 +123,21 @@ export default class Hud {
 		const slotXEnd = colEndNew * this.inventorySlotSize + inventoryStartX;
 		const slotYEnd = rowEndNew * this.inventorySlotSize + inventoryStartY;
 
-		if (
-			spaceFound &&
-			slotX >= inventoryStartX &&
-			slotXEnd <= inventoryStartX + (inventoryW - this.inventorySlotSize) &&
-			slotY >= inventoryStartY &&
-			slotYEnd <= inventoryStartY + (inventoryH - this.inventorySlotSize)
-		) {
-			this.itemPlacementCol = colStartNew;
-			this.itemPlacementRow = rowStartNew;
-			this.itemCanBePlaced = true;
-			this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-			this.ctx.beginPath();
-			this.ctx.fillRect(slotX, slotY, this.inventorySlotSize * slotCols, this.inventorySlotSize * slotRows);
-		} else {
-			this.itemCanBePlaced = false;
+		this.itemCanBePlaced = false;
+		if (spaceFound) {
+			if (
+				slotX >= inventoryStartX &&
+				slotXEnd <= inventoryStartX + (inventoryW - this.inventorySlotSize) &&
+				slotY >= inventoryStartY &&
+				slotYEnd <= inventoryStartY + (inventoryH - this.inventorySlotSize)
+			) {
+				this.itemPlacementCol = colStartNew;
+				this.itemPlacementRow = rowStartNew;
+				this.itemCanBePlaced = true;
+				this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+				this.ctx.beginPath();
+				this.ctx.fillRect(slotX, slotY, this.inventorySlotSize * slotCols, this.inventorySlotSize * slotRows);
+			} else this.itemOutsideOfInventory = true;
 		}
 
 		this.ctx.beginPath();
@@ -146,10 +149,35 @@ export default class Hud {
 			this.engine.inventory[this.inventoryIndexSelected].slotIdStartCol = this.itemPlacementCol;
 			this.engine.inventory[this.inventoryIndexSelected].slotIdStartRow = this.itemPlacementRow;
 			this.itemCanBePlaced = false;
-			this.inventoryIndexSelected = null;
-		} else {
-			this.inventoryIndexSelected = null;
+		} else if (this.itemOutsideOfInventory) {
+			this.itemOutsideOfInventory = false;
+			this.engine.items.push({
+				name: this.engine.inventory[this.inventoryIndexSelected].name,
+				x: this.engine.fPlayerX,
+				y: this.engine.fPlayerY,
+				category: this.engine.inventory[this.inventoryIndexSelected].category,
+				inReticle: this.engine.inventory[this.inventoryIndexSelected].inReticle,
+				inventoryCols: this.engine.inventory[this.inventoryIndexSelected].slotCols,
+				inventoryRows: this.engine.inventory[this.inventoryIndexSelected].slotRows,
+			});
+
+			const img = this.engine.textures[this.engine.inventory[this.inventoryIndexSelected].name];
+			this.engine.fItemTextureBufferList.push(new OffscreenCanvas(img.width, img.height));
+			const lastIndex = this.engine.fItemTextureBufferList.length - 1;
+			this.engine.fItemTextureBufferList[lastIndex].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
+			const imgData = this.engine.fItemTextureBufferList[lastIndex]
+				.getContext('2d', { alpha: false })
+				.getImageData(
+					0,
+					0,
+					this.engine.fItemTextureBufferList[lastIndex].width,
+					this.engine.fItemTextureBufferList[lastIndex].height
+				);
+			this.engine.fItemTexturePixelsList[lastIndex] = imgData.data;
+
+			this.engine.inventory.splice(this.inventoryIndexSelected, 1);
 		}
+		this.inventoryIndexSelected = null;
 	}
 
 	drawInventory() {

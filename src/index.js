@@ -44,6 +44,7 @@ const gameLoop = () => {
 		hud.cursorY = engine.canvasHeight / 2;
 		hud.inventoryIndexSelected = null;
 		hud.itemCanBePlaced = false;
+		hud.itemOutsideOfInventory = false;
 	}
 
 	deltaTime = Date.now() - timestamp;

@@ -149,8 +149,8 @@ export default class Engine {
 		this.levelTransitionFadeAmt = 0;
 		this.doorMap = {};
 
-		this.inventorySlotCols = 6;
-		this.inventorySlotRows = 8;
+		this.inventorySlotCols = 5;
+		this.inventorySlotRows = 6;
 		this.inventoryOpen = false;
 		this.inventory = [
 			{
@@ -159,6 +159,7 @@ export default class Engine {
 				slotIdStartRow: 0,
 				slotCols: 1,
 				slotRows: 1,
+				category: 'food',
 			},
 			{
 				name: 'redbull',
@@ -166,6 +167,7 @@ export default class Engine {
 				slotIdStartRow: 0,
 				slotCols: 1,
 				slotRows: 2,
+				category: 'food',
 			},
 		];
 		/*

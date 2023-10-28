@@ -236,11 +236,11 @@ export default class Actions {
 						slotIdStartRow: j,
 						slotCols: newItemCols,
 						slotRows: newItemRows,
+						category: this.engine.items[newItemIndex].category,
 					});
 					this.engine.items.splice(newItemIndex, 1);
 					this.engine.fItemTextureBufferList.splice(newItemIndex, 1);
 					this.engine.fItemTexturePixelsList.splice(newItemIndex, 1);
-
 					return;
 				}
 			}
