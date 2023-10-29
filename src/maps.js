@@ -53,7 +53,7 @@ export const maps = [
         items: [
             {
                 name: 'apple',
-                x: 300,
+                x: 500,
                 y: 220,
                 category: 'food',
                 inReticle: false,
@@ -71,8 +71,8 @@ export const maps = [
             },
             {
                 name: 'pickaxe',
-                x: 400,
-                y: 90,
+                x: 1450,
+                y: 80,
                 category: 'tool',
                 inReticle: false,
                 inventoryCols: 2,
@@ -80,13 +80,49 @@ export const maps = [
             },
             {
                 name: 'bread',
-                x: 500,
-                y: 170,
+                x: 700,
+                y: 600,
                 category: 'food',
                 inReticle: false,
                 inventoryCols: 2,
                 inventoryRows: 1,
-            }
+            },
+            {
+                name: 'pickaxe',
+                x: 730,
+                y: 530,
+                category: 'tool',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 3,
+            },
+            {
+                name: 'bread',
+                x: 750,
+                y: 480,
+                category: 'food',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 1,
+            },
+            {
+                name: 'bread',
+                x: 710,
+                y: 500,
+                category: 'food',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 1,
+            },
+            {
+                name: 'bread',
+                x: 100,
+                y: 1380,
+                category: 'food',
+                inReticle: false,
+                inventoryCols: 2,
+                inventoryRows: 1,
+            },
         ],
         objects: [
             {
@@ -103,16 +139,6 @@ export const maps = [
                 name: 'barrel',
                 x: 940,
                 y: 80
-            },
-            {
-                name: 'barrel',
-                x: 410,
-                y: 820
-            },
-            {
-                name: 'barrel',
-                x: 546,
-                y: 820
             },
             {
                 name: 'table',
@@ -140,7 +166,7 @@ export const maps = [
         },
         floorTextures: ['floor1', 'floor3', 'floor4', 'floor5'],
         ceilingTexture: 'ceiling1',
-        paintings: ['painting3two', 'painting3one', 'painting1', 'painting4one', 'painting4two', 'painting2one', 'painting2two', 'painting5one', 'painting5two', 'painting6one', 'painting6two', 'painting7one', 'painting7two'],
+        paintings: ['painting3two', 'painting3one', 'painting1', 'painting4one', 'painting4two', 'painting2one', 'painting2two', 'painting5one', 'painting5two', 'painting6one', 'painting6two', 'painting7one', 'painting7two', 'shield', 'shield'],
         paintingDetails: [
             {
                 row: 4,
@@ -206,6 +232,16 @@ export const maps = [
                 row: 20,
                 col: 21,
                 side: 3
+            },
+            {
+                row: 13,
+                col: 6,
+                side: 0
+            },
+            {
+                row: 13,
+                col: 8,
+                side: 0
             }
         ]
     },
@@ -389,6 +425,7 @@ export const texturePaths = [
 	'src/assets/paintings/painting13.png',
 	'src/assets/paintings/painting14.png',
 	'src/assets/paintings/painting15.png',
+	'src/assets/paintings/shield.png',
 	// Objects
 	'src/assets/objects/barrel.png',
 	'src/assets/objects/redbull.png',

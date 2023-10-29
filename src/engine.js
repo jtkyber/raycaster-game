@@ -171,6 +171,8 @@ export default class Engine {
 			},
 		];
 
+		this.itemInUseIndex = null;
+
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
@@ -324,6 +326,7 @@ export default class Engine {
 		let red;
 		let green;
 		let blue;
+		let alpha;
 
 		let yError = 0;
 		let sourceRow;
@@ -349,6 +352,7 @@ export default class Engine {
 
 		while (true) {
 			yError += height;
+			if (texturePixelsPainting) alpha = texturePixelsPainting[sourceIndexPainting + 3];
 
 			if (
 				textureBufferPainting &&
@@ -358,9 +362,15 @@ export default class Engine {
 				xOffset < paintingSourceRight
 			) {
 				// Painting on column and within size of painting source
-				red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint);
-				green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint);
-				blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint);
+				if (alpha > 0) {
+					red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint);
+					green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint);
+					blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint);
+				} else {
+					red = texturePixels[sourceIndex] * (brightnessLevel + this.redTint);
+					green = texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
+					blue = texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
+				}
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
@@ -1224,7 +1234,7 @@ export default class Engine {
 		for (let i = 0; i < imgNames.length; i++) {
 			const img = this.textures[imgNames[i]];
 			this.fPaintingTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
-			this.fPaintingTextureBufferList[i].getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+			this.fPaintingTextureBufferList[i].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
 
 			const imgData = this.fPaintingTextureBufferList[i]
 				.getContext('2d', { alpha: false })
@@ -1471,7 +1481,7 @@ export default class Engine {
 		if (this.isStanding) this.stand();
 		if (this.activeThinWallId !== null) this.operateThinWall(this.activeThinWallId);
 
-		if (!this.inventoryOpen) this.move();
+		this.move();
 		if (this.DEBUG) this.draw2d();
 		this.raycaster();
 		this.draw3d();

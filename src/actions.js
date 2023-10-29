@@ -367,11 +367,6 @@ export default class Actions {
 			if (e.code === 'Tab') {
 				if (this.engine.inventoryOpen) this.engine.inventoryOpen = false;
 				else this.engine.inventoryOpen = true;
-
-				this.engine.fKeyForward = false;
-				this.engine.fKeyBack = false;
-				this.engine.fKeyLeft = false;
-				this.engine.fKeyRight = false;
 			}
 
 			if (!engine.userIsInTab && !engine.DEBUG) return;
