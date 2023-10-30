@@ -2,7 +2,8 @@ import { degToRad, getIntersection } from '../utils/calc.js';
 import { maps } from './maps.js';
 
 export default class Actions {
-	constructor(engine) {
+	constructor(engine, audio) {
+		this.audio = audio;
 		this.engine = engine;
 		this.minUseDist = 120;
 		this.keysPressed = [];
@@ -272,12 +273,30 @@ export default class Actions {
 		switch (action) {
 			case 'openDoor':
 				this.openDoor(doorData.rowFound, doorData.colFound, doorData.tileIndex);
+				this.audio.playSound('doorOpen', this.engine.fPlayerX, this.engine.fPlayerY, false);
 				break;
 			case 'operateThinWall':
 				this.engine.activeThinWallId = thinWallData.index;
+				const x =
+					this.engine.thinWalls[thinWallData.index].xStartOriginal +
+					Math.abs(
+						this.engine.thinWalls[thinWallData.index].xEnd - this.engine.thinWalls[thinWallData.index].xStart
+					) /
+						2;
+				const y =
+					this.engine.thinWalls[thinWallData.index].yStartOriginal +
+					Math.abs(
+						this.engine.thinWalls[thinWallData.index].yEnd - this.engine.thinWalls[thinWallData.index].yStart
+					) /
+						2;
+
+				if (this.engine.thinWalls[thinWallData.index].isOpen) {
+					this.audio.playSound(this.engine.thinWalls[thinWallData.index].sounds.close, x, y, true);
+				} else this.audio.playSound(this.engine.thinWalls[thinWallData.index].sounds.open, x, y, true);
 				break;
 			case 'grabItem':
 				this.findSpotForItem(itemData.index);
+				this.audio.playSound('itemPickup', this.engine.fPlayerX, this.engine.fPlayerY, false);
 				break;
 		}
 	}

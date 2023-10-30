@@ -2,7 +2,8 @@ import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/
 import { maps, texturePaths } from './maps.js';
 
 export default class Engine {
-	constructor() {
+	constructor(audio) {
+		this.audio = audio;
 		this.canvas = document.getElementById('canvas');
 		this.canvasWidth = this.canvas.width;
 		this.canvasHeight = this.canvas.height;
@@ -173,8 +174,10 @@ export default class Engine {
 
 		this.itemInUseIndex = null;
 
+		this.timeOfLastFootstep = 10000;
+
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 		this.consoleValues = [];
 	}
 
@@ -1113,6 +1116,11 @@ export default class Engine {
 
 		const minDist = (this.TILE_SIZE * Math.sqrt(2)) / 1.5;
 		if (this.fKeyForward || this.fKeyBack || this.fKeyLeft || this.fKeyRight) {
+			if (!this.isJumping && Date.now() - this.timeOfLastFootstep > (this.isCrouching ? 1000 : 500)) {
+				const footstepNum = ~~(Math.random() * (5 - 1) + 1);
+				this.audio.playSound(`footstep${footstepNum}`, this.fPlayerX, this.fPlayerY, false);
+				this.timeOfLastFootstep = Date.now();
+			}
 			for (let i = 0; i < this.thinWalls.length; i++) {
 				const intersection = getIntersection(
 					this.fPlayerX,
@@ -1350,6 +1358,7 @@ export default class Engine {
 					xEnd: xEndTemp,
 					yEnd: yEndTemp,
 					isOpen: wall.isOpen,
+					sounds: wall.sounds,
 				};
 			});
 		} else this.thinWalls = [];
@@ -1372,6 +1381,16 @@ export default class Engine {
 			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
 
 			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
+		}
+
+		if (this.audio.sounds?.['song']) {
+			if (i > 0) this.audio.sounds['song'].mute(true);
+			else this.audio.sounds['song'].mute(false);
+		}
+
+		if (this.audio.sounds?.['knocking']) {
+			if (i === 1) this.audio.playSound('knocking', 1042, 86, true);
+			else this.audio.stopSound('knocking');
 		}
 	}
 
@@ -1425,7 +1444,7 @@ export default class Engine {
 
 	operateThinWall(i) {
 		const thinWall = this.thinWalls[i];
-		const slideSpeed = this.fGameSpeed / 2;
+		const slideSpeed = this.fGameSpeed / 2.5;
 
 		if (thinWall.xEnd - thinWall.xStart !== 0) {
 			const length = Math.abs(thinWall.xEnd - thinWall.xStart);
@@ -1482,6 +1501,8 @@ export default class Engine {
 		if (this.activeThinWallId !== null) this.operateThinWall(this.activeThinWallId);
 
 		this.move();
+		this.audio.updateSoundPositions(this.fPlayerAngle, this.fPlayerX, this.fPlayerY);
+
 		if (this.DEBUG) this.draw2d();
 		this.raycaster();
 		this.draw3d();

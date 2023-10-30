@@ -1,5 +1,6 @@
 export default class Hud {
-	constructor(engine) {
+	constructor(engine, audio) {
+		this.audio = audio;
 		this.engine = engine;
 		this.ctx = engine.ctx;
 		this.canvasWidth = engine.canvasWidth;

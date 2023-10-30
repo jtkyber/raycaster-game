@@ -1,10 +1,12 @@
 import Actions from './actions.js';
+import Sound from './audio.js';
 import Engine from './engine.js';
 import Hud from './hud.js';
 
-const engine = new Engine();
-const hud = new Hud(engine);
-const actions = new Actions(engine);
+const audio = new Sound();
+const engine = new Engine(audio);
+const hud = new Hud(engine, audio);
+const actions = new Actions(engine, audio);
 
 const fpsInterval = 1000 / 60;
 let animationFrameId;
@@ -64,6 +66,8 @@ const beginLoop = () => {
 const setUp = async () => {
 	await engine.init();
 	await actions.init();
+	await audio.init();
+	audio.playSound('song', 850, 1360, true);
 
 	hud.frameRate = 0;
 

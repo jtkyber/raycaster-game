@@ -19,7 +19,7 @@ export const maps = [
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 0, 0, 6, 6, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [0, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0, 6, 0, 6, 6, 6, 7, 7, 7, 7, 7, 0, 7, 0],
-            [0, 6, 6, 6, 6, 0, 6, 6, 6, 0, 6, 6, 0, 6, 6, 6, 7, 7, 7, 7, 7, 0, 7, 0],
+            [0, 6, 6, 6, 6, 0, 6, 6, 6, 0, 6, 6, 0, 6, 6, 0, 7, 7, 7, 7, 7, 0, 7, 0],
             [0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [4, 3, 3, 3, 3, 3, 3, 6, 3, 3, 3, 3, 3, 3, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
@@ -39,22 +39,31 @@ export const maps = [
                 rowEnd: 3,
                 colEnd: 15,
                 isOpen: false,
-                operation: 'door'
+                operation: 'door',
+                sounds: {
+                    open: 'slidingDoorOpen',
+                    close: 'slidingDoorClose'
+                }
             },
             {
-                texture: 'test2',
+                texture: 'test',
                 rowStart: 11,
                 colStart: 15,
-                rowEnd: 13,
+                rowEnd: 12,
                 colEnd: 15,
                 isOpen: false,
+                operation: 'door',
+                sounds: {
+                    open: 'slidingDoorOpen',
+                    close: 'slidingDoorClose'
+                }
             }
         ],
         items: [
             {
                 name: 'apple',
                 x: 500,
-                y: 220,
+                y: 150,
                 category: 'food',
                 inReticle: false,
                 inventoryCols: 1,
@@ -154,6 +163,11 @@ export const maps = [
                 name: 'table',
                 x: 1370,
                 y: 1160
+            },
+            {
+                name: 'radio',
+                x: 850,
+                y: 1360
             },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall3'],
@@ -270,7 +284,11 @@ export const maps = [
                 rowEnd: 10,
                 colEnd: 20,
                 isOpen: false,
-                operation: 'door'
+                operation: 'door',
+                sounds: {
+                    open: 'slidingDoorOpen',
+                    close: 'slidingDoorClose'
+                }
             }
         ],
         objects: [
@@ -431,6 +449,7 @@ export const texturePaths = [
 	'src/assets/objects/redbull.png',
 	'src/assets/objects/elmo.png',
 	'src/assets/objects/table.png',
+	'src/assets/objects/radio.png',
 	// Thin Walls
 	'src/assets/thinWalls/test.png',
 	'src/assets/thinWalls/test2.png',
