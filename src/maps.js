@@ -313,7 +313,7 @@ export const maps = [
         },
         floorTextures: ['floor1'],
         ceilingTexture: 'ceiling1',
-        paintings: ['painting1', 'painting8', 'painting9', 'painting10', 'painting11', 'painting12', 'painting13', 'painting14', 'painting15'],
+        paintings: ['painting1', 'painting8', 'painting9', 'painting10', 'painting11', 'painting12', 'painting13', 'painting14', 'painting15', 'bloodyHandprint'],
         paintingDetails: [
             {
                 row: 5,
@@ -359,6 +359,11 @@ export const maps = [
                 row: 12,
                 col: 22,
                 side: 0
+            },
+            {
+                row: 0,
+                col: 16,
+                side: 2
             },
         ]
     },
@@ -444,6 +449,7 @@ export const texturePaths = [
 	'src/assets/paintings/painting14.png',
 	'src/assets/paintings/painting15.png',
 	'src/assets/paintings/shield.png',
+	'src/assets/paintings/bloodyHandprint.png',
 	// Objects
 	'src/assets/objects/barrel.png',
 	'src/assets/objects/redbull.png',
