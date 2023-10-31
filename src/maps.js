@@ -166,8 +166,8 @@ export const maps = [
             },
             {
                 name: 'radio',
-                x: 850,
-                y: 1360
+                x: 800,
+                y: 1350
             },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall3'],
