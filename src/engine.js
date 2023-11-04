@@ -2,7 +2,8 @@ import { convertDeg0To360, degToRad, getIntersection, radToDeg } from '../utils/
 import { maps, texturePaths } from './maps.js';
 
 export default class Engine {
-	constructor(audio) {
+	constructor(audio, db) {
+		this.db = db;
 		this.audio = audio;
 		this.canvas = document.getElementById('canvas');
 		this.canvasWidth = this.canvas.width;
@@ -20,6 +21,14 @@ export default class Engine {
 
 		this.PROJECTIONPLANEWIDTH = this.canvasWidth;
 		this.PROJECTIONPLANEHEIGHT = this.canvasHeight;
+
+		this.mapLightValues = [null, null, null];
+		this.mapLightRefs = [null, null, null];
+		this.mapLightSides = [null, null, null];
+		this.currentLightValues = null;
+		this.currentLightRefs = null;
+		this.currentThinWallLightSides = null;
+		this.minBrightness = 0.1;
 
 		this.fWallTextureBufferList;
 		this.fWallTexturePixelsList;
@@ -41,16 +50,26 @@ export default class Engine {
 		this.fThinWallTexturePixelsList;
 
 		this.fItemTextureBufferList;
-		this.fItemTexturePixelList;
+		this.fItemTexturePixelsList;
+
+		this.fLightTextureBufferList;
+		this.fLightTexturePixelList;
 
 		this.items = [];
 		this.objects = [];
+		this.lightSources = [];
 		this.objectRefs = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectOffsets = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectRayLengths = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsX = new Array(this.PROJECTIONPLANEWIDTH);
 		this.objectCollisionsY = new Array(this.PROJECTIONPLANEWIDTH);
 		this.isItemRay = new Array(this.PROJECTIONPLANEWIDTH);
+		this.isLightsourceRay = new Array(this.PROJECTIONPLANEWIDTH);
+
+		this.minUseDist = 140;
+
+		this.objectTargetIndecesForStrip = [];
+		this.objectDistsForStrip = [];
 
 		this.thinWalls = [];
 		this.thinWallRefs = new Array(this.PROJECTIONPLANEWIDTH);
@@ -142,9 +161,9 @@ export default class Engine {
 		this.standSpeed = this.standSpeedStart;
 		this.standGravity = 0.007;
 
-		this.redTint = 0;
-		this.greenTint = 0;
-		this.blueTint = 0;
+		this.redTint = 1.2;
+		this.greenTint = 1.1;
+		this.blueTint = 1;
 
 		this.levelTransition = false;
 		this.levelTransitionFadeAmt = 0;
@@ -163,11 +182,11 @@ export default class Engine {
 				category: 'food',
 			},
 			{
-				name: 'redbull',
-				slotIdStartCol: 3,
-				slotIdStartRow: 0,
-				slotCols: 1,
-				slotRows: 2,
+				name: 'bread',
+				slotIdStartCol: 0,
+				slotIdStartRow: 1,
+				slotCols: 2,
+				slotRows: 1,
 				category: 'food',
 			},
 		];
@@ -179,6 +198,7 @@ export default class Engine {
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
+		this.lightingVersionNum = 1;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -217,14 +237,25 @@ export default class Engine {
 
 			const diagDist = ~~(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
 
-			let brightnessLevel = 100 / diagDist;
-			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
+			// let brightnessLevel = 100 / diagDist;
 
 			let xEnd = diagDist * Math.cos(rayAng);
 			let yEnd = diagDist * Math.sin(rayAng);
 
 			xEnd = ~~(xEnd + this.fPlayerX);
 			yEnd = ~~(yEnd + this.fPlayerY);
+
+			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd];
+			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
+			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
+			// 	case 'floor':
+			// 		brightnessLevel /= 1.3;
+			// 		break;
+			// 	case 'wall':
+			// 		brightnessLevel /= 1.2;
+			// 		break;
+			// }
+			// if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 
 			const cellX = ~~(xEnd / this.TILE_SIZE);
 			const cellY = ~~(yEnd / this.TILE_SIZE);
@@ -236,9 +267,9 @@ export default class Engine {
 				const sourceIndex =
 					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel + this.redTint);
-				const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
-				const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
+				const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel * this.redTint);
+				const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel * this.greenTint);
+				const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel * this.blueTint);
 
 				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
@@ -253,20 +284,31 @@ export default class Engine {
 	drawFloor(wallBottom, castColumn, rayAng) {
 		let targetIndex = wallBottom * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
-		let count = 0;
-		for (let row = wallBottom; row < this.PROJECTIONPLANEHEIGHT; row++) {
+		for (let row = wallBottom + 1; row <= this.PROJECTIONPLANEHEIGHT; row++) {
 			const straightDistance =
 				(this.fPlayerHeight / (row - this.fProjectionPlaneYCenter)) * this.fPlayerDistanceToProjectionPlane;
 
-			const actualDistance = straightDistance * this.fFishTable[castColumn];
+			const diagDist = straightDistance * this.fFishTable[castColumn];
 
-			const brightnessLevel = 120 / actualDistance;
-
-			let xEnd = actualDistance * Math.cos(rayAng);
-			let yEnd = actualDistance * Math.sin(rayAng);
+			let xEnd = diagDist * Math.cos(rayAng);
+			let yEnd = diagDist * Math.sin(rayAng);
 
 			xEnd = ~~(xEnd + this.fPlayerX);
 			yEnd = ~~(yEnd + this.fPlayerY);
+
+			// const brightnessLevel = 120 / actualDistance;
+			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd];
+			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
+			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
+			// 	case 'ceiling':
+			// 		brightnessLevel /= 1.3;
+			// 		break;
+			// 	case 'wall':
+			// 		brightnessLevel /= 1.2;
+			// 		break;
+			// }
+
+			// if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 
 			let cellX = ~~(xEnd / this.TILE_SIZE);
 			let cellY = ~~(yEnd / this.TILE_SIZE);
@@ -285,11 +327,11 @@ export default class Engine {
 					tileRow * this.fFloorTextureBufferList[fIndex].width * this.bytesPerPixel +
 					this.bytesPerPixel * tileCol;
 
-				const red = this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel + this.redTint);
+				const red = this.fFloorTexturePixelsList[fIndex][sourceIndex] * (brightnessLevel * this.redTint);
 				const green =
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel + this.greenTint);
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 1] * (brightnessLevel * this.greenTint);
 				const blue =
-					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel + this.blueTint);
+					this.fFloorTexturePixelsList[fIndex][sourceIndex + 2] * (brightnessLevel * this.blueTint);
 
 				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
 				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
@@ -298,7 +340,6 @@ export default class Engine {
 
 				targetIndex += this.bytesPerPixel * this.canvasWidth;
 			}
-			count++;
 		}
 	}
 
@@ -366,20 +407,20 @@ export default class Engine {
 			) {
 				// Painting on column and within size of painting source
 				if (alpha > 0) {
-					red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel + this.redTint);
-					green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel + this.greenTint);
-					blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel + this.blueTint);
+					red = texturePixelsPainting[sourceIndexPainting] * (brightnessLevel * this.redTint);
+					green = texturePixelsPainting[sourceIndexPainting + 1] * (brightnessLevel * this.greenTint);
+					blue = texturePixelsPainting[sourceIndexPainting + 2] * (brightnessLevel * this.blueTint);
 				} else {
-					red = texturePixels[sourceIndex] * (brightnessLevel + this.redTint);
-					green = texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
-					blue = texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
+					red = texturePixels[sourceIndex] * (brightnessLevel * this.redTint);
+					green = texturePixels[sourceIndex + 1] * (brightnessLevel * this.greenTint);
+					blue = texturePixels[sourceIndex + 2] * (brightnessLevel * this.blueTint);
 				}
 
 				sourceIndexPainting += this.bytesPerPixel * textureBufferPainting.width;
 			} else {
-				red = texturePixels[sourceIndex] * (brightnessLevel + this.redTint);
-				green = texturePixels[sourceIndex + 1] * (brightnessLevel + this.greenTint);
-				blue = texturePixels[sourceIndex + 2] * (brightnessLevel + this.blueTint);
+				red = texturePixels[sourceIndex] * (brightnessLevel * this.redTint);
+				green = texturePixels[sourceIndex + 1] * (brightnessLevel * this.greenTint);
+				blue = texturePixels[sourceIndex + 2] * (brightnessLevel * this.blueTint);
 			}
 
 			while (yError >= textureBuffer.height) {
@@ -400,7 +441,7 @@ export default class Engine {
 		}
 	}
 
-	drawObjectStrip(x, y, height, brightness, xOffset, textureBuffer, texturePixels, inReticle) {
+	drawObjectStrip(x, y, height, brightness, xOffset, textureBuffer, texturePixels, inReticle, dist) {
 		if (textureBuffer == undefined) return;
 		const bytesPerPixel = 4;
 
@@ -420,9 +461,9 @@ export default class Engine {
 		while (true) {
 			yError += height;
 
-			let red = texturePixels[sourceIndex] * brightness;
-			let green = texturePixels[sourceIndex + 1] * brightness;
-			let blue = texturePixels[sourceIndex + 2] * brightness;
+			let red = texturePixels[sourceIndex] * brightness * this.redTint;
+			let green = texturePixels[sourceIndex + 1] * brightness * this.greenTint;
+			let blue = texturePixels[sourceIndex + 2] * brightness * this.blueTint;
 			let alpha = texturePixels[sourceIndex + 3];
 			if (inReticle) {
 				red += 70;
@@ -436,6 +477,8 @@ export default class Engine {
 					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
 					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
 					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+					this.objectTargetIndecesForStrip.push(targetIndex);
+					this.objectDistsForStrip.push(dist);
 				}
 				yError -= textureBuffer.height;
 				targetIndex += bytesPerPixel * this.canvasWidth;
@@ -448,7 +491,7 @@ export default class Engine {
 		}
 	}
 
-	drawThinWallStrip(x, y, height, brightness, thinWallRef, xOffset, cuttoffHeight) {
+	drawThinWallStrip(x, y, height, brightness, thinWallRef, xOffset, dist) {
 		if (this.fThinWallTextureBufferList[thinWallRef] == undefined) return;
 		const bytesPerPixel = 4;
 
@@ -472,35 +515,40 @@ export default class Engine {
 		while (true) {
 			yError += height;
 
-			const red = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness;
-			const green = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness;
-			const blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness;
+			const red = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness * this.redTint;
+			const green =
+				this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness * this.greenTint;
+			const blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness * this.blueTint;
 			const alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
 
 			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
-				// Blend pixel color values with transparent thin wall color values
-				let redBlend;
-				let greenBlend;
-				let blueBlend;
-				if (alpha < 255) {
-					redBlend = (alpha / 255) * red + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex];
-					greenBlend =
-						(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
-					blueBlend =
-						(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
-				}
-
 				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
-				this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blueBlend;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+				if (
+					!this.objectTargetIndecesForStrip.includes(targetIndex) ||
+					this.objectDistsForStrip[this.objectTargetIndecesForStrip.indexOf(targetIndex)] > dist
+				) {
+					// Blend pixel color values with transparent thin wall color values
+					let redBlend;
+					let greenBlend;
+					let blueBlend;
+					if (alpha > 0) {
+						redBlend = (alpha / 255) * red + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex];
+						greenBlend =
+							(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
+						blueBlend =
+							(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
+					}
+
+					this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blueBlend;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+				}
 
 				targetIndex += bytesPerPixel * this.canvasWidth;
 
 				heightToDraw--;
 				if (heightToDraw < 1) return;
-				if (heightToDraw < cuttoffHeight) return;
 			}
 			sourceIndex += bytesPerPixel * this.fThinWallTextureBufferList[thinWallRef].width;
 			if (sourceIndex > lastSourceIndex) sourceIndex = lastSourceIndex;
@@ -540,7 +588,7 @@ export default class Engine {
 				const dy = Math.abs(this.fPlayerY - intersection[1]);
 				const d = Math.sqrt(dx * dx + dy * dy);
 
-				if (d <= 120) this.items[i].inReticle = true;
+				if (d <= this.minUseDist) this.items[i].inReticle = true;
 				else this.items[i].inReticle = false;
 			} else this.items[i].inReticle = false;
 		}
@@ -591,9 +639,11 @@ export default class Engine {
 			let textureBuffer = this.fWallTextureBufferList[this.tileTypes?.[i]];
 			let texturePixels = this.fWallTexturePixelsList[this.tileTypes?.[i]];
 
-			let brightnessLevel = 110 / ~~dist;
+			let brightnessLevel =
+				this.currentLightValues?.[~~this.tileCollisionsY[i] * this.mapWidth + ~~this.tileCollisionsX[i]];
 			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
-			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel = brightnessLevel * 0.8;
+			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel *= 0.85;
+			if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 
 			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
 
@@ -611,36 +661,52 @@ export default class Engine {
 				texturePixelsPainting
 			);
 
-			let highestObjectTop = this.canvasHeight;
-			let highestObjectTopDist = Infinity;
-
+			this.objectTargetIndecesForStrip = [];
+			this.objectDistsForStrip = [];
 			// Objects
 			for (let j = 0; j < this.objectRayLengths[i].length; j++) {
 				let textureBuffer;
 				let texturePixels;
-				if (this.isItemRay[i][j]) {
-					textureBuffer = this.fItemTextureBufferList[this.objectRefs[i][j]];
-					texturePixels = this.fItemTexturePixelsList[this.objectRefs[i][j]];
-				} else {
-					textureBuffer = this.fObjectTextureBufferList[this.objectRefs[i][j]];
-					texturePixels = this.fObjectTexturePixelsList[this.objectRefs[i][j]];
-				}
 
 				let objDist =
 					this.objectRayLengths[i][j] > 0 ? this.objectRayLengths[i][j] / this.fFishTable[i] : null;
 
 				if (objDist) {
-					let objBrightnessLevel = 110 / ~~objDist;
-					if (objBrightnessLevel > 1.3) objBrightnessLevel = 1.3;
+					let objRatio;
+					let objScale;
+					let objBottom;
+					let objTop;
+					let objHeight;
+					if (this.isItemRay[i][j]) {
+						textureBuffer = this.fItemTextureBufferList[this.objectRefs[i][j]];
+						texturePixels = this.fItemTexturePixelsList[this.objectRefs[i][j]];
+					} else if (this.isLightsourceRay[i][j]) {
+						textureBuffer = this.fLightTextureBufferList[this.objectRefs[i][j]];
+						texturePixels = this.fLightTexturePixelsList[this.objectRefs[i][j]];
+					} else {
+						textureBuffer = this.fObjectTextureBufferList[this.objectRefs[i][j]];
+						texturePixels = this.fObjectTexturePixelsList[this.objectRefs[i][j]];
+					}
 
-					const objRatio = this.fPlayerDistanceToProjectionPlane / objDist;
-					const objScale = (this.fPlayerDistanceToProjectionPlane * textureBuffer.height) / objDist;
-					const objBottom = objRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
-					const objTop = objBottom - objScale;
-					const objHeight = objBottom - objTop;
-					if (objTop < highestObjectTop) {
-						highestObjectTop = objTop;
-						highestObjectTopDist = objDist;
+					objRatio = this.fPlayerDistanceToProjectionPlane / objDist;
+					objScale = (this.fPlayerDistanceToProjectionPlane * textureBuffer.height) / objDist;
+					objBottom = objRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
+					objTop = objBottom - objScale;
+					objHeight = objBottom - objTop;
+
+					if (this.isLightsourceRay[i][j]) {
+						switch (this.lightSources[this.objectRefs[i][j]]?.surface) {
+							case 'wall':
+								objScale =
+									(this.fPlayerDistanceToProjectionPlane *
+										(this.WALL_HEIGHT / 2 + textureBuffer.height / 2)) /
+									objDist;
+								break;
+							case 'ceiling':
+								objScale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / objDist;
+								break;
+						}
+						objTop = objBottom - objScale;
 					}
 
 					if (
@@ -652,6 +718,12 @@ export default class Engine {
 						this.items[this.objectRefs[i][j]].inReticle = true;
 					} else if (this.isItemRay[i][j]) this.items[this.objectRefs[i][j]].inReticle = false;
 
+					let objBrightnessLevel =
+						this.currentLightValues[
+							~~this.objectCollisionsY[i][j] * this.mapWidth + ~~this.objectCollisionsX[i][j]
+						];
+					if (objBrightnessLevel > 1.3) objBrightnessLevel = 1.3;
+
 					this.drawObjectStrip(
 						i,
 						Math.floor(objTop),
@@ -660,7 +732,8 @@ export default class Engine {
 						this.objectOffsets[i][j],
 						textureBuffer,
 						texturePixels,
-						this.isItemRay[i][j] ? this.items[this.objectRefs[i][j]].inReticle : false
+						this.isItemRay[i][j] ? this.items[this.objectRefs[i][j]].inReticle : false,
+						objDist
 					);
 				}
 			}
@@ -669,7 +742,10 @@ export default class Engine {
 				this.thinWallRayLengths[i] > 0 ? this.thinWallRayLengths[i] / this.fFishTable[i] : null;
 
 			if (thinWallDist) {
-				let thinWallBrightnessLevel = 110 / ~~thinWallDist;
+				let thinWallBrightnessLevel =
+					this.currentLightValues[
+						~~this.thinWallCollisionsY[i] * this.mapWidth + ~~this.thinWallCollisionsX[i]
+					];
 				if (thinWallBrightnessLevel > 1.3) thinWallBrightnessLevel = 1.3;
 
 				const thinWallRatio = this.fPlayerDistanceToProjectionPlane / thinWallDist;
@@ -677,10 +753,6 @@ export default class Engine {
 				const thinWallBottom = thinWallRatio * this.fPlayerHeight + this.fProjectionPlaneYCenter;
 				const thinWallTop = thinWallBottom - thinWallScale;
 				let thinWallHeight = thinWallBottom - thinWallTop;
-
-				let cuttoffHeight = 1;
-				if (thinWallBottom - highestObjectTop > 0 && thinWallDist >= highestObjectTopDist)
-					cuttoffHeight = thinWallBottom - highestObjectTop;
 
 				if (
 					i === this.PROJECTIONPLANEWIDTH / 2 &&
@@ -697,7 +769,7 @@ export default class Engine {
 					thinWallBrightnessLevel,
 					this.thinWallRefs[i],
 					this.thinWallOffsets[i],
-					cuttoffHeight
+					thinWallDist
 				);
 			}
 		}
@@ -756,7 +828,7 @@ export default class Engine {
 		}
 	}
 
-	getIntersectionOfTile(x, y, row, col, theta, sides = [0, 1, 2, 3]) {
+	getIntersectionOfTile(x, y, row, col, theta, sides = [0, 1, 2, 3], p4 = null) {
 		const x1 = col * this.TILE_SIZE;
 		const y1 = row * this.TILE_SIZE;
 
@@ -806,7 +878,7 @@ export default class Engine {
 					break;
 			}
 
-			const intersection = getIntersection(x, y, 1, theta, tX1, tY1, tX2, tY2);
+			const intersection = getIntersection(x, y, 1, theta, tX1, tY1, tX2, tY2, p4);
 			if (intersection?.[0]) {
 				const dx = Math.abs(x - intersection[0]);
 				const dy = Math.abs(y - intersection[1]);
@@ -955,6 +1027,7 @@ export default class Engine {
 			this.objectRefs[i] = [];
 			this.objectOffsets[i] = [];
 			this.isItemRay[i] = [];
+			this.isLightsourceRay[i] = [];
 
 			const rayObjData = [
 				{
@@ -964,23 +1037,30 @@ export default class Engine {
 					ref: 0,
 					offset: 0,
 					isItemRay: 0,
+					isLightsourceRay: 0,
 				},
 			];
 
-			for (let j = 0; j < this.objects.length + this.items.length; j++) {
+			for (let j = 0; j < this.objects.length + this.items.length + this.lightSources.length; j++) {
 				let object;
 				let textureBuffer;
 				let ref;
 				let isItem = false;
+				let isLightsource = false;
 				if (j < this.objects.length) {
 					object = this.objects[j];
 					textureBuffer = this.fObjectTextureBufferList[j];
 					ref = j;
-				} else {
+				} else if (j >= this.objects.length && j < this.objects.length + this.items.length) {
 					ref = j - this.objects.length;
 					object = this.items[ref];
 					textureBuffer = this.fItemTextureBufferList[ref];
 					isItem = true;
+				} else {
+					ref = j - this.objects.length - this.items.length;
+					object = this.lightSources[ref];
+					textureBuffer = this.fLightTextureBufferList[ref];
+					isLightsource = true;
 				}
 				// Get perpendicular line coords
 				const deltaY = object.y - this.fPlayerY;
@@ -1023,6 +1103,7 @@ export default class Engine {
 									(intersection[1] - y1) * (intersection[1] - y1)
 							),
 							isItemRay: isItem ? 1 : 0,
+							isLightsourceRay: isLightsource ? 1 : 0,
 						});
 
 						if (this.DEBUG && d < thinWallRecord) {
@@ -1046,7 +1127,9 @@ export default class Engine {
 				this.objectRefs[i].push(rayObjData[j].ref);
 				this.objectOffsets[i].push(rayObjData[j].offset);
 				this.isItemRay[i].push(rayObjData[j].isItemRay);
+				this.isLightsourceRay[i].push(rayObjData[j].isLightsourceRay);
 			}
+			// if (this.isLightsourceRay[i]) console.log(this.lightSources[0]);
 		}
 	}
 
@@ -1309,88 +1392,19 @@ export default class Engine {
 		}
 	}
 
-	setNewMapData(i = this.mapNum) {
-		this.onWallTextureLoaded(maps[i].wallTextures);
-		this.onPaintingTexturesLoaded(maps[i].paintings);
-		this.fPaintingDetails = maps[i].paintingDetails;
+	onLightTexturesLoaded(imgNames) {
+		this.fLightTextureBufferList = new Array(imgNames.length);
+		this.fLightTexturePixelsList = new Array(imgNames.length);
 
-		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
-		this.onFloorTextureLoaded(maps[i].floorTextures);
+		for (let i = 0; i < imgNames.length; i++) {
+			const img = this.textures[imgNames[i]];
+			this.fLightTextureBufferList[i] = new OffscreenCanvas(img.width, img.height);
+			this.fLightTextureBufferList[i].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
 
-		if (maps[i]?.items?.length) {
-			this.onItemTexturesLoaded(maps[i].items.map(item => item.name));
-			this.items = maps[i].items;
-		} else this.items = [];
-
-		if (maps[i]?.objects?.length) {
-			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.name));
-			this.objects = maps[i].objects;
-		} else this.objects = [];
-
-		if (maps[i]?.thinWalls?.length) {
-			this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
-			this.thinWalls = maps[i].thinWalls.map(wall => {
-				let xStartTemp = wall.colStart * this.TILE_SIZE;
-				let yStartTemp = wall.rowStart * this.TILE_SIZE;
-				let xEndTemp = wall.colEnd * this.TILE_SIZE;
-				let yEndTemp = wall.rowEnd * this.TILE_SIZE;
-
-				if (yStartTemp < yEndTemp) {
-					xStartTemp += this.TILE_SIZE / 2;
-					xEndTemp += this.TILE_SIZE / 2;
-				} else if (yEndTemp < yStartTemp) {
-					xStartTemp += this.TILE_SIZE / 2;
-					xEndTemp += this.TILE_SIZE / 2;
-				} else if (xStartTemp < xEndTemp) {
-					yStartTemp += this.TILE_SIZE / 2;
-					yEndTemp += this.TILE_SIZE / 2;
-				} else if (xEndTemp < xStartTemp) {
-					yStartTemp += this.TILE_SIZE / 2;
-					yEndTemp += this.TILE_SIZE / 2;
-				}
-
-				return {
-					texture: wall.texture,
-					xStartOriginal: xStartTemp,
-					yStartOriginal: yStartTemp,
-					xStart: xStartTemp,
-					yStart: yStartTemp,
-					xEnd: xEndTemp,
-					yEnd: yEndTemp,
-					isOpen: wall.isOpen,
-					sounds: wall.sounds,
-				};
-			});
-		} else this.thinWalls = [];
-
-		this.map = new Uint8Array(maps[i].map.flat());
-		this.mapNum = i;
-		this.doorMap = maps[i].doorMap;
-		this.mapCols = maps[i].map[0].length;
-		this.mapRows = maps[i].map.length;
-		this.mapWidth = this.TILE_SIZE * this.mapCols;
-		this.mapHeight = this.TILE_SIZE * this.mapRows;
-		this.fPlayerX = this.fPlayerX;
-		this.fPlayerY = this.fPlayerY;
-
-		if (this.DEBUG && this.debugCanvas) {
-			this.debugCanvas.width = this.mapWidth;
-			this.debugCanvas.height = this.mapHeight;
-			this.debugCanvasWidth = this.debugCanvas.width;
-			this.debugCanvasHeight = this.debugCanvas.height;
-			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
-
-			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
-		}
-
-		if (this.audio.sounds?.['song']) {
-			if (i > 0) this.audio.sounds['song'].mute(true);
-			else this.audio.sounds['song'].mute(false);
-		}
-
-		if (this.audio.sounds?.['knocking']) {
-			if (i === 1) this.audio.playSound('knocking', 1042, 86, true);
-			else this.audio.stopSound('knocking');
+			const imgData = this.fLightTextureBufferList[i]
+				.getContext('2d', { alpha: false })
+				.getImageData(0, 0, this.fLightTextureBufferList[i].width, this.fLightTextureBufferList[i].height);
+			this.fLightTexturePixelsList[i] = imgData.data;
 		}
 	}
 
@@ -1445,6 +1459,7 @@ export default class Engine {
 	operateThinWall(i) {
 		const thinWall = this.thinWalls[i];
 		const slideSpeed = this.fGameSpeed / 2.5;
+		const stopGap = 8;
 
 		if (thinWall.xEnd - thinWall.xStart !== 0) {
 			const length = Math.abs(thinWall.xEnd - thinWall.xStart);
@@ -1453,10 +1468,10 @@ export default class Engine {
 			if (!thinWall.isOpen) {
 				this.thinWalls[i].xStart -= slideSpeed * moveDir;
 				this.thinWalls[i].xEnd -= slideSpeed * moveDir;
-				if (Math.abs(this.thinWalls[i].xStart - this.thinWalls[i].xStartOriginal) >= length - 14) {
+				if (Math.abs(this.thinWalls[i].xStart - this.thinWalls[i].xStartOriginal) >= length - stopGap) {
 					this.activeThinWallId = null;
 					this.thinWalls[i].isOpen = true;
-					this.thinWalls[i].xStart = this.thinWalls[i].xStartOriginal - (length - 14) * moveDir;
+					this.thinWalls[i].xStart = this.thinWalls[i].xStartOriginal - (length - stopGap) * moveDir;
 				}
 			} else {
 				this.thinWalls[i].xStart += slideSpeed * moveDir;
@@ -1474,10 +1489,10 @@ export default class Engine {
 			if (!thinWall.isOpen) {
 				this.thinWalls[i].yStart -= slideSpeed * moveDir;
 				this.thinWalls[i].yEnd -= slideSpeed * moveDir;
-				if (Math.abs(this.thinWalls[i].yStart - this.thinWalls[i].yStartOriginal) >= length - 14) {
+				if (Math.abs(this.thinWalls[i].yStart - this.thinWalls[i].yStartOriginal) >= length - stopGap) {
 					this.activeThinWallId = null;
 					this.thinWalls[i].isOpen = true;
-					this.thinWalls[i].yStart = this.thinWalls[i].yStartOriginal - (length - 14) * moveDir;
+					this.thinWalls[i].yStart = this.thinWalls[i].yStartOriginal - (length - stopGap) * moveDir;
 				}
 			} else {
 				this.thinWalls[i].yStart += slideSpeed * moveDir;
@@ -1531,26 +1546,19 @@ export default class Engine {
 	}
 
 	async preloadTextures() {
-		const preloadImages = () => {
-			const promises = this.texturePaths.map(path => {
-				return new Promise((resolve, reject) => {
-					const name = path.split('/').pop()?.split('.')[0];
-					const image = new Image();
+		const promises = this.texturePaths.map(path => {
+			return new Promise((resolve, reject) => {
+				const name = path.split('/').pop()?.split('.')[0];
+				const image = new Image();
 
-					image.src = path;
-					image.onload = () => {
-						resolve([name, image]);
-					};
-					image.onerror = () => reject(`Image failed to load: ${path}`);
-				});
+				image.src = path;
+				image.onload = () => resolve([name, image]);
+				image.onerror = () => reject(`Image failed to load: ${path}`);
 			});
-			return Promise.all(promises);
-		};
+		});
 
-		const imgArraytemp = await preloadImages();
+		const imgArraytemp = await Promise.all(promises);
 		this.textures = Object.fromEntries(imgArraytemp);
-
-		this.setNewMapData();
 	}
 
 	lockPointer() {
@@ -1577,8 +1585,449 @@ export default class Engine {
 		}
 	}
 
+	setNewMapData(i = this.mapNum) {
+		this.currentLightValues = this.mapLightValues[i];
+		this.currentLightRefs = this.mapLightRefs[i];
+
+		this.onWallTextureLoaded(maps[i].wallTextures);
+		this.onPaintingTexturesLoaded(maps[i].paintings);
+		this.fPaintingDetails = maps[i].paintingDetails;
+
+		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
+		this.onFloorTextureLoaded(maps[i].floorTextures);
+
+		if (maps[i]?.lightSources?.length) {
+			this.onLightTexturesLoaded(maps[i].lightSources.map(light => light.texture));
+			this.lightSources = maps[i].lightSources;
+			for (let i = 0; i < this.lightSources.length; i++) {
+				const textureWidth = this.textures[this.lightSources[i].texture].width;
+				switch (this.lightSources[i].side) {
+					case 0:
+						this.lightSources[i].x = this.lightSources[i].col * this.TILE_SIZE + this.TILE_SIZE / 2;
+						this.lightSources[i].y = this.lightSources[i].row * this.TILE_SIZE - textureWidth / 2;
+						break;
+					case 1:
+						this.lightSources[i].x =
+							this.lightSources[i].col * this.TILE_SIZE + this.TILE_SIZE + textureWidth / 2;
+						this.lightSources[i].y = this.lightSources[i].row * this.TILE_SIZE + this.TILE_SIZE / 2;
+						break;
+					case 2:
+						this.lightSources[i].x = this.lightSources[i].col * this.TILE_SIZE + this.TILE_SIZE / 2;
+						this.lightSources[i].y =
+							this.lightSources[i].row * this.TILE_SIZE + this.TILE_SIZE + textureWidth / 2;
+						break;
+					case 3:
+						this.lightSources[i].x = this.lightSources[i].col * this.TILE_SIZE - textureWidth / 2;
+						this.lightSources[i].y = this.lightSources[i].row * this.TILE_SIZE + this.TILE_SIZE / 2;
+						break;
+					default:
+						this.lightSources[i].x = this.lightSources[i].col * this.TILE_SIZE + this.TILE_SIZE / 2;
+						this.lightSources[i].y = this.lightSources[i].row * this.TILE_SIZE + this.TILE_SIZE / 2;
+				}
+			}
+		} else this.lightSources = [];
+
+		if (maps[i]?.items?.length) {
+			this.onItemTexturesLoaded(maps[i].items.map(item => item.name));
+			this.items = maps[i].items;
+		} else this.items = [];
+
+		if (maps[i]?.objects?.length) {
+			this.onObjectTexturesLoaded(maps[i].objects.map(obj => obj.name));
+			this.objects = maps[i].objects;
+		} else this.objects = [];
+
+		if (maps[i]?.thinWalls?.length) {
+			this.onThinWallTexturesLoaded(maps[i].thinWalls.map(wall => wall.texture));
+			this.thinWalls = maps[i].thinWalls.map(wall => {
+				let xStartTemp = wall.colStart * this.TILE_SIZE;
+				let yStartTemp = wall.rowStart * this.TILE_SIZE;
+				let xEndTemp = wall.colEnd * this.TILE_SIZE;
+				let yEndTemp = wall.rowEnd * this.TILE_SIZE;
+
+				if (yStartTemp < yEndTemp) {
+					xStartTemp += this.TILE_SIZE / 2;
+					xEndTemp += this.TILE_SIZE / 2;
+				} else if (yEndTemp < yStartTemp) {
+					xStartTemp += this.TILE_SIZE / 2;
+					xEndTemp += this.TILE_SIZE / 2;
+				} else if (xStartTemp < xEndTemp) {
+					yStartTemp += this.TILE_SIZE / 2;
+					yEndTemp += this.TILE_SIZE / 2;
+				} else if (xEndTemp < xStartTemp) {
+					yStartTemp += this.TILE_SIZE / 2;
+					yEndTemp += this.TILE_SIZE / 2;
+				}
+
+				return {
+					texture: wall.texture,
+					xStartOriginal: xStartTemp,
+					yStartOriginal: yStartTemp,
+					xStart: xStartTemp,
+					yStart: yStartTemp,
+					xEnd: xEndTemp,
+					yEnd: yEndTemp,
+					isOpen: wall.isOpen,
+					sounds: wall.sounds,
+					function: wall.function,
+				};
+			});
+		} else this.thinWalls = [];
+
+		this.map = new Uint8Array(maps[i].map.flat());
+		this.mapNum = i;
+		this.doorMap = maps[i].doorMap;
+		this.mapCols = maps[i].map[0].length;
+		this.mapRows = maps[i].map.length;
+		this.mapWidth = this.TILE_SIZE * this.mapCols;
+		this.mapHeight = this.TILE_SIZE * this.mapRows;
+		this.fPlayerX = this.fPlayerX;
+		this.fPlayerY = this.fPlayerY;
+
+		if (this.DEBUG && this.debugCanvas) {
+			this.debugCanvas.width = this.mapWidth;
+			this.debugCanvas.height = this.mapHeight;
+			this.debugCanvasWidth = this.debugCanvas.width;
+			this.debugCanvasHeight = this.debugCanvas.height;
+			this.debugCtx = this.debugCanvas.getContext('2d', { alpha: false });
+
+			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
+		}
+
+		if (this.audio.sounds?.['song']) {
+			if (i > 0) this.audio.sounds['song'].mute(true);
+			else this.audio.sounds['song'].mute(false);
+		}
+
+		if (this.audio.sounds?.['knocking']) {
+			if (i === 1) this.audio.playSound('knocking', 1042, 86, true);
+			else this.audio.stopSound('knocking');
+		}
+	}
+
+	calculateLightValues() {
+		return new Promise((resolve, reject) => {
+			const total = maps.reduce(
+				(acc, value) => acc + value.lightSources.length * value.map[0].length * this.TILE_SIZE,
+				0
+			);
+			let progress = 0;
+
+			const lightingVersionTransaction = this.db.transaction('lightingVersion');
+			const lightingVersionObjectStore = lightingVersionTransaction.objectStore('lightingVersion');
+			const lightingVersionGetRequest = lightingVersionObjectStore.get(0);
+
+			lightingVersionGetRequest.onsuccess = () => {
+				let mapsCompleted = 0;
+
+				if (lightingVersionGetRequest?.result === this.lightingVersionNum) {
+					for (let i = 0; i < maps.length; i++) {
+						const transaction = this.db.transaction('lighting');
+						const objectStore = transaction.objectStore('lighting');
+						const getRequest = objectStore.get(i);
+
+						getRequest.onsuccess = () => {
+							this.mapLightValues[i] = getRequest.result.mapLightValues;
+							this.mapLightRefs[i] = getRequest.result.mapLightRefs;
+							this.mapLightSides[i] = getRequest.result.mapLightSides;
+							console.log(`Lighting for map ${i} has been retrieved`);
+							mapsCompleted++;
+							if (mapsCompleted === maps.length) resolve();
+						};
+						getRequest.onerror = () => {
+							console.log(`Unable to retrieve lighting for map ${i}`);
+							reject();
+						};
+					}
+				} else {
+					(function mapLoop(i = 0) {
+						if (i < maps.length) {
+							if (!maps[i].lightSources.length) {
+								this.mapLightValues[i] = null;
+								this.mapLightRefs[i] = null;
+								this.mapLightSides[i] = null;
+								console.log(`Lighting for map ${i} has been retrieved`);
+								mapsCompleted++;
+								if (mapsCompleted === maps.length) resolve();
+							} else {
+								document.querySelector('.loadingContainer').style.display = 'flex';
+								console.log(`Processing lighting for map ${i}`);
+								const curLevel = maps[i];
+								const curMap = curLevel.map;
+								const mapCols = curMap[0].length;
+								const mapRows = curMap.length;
+								const mapWidth = mapCols * this.TILE_SIZE;
+								const mapHeight = mapRows * this.TILE_SIZE;
+
+								this.mapLightValues[i] = new Float32Array(mapWidth * mapHeight).fill(this.minBrightness);
+								this.mapLightRefs[i] = new Uint8Array(mapWidth * mapHeight);
+								this.mapLightSides[i] = new Int8Array(mapWidth * mapHeight).fill(-1);
+
+								(function lightSourceLoop(j = 0) {
+									if (j < curLevel.lightSources.length) {
+										const light = curLevel.lightSources[j];
+										const textureWidth = this.textures[light.texture].width;
+										const sourceCol = light.col;
+										const sourceRow = light.row;
+										let lightX;
+										let lightY;
+
+										switch (light.side) {
+											case 0:
+												lightX = sourceCol * this.TILE_SIZE + this.TILE_SIZE / 2;
+												lightY = sourceRow * this.TILE_SIZE - textureWidth / 2;
+												break;
+											case 1:
+												lightX = sourceCol * this.TILE_SIZE + this.TILE_SIZE + textureWidth / 2;
+												lightY = sourceRow * this.TILE_SIZE + this.TILE_SIZE / 2;
+												break;
+											case 2:
+												lightX = sourceCol * this.TILE_SIZE + this.TILE_SIZE / 2;
+												lightY = sourceRow * this.TILE_SIZE + this.TILE_SIZE + textureWidth / 2;
+												break;
+											case 3:
+												lightX = sourceCol * this.TILE_SIZE - textureWidth / 2;
+												lightY = sourceRow * this.TILE_SIZE + this.TILE_SIZE / 2;
+												break;
+											default:
+												lightX = sourceCol * this.TILE_SIZE + this.TILE_SIZE / 2;
+												lightY = sourceRow * this.TILE_SIZE + this.TILE_SIZE / 2;
+										}
+
+										(function xLoop(x = 0) {
+											if (x < mapWidth) {
+												setTimeout(() => {
+													document.querySelector('.loadingFill').style.width = `${~~(
+														(progress / total) *
+														100
+													)}%`;
+													document.querySelector('.loadingValue').innerText = `${~~(
+														(progress / total) *
+														100
+													)}%`;
+
+													if (x >= this.TILE_SIZE && x <= mapWidth - this.TILE_SIZE) {
+														loop1: for (let y = 0; y < mapHeight; y++) {
+															if (y < this.TILE_SIZE || y > mapHeight - this.TILE_SIZE) continue loop1;
+															for (let row = 0; row < mapRows; row++) {
+																loop2: for (let col = 0; col < mapCols; col++) {
+																	const tile = curMap[row][col];
+																	if (tile > 5) continue loop2;
+
+																	const x1 = col * this.TILE_SIZE;
+																	const y1 = row * this.TILE_SIZE;
+
+																	const x2 = x1 + this.TILE_SIZE;
+																	const y2 = y1;
+
+																	const x3 = x2;
+																	const y3 = y1 + this.TILE_SIZE;
+
+																	const x4 = x1;
+																	const y4 = y3;
+
+																	if (x > x1 && x < x2 && y > y1 && y < y3) continue loop1;
+																	if (
+																		Math.abs(x1 + this.TILE_SIZE / 2 - x) > Math.abs(lightX - x) &&
+																		Math.abs(y1 + this.TILE_SIZE / 2 - y) > Math.abs(lightY - y)
+																	) {
+																		continue loop2;
+																	}
+
+																	let tX1 = 0;
+																	let tY1 = 0;
+																	let tX2 = 0;
+																	let tY2 = 0;
+
+																	let sidesIntersected = 0;
+																	let sharesCornerWithTile = false;
+																	for (let i = 0; i < 4; i++) {
+																		switch (i) {
+																			case 0:
+																				tX1 = x1;
+																				tY1 = y1;
+																				tX2 = x2;
+																				tY2 = y2;
+																				break;
+																			case 1:
+																				tX1 = x2;
+																				tY1 = y2;
+																				tX2 = x3;
+																				tY2 = y3;
+																				break;
+																			case 2:
+																				tX1 = x3;
+																				tY1 = y3;
+																				tX2 = x4;
+																				tY2 = y4;
+																				break;
+																			case 3:
+																				tX1 = x4;
+																				tY1 = y4;
+																				tX2 = x1;
+																				tY2 = y1;
+																				break;
+																		}
+
+																		const denom = (tX1 - tX2) * (y - lightY) - (tY1 - tY2) * (x - lightX);
+
+																		if (denom !== 0) {
+																			const t = ((tX1 - x) * (y - lightY) - (tY1 - y) * (x - lightX)) / denom;
+																			const u = ((tX1 - x) * (tY1 - tY2) - (tY1 - y) * (tX1 - tX2)) / denom;
+
+																			if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+																				if (
+																					!sharesCornerWithTile &&
+																					((x === tX1 && y === tY1) || (x === tX2 && y === tY2))
+																				) {
+																					sharesCornerWithTile = true;
+																					sidesIntersected++;
+																				} else if (!((x === tX1 && y === tY1) || (x === tX2 && y === tY2)))
+																					sidesIntersected++;
+																			}
+																			if (sidesIntersected > 1) continue loop1;
+																		}
+																	}
+																}
+															}
+
+															loop3: for (let k = 0; k < curLevel?.thinWalls?.length; k++) {
+																if (curLevel.thinWalls[k].transparent) continue loop3;
+																let xStart = curLevel.thinWalls[k].colStart * this.TILE_SIZE;
+																let yStart = curLevel.thinWalls[k].rowStart * this.TILE_SIZE;
+																let xEnd = curLevel.thinWalls[k].colEnd * this.TILE_SIZE;
+																let yEnd = curLevel.thinWalls[k].rowEnd * this.TILE_SIZE;
+
+																if (yStart < yEnd) {
+																	xStart += this.TILE_SIZE / 2;
+																	xEnd += this.TILE_SIZE / 2;
+																} else if (yEnd < yStart) {
+																	xStart += this.TILE_SIZE / 2;
+																	xEnd += this.TILE_SIZE / 2;
+																} else if (xStart < xEnd) {
+																	yStart += this.TILE_SIZE / 2;
+																	yEnd += this.TILE_SIZE / 2;
+																} else if (xEnd < xStart) {
+																	yStart += this.TILE_SIZE / 2;
+																	yEnd += this.TILE_SIZE / 2;
+																}
+																if (
+																	(y === yStart &&
+																		x >= Math.min(xStart, xEnd) &&
+																		x <= Math.max(xStart, xEnd)) ||
+																	(x === xStart && y >= Math.min(yStart, yEnd) && y <= Math.max(yStart, yEnd))
+																) {
+																	if (xStart === xEnd) {
+																		if (x - lightX > 0) {
+																			this.mapLightSides[i][y * mapWidth + x] = parseInt(
+																				'' + this.mapLightSides[i][y * mapWidth + x] + 1
+																			);
+																		} else
+																			this.mapLightSides[i][y * mapWidth + x] = parseInt(
+																				'' + this.mapLightSides[i][y * mapWidth + x] + 3
+																			);
+																	} else {
+																		if (y - lightY > 0) {
+																			this.mapLightSides[i][y * mapWidth + x] = parseInt(
+																				'' + this.mapLightSides[i][y * mapWidth + x] + 2
+																			);
+																		} else
+																			this.mapLightSides[i][y * mapWidth + x] = parseInt(
+																				'' + this.mapLightSides[i][y * mapWidth + x] + 0
+																			);
+																	}
+
+																	continue loop3;
+																}
+
+																const denom = (xStart - xEnd) * (y - lightY) - (yStart - yEnd) * (x - lightX);
+
+																if (denom !== 0) {
+																	const t =
+																		((xStart - x) * (y - lightY) - (yStart - y) * (x - lightX)) / denom;
+																	const u =
+																		((xStart - x) * (yStart - yEnd) - (yStart - y) * (xStart - xEnd)) / denom;
+
+																	if (t >= 0 && t <= 1 && u >= 0 && u <= 1) continue loop1;
+																}
+															}
+
+															const d =
+																Math.sqrt((x - lightX) * (x - lightX) + (y - lightY) * (y - lightY)) || 0.001;
+															this.mapLightValues[i][y * mapWidth + x] += (5 / Math.sqrt(d)) * light.strenth;
+															if (this.mapLightValues[i][y * mapWidth + x] > 3)
+																this.mapLightValues[i][y * mapWidth + x] = 3;
+															this.mapLightRefs[i][y * mapWidth + x] = j;
+														}
+													}
+
+													if (j === curLevel.lightSources.length - 1 && x === mapWidth - 1) {
+														const transaction = this.db.transaction('lighting', 'readwrite');
+														const objectStore = transaction.objectStore('lighting');
+														const request = objectStore.put(
+															{
+																mapLightValues: this.mapLightValues[i],
+																mapLightRefs: this.mapLightRefs[i],
+																mapLightSides: this.mapLightSides[i],
+															},
+															i
+														);
+
+														request.onsuccess = () => {
+															console.log(`Lighting calculations complete for map ${i} - added to database`);
+															mapsCompleted++;
+
+															if (mapsCompleted === maps.length) {
+																const lightingVersionTransaction = this.db.transaction(
+																	'lightingVersion',
+																	'readwrite'
+																);
+																const lightingVersionObjectStore =
+																	lightingVersionTransaction.objectStore('lightingVersion');
+
+																const lightingVersionRequest = lightingVersionObjectStore.put(
+																	this.lightingVersionNum,
+																	0
+																);
+
+																lightingVersionRequest.onsuccess = () => {
+																	console.log(`Lighting updated to version ${this.lightingVersionNum}`);
+																};
+																lightingVersionRequest.onerror = () => {
+																	console.log(
+																		`Unable to update lighting to version ${this.lightingVersionNum}`
+																	);
+																	reject();
+																};
+																resolve();
+															}
+														};
+														request.onerror = () => {
+															console.log(`Unable to add lighting calculations to database for map ${i}`);
+															reject();
+														};
+													}
+													progress++;
+													xLoop.bind(this)(x + 1);
+												}, 1);
+											}
+										}).bind(this)();
+										lightSourceLoop.bind(this)(j + 1);
+									}
+								}).bind(this)();
+							}
+							mapLoop.bind(this)(i + 1);
+						}
+					}).bind(this)();
+				}
+			};
+		});
+	}
+
 	async init() {
 		await this.preloadTextures();
+		await this.calculateLightValues();
+		this.setNewMapData();
 		this.setAngles();
 
 		if (!this.DEBUG) {

@@ -12,7 +12,7 @@ export const maps = [
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 0, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 7, 7, 7, 7, 7, 7, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 0, 7, 7, 7, 7, 7, 7, 7, 0],
-            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 7, 7, 0, 0, 0, 0],
             [0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 0, 7, 7, 7, 7, 7, 0, 7, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 0, 7, 7, 7, 7, 7, 0, 7, 0],
@@ -31,6 +31,35 @@ export const maps = [
             [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
+        lightSources: [
+            {
+                surface: 'floor',
+                texture: 'standingLight',
+                col: 14,
+                row: 1,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 1
+            },
+            {
+                surface: 'ceiling',
+                texture: 'chandelier',
+                col: 19,
+                row: 11,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 1
+            },
+            {
+                surface: 'ceiling',
+                texture: 'hangingLight2',
+                col: 7,
+                row: 18,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 1.3
+            }
+        ],
         thinWalls: [
             {
                 texture: 'test',
@@ -39,11 +68,12 @@ export const maps = [
                 rowEnd: 3,
                 colEnd: 15,
                 isOpen: false,
-                operation: 'door',
+                function: 'door',
                 sounds: {
                     open: 'slidingDoorOpen',
                     close: 'slidingDoorClose'
-                }
+                },
+                transparent: true
             },
             {
                 texture: 'test',
@@ -52,11 +82,12 @@ export const maps = [
                 rowEnd: 12,
                 colEnd: 15,
                 isOpen: false,
-                operation: 'door',
+                function: 'door',
                 sounds: {
                     open: 'slidingDoorOpen',
                     close: 'slidingDoorClose'
-                }
+                },
+                transparent: true
             }
         ],
         items: [
@@ -71,8 +102,8 @@ export const maps = [
             },
             {
                 name: 'note',
-                x: 950,
-                y: 90,
+                x: 940,
+                y: 80,
                 category: 'note',
                 inReticle: false,
                 inventoryCols: 1,
@@ -137,37 +168,38 @@ export const maps = [
             {
                 name: 'barrel',
                 x: 1420,
-                y: 100
+                y: 100,
+                hFromGround: 0
             },
             {
                 name: 'barrel',
                 x: 1420,
-                y: 280
-            },
-            {
-                name: 'barrel',
-                x: 940,
-                y: 80
+                y: 280,
+                hFromGround: 0
             },
             {
                 name: 'table',
                 x: 1370,
-                y: 640
+                y: 640,
+                hFromGround: 0
             },
             {
                 name: 'table',
                 x: 1370,
-                y: 900
+                y: 900,
+                hFromGround: 0
             },
             {
                 name: 'table',
                 x: 1370,
-                y: 1160
+                y: 1160,
+                hFromGround: 0
             },
             {
                 name: 'radio',
                 x: 800,
-                y: 1350
+                y: 1350,
+                hFromGround: 0
             },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall3'],
@@ -276,6 +308,26 @@ export const maps = [
             [0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
+        lightSources: [
+            {
+                surface: 'ceiling',
+                texture: 'hangingLight2',
+                col: 8,
+                row: 6,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 0.6
+            },
+            {
+                surface: 'floor',
+                texture: 'standingLight',
+                col: 16,
+                row: 11,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 0.4
+            }
+        ],
         thinWalls: [
             {
                 texture: 'test',
@@ -284,18 +336,20 @@ export const maps = [
                 rowEnd: 10,
                 colEnd: 20,
                 isOpen: false,
-                operation: 'door',
+                function: 'door',
                 sounds: {
                     open: 'slidingDoorOpen',
                     close: 'slidingDoorClose'
-                }
+                },
+                transparent: true
             }
         ],
         objects: [
             {
                 name: 'elmo',
                 x: 1042,
-                y: 86
+                y: 86,
+                hFromGround: 0
             }
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen'],
@@ -368,6 +422,7 @@ export const maps = [
         ]
     },
     {
+        // 20 x 20
         map: [
             [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
@@ -389,6 +444,29 @@ export const maps = [
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        lightSources: [
+            {
+                surface: 'ceiling',
+                texture: 'hangingLight',
+                col: 8,
+                row: 8,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 1.2
+            },
+            {
+                surface: 'ceiling',
+                texture: 'hangingLight',
+                col: 6,
+                row: 15,
+                side: null,
+                lightOffsetFromTexture: 10,
+                strenth: 1.2
+            }
+        ],
+        items: [
+
         ],
         objects: [
 
@@ -459,10 +537,16 @@ export const texturePaths = [
 	// Thin Walls
 	'src/assets/thinWalls/test.png',
 	'src/assets/thinWalls/test2.png',
+	'src/assets/thinWalls/window.png',
 	// Items
 	'src/assets/items/apple.png',
 	'src/assets/items/pickaxe.png',
 	'src/assets/items/note.png',
 	'src/assets/items/redbull.png',
 	'src/assets/items/bread.png',
+	// Light Sources
+	'src/assets/lightSources/hangingLight.png',
+	'src/assets/lightSources/hangingLight2.png',
+	'src/assets/lightSources/standingLight.png',
+	'src/assets/lightSources/chandelier.png',
 ];

@@ -3,10 +3,12 @@ import Sound from './audio.js';
 import Engine from './engine.js';
 import Hud from './hud.js';
 
-const audio = new Sound();
-const engine = new Engine(audio);
-const hud = new Hud(engine, audio);
-const actions = new Actions(engine, audio);
+const request = window.indexedDB.open('RaycasterDB', 3);
+
+let audio;
+let engine;
+let hud;
+let actions;
 
 const fpsInterval = 1000 / 60;
 let animationFrameId;
@@ -39,7 +41,6 @@ const gameLoop = () => {
 	alterOffscreenCanvasPixels();
 	drawOntoCanvas();
 	actions.runNextFunction();
-
 	if (engine.inventoryOpen) hud.drawCursor();
 	else {
 		hud.cursorX = engine.canvasWidth / 2;
@@ -48,7 +49,6 @@ const gameLoop = () => {
 		hud.itemCanBePlaced = false;
 		hud.itemOutsideOfInventory = false;
 	}
-
 	deltaTime = Date.now() - timestamp;
 
 	engine.fGameSpeed = (deltaTime / fpsInterval) * 2.5;
@@ -63,21 +63,28 @@ const beginLoop = () => {
 	}, 100);
 };
 
-const setUp = async () => {
-	await engine.init();
-	await actions.init();
-	await audio.init();
-	audio.playSound('song', 850, 1360, true);
+const setUp = async db => {
+	audio = new Sound(db);
+	engine = new Engine(audio, db);
+	hud = new Hud(engine, audio, db);
+	actions = new Actions(engine, audio, db);
 
-	hud.frameRate = 0;
+	const promise = engine.init();
+	Promise.resolve(promise).then(() => {
+		document.querySelector('.loadingContainer').remove();
+		actions.init();
+		audio.init();
 
-	beginLoop();
+		audio.playSound('song', 850, 1360, true);
+
+		hud.frameRate = 0;
+
+		beginLoop();
+	});
 };
 
-setUp();
-
 document.onmousemove = e => {
-	if (engine.inventoryOpen && engine.userIsInTab) {
+	if (engine?.inventoryOpen && engine?.userIsInTab) {
 		const newX = hud.cursorX + e.movementX / 4;
 		const newY = hud.cursorY + e.movementY / 4;
 
@@ -89,13 +96,30 @@ document.onmousemove = e => {
 };
 
 document.onmousedown = e => {
-	if (engine.inventoryOpen && engine.userIsInTab) {
+	if (engine?.inventoryOpen && engine?.userIsInTab) {
 		if (hud.inventoryIndexSelected === null) hud.setItemSelected();
 	}
 };
 
 document.onmouseup = e => {
-	if (engine.inventoryOpen && engine.userIsInTab) {
+	if (engine?.inventoryOpen && engine?.userIsInTab) {
 		if (hud.inventoryIndexSelected !== null) hud.placeSelectedInventoryItem();
 	}
+};
+
+request.onerror = e => {
+	console.log(e);
+};
+
+request.onupgradeneeded = e => {
+	if (!e.target.result.objectStoreNames.contains('lighting')) {
+		e.target.result.createObjectStore('lighting', { autoIncrement: true });
+	}
+	if (!e.target.result.objectStoreNames.contains('lightingVersion')) {
+		e.target.result.createObjectStore('lightingVersion', { autoIncrement: true });
+	}
+};
+
+request.onsuccess = e => {
+	setUp(e.target.result);
 };

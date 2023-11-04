@@ -2,10 +2,11 @@ import { degToRad, getIntersection } from '../utils/calc.js';
 import { maps } from './maps.js';
 
 export default class Actions {
-	constructor(engine, audio) {
+	constructor(engine, audio, db) {
+		this.db = db;
 		this.audio = audio;
 		this.engine = engine;
-		this.minUseDist = 120;
+		this.minUseDist = engine.minUseDist;
 		this.keysPressed = [];
 		this.functionToRun = null;
 	}
@@ -66,6 +67,7 @@ export default class Actions {
 		let thinWallIndex = null;
 
 		for (let i = 0; i < engine.thinWalls.length; i++) {
+			if (engine.thinWalls[i].function !== 'door') continue;
 			const intersection = getIntersection(
 				engine.fPlayerX,
 				engine.fPlayerY,

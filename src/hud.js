@@ -1,5 +1,6 @@
 export default class Hud {
-	constructor(engine, audio) {
+	constructor(engine, audio, db) {
+		this.db = db;
 		this.audio = audio;
 		this.engine = engine;
 		this.ctx = engine.ctx;
@@ -139,7 +140,15 @@ export default class Hud {
 				this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
 				this.ctx.beginPath();
 				this.ctx.fillRect(slotX, slotY, this.inventorySlotSize * slotCols, this.inventorySlotSize * slotRows);
-			} else this.itemOutsideOfInventory = true;
+			} else {
+				this.itemOutsideOfInventory = true;
+
+				this.ctx.font = `400 8px arial`;
+				this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+				this.ctx.textAlign = 'center';
+				this.ctx.textBaseline = 'center';
+				this.ctx.fillText('Drop', this.cursorX, this.cursorY - newH / 2 - 10);
+			}
 		}
 
 		this.ctx.beginPath();

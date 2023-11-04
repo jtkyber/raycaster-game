@@ -1,7 +1,8 @@
 import { convertDeg0To360, degToRad, radToDeg } from '../utils/calc.js';
 
 export default class Sound {
-	constructor() {
+	constructor(db) {
+		this.db = db;
 		this.soundPaths = [
 			'./src/audio/song.mp3',
 			'./src/audio/test.mp3',
@@ -73,10 +74,10 @@ export default class Sound {
 			let loop = false;
 			switch (name) {
 				case 'slidingDoorOpen':
-					rate = 2;
+					rate = 1.7;
 					break;
 				case 'slidingDoorClose':
-					rate = 2;
+					rate = 1.7;
 					break;
 				case 'song':
 					loop = true;
