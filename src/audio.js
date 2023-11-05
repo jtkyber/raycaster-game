@@ -87,7 +87,7 @@ export default class Sound {
 					volume = 0.5;
 					break;
 				case 'itemPickup':
-					volume = 0.5;
+					volume = 0.4;
 					break;
 				case 'knocking':
 					loop = true;
@@ -96,7 +96,7 @@ export default class Sound {
 					break;
 			}
 			if (name.includes('footstep')) {
-				volume = 1.5;
+				volume = 1.1;
 			}
 
 			this.sounds[name] = new Howl({
