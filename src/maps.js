@@ -39,7 +39,7 @@ export const maps = [
                 row: 1,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 1
+                strength: 0.5
             },
             {
                 surface: 'ceiling',
@@ -48,7 +48,7 @@ export const maps = [
                 row: 11,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 1
+                strength: 0.8
             },
             {
                 surface: 'ceiling',
@@ -57,7 +57,7 @@ export const maps = [
                 row: 18,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 1.3
+                strength: 1
             }
         ],
         thinWalls: [
@@ -316,7 +316,7 @@ export const maps = [
                 row: 6,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 0.6
+                strength: 0.5
             },
             {
                 surface: 'floor',
@@ -325,7 +325,7 @@ export const maps = [
                 row: 11,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 0.4
+                strength: 0.3
             }
         ],
         thinWalls: [
@@ -453,7 +453,7 @@ export const maps = [
                 row: 8,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 1.2
+                strength: 0.8
             },
             {
                 surface: 'ceiling',
@@ -462,7 +462,7 @@ export const maps = [
                 row: 15,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strenth: 1.2
+                strength: 0.8
             }
         ],
         items: [

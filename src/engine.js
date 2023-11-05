@@ -28,7 +28,9 @@ export default class Engine {
 		this.currentLightValues = null;
 		this.currentLightRefs = null;
 		this.currentThinWallLightSides = null;
-		this.minBrightness = 0.1;
+
+		this.minBrightness = 0.12;
+		this.maxBrightness = 1.3;
 
 		this.fWallTextureBufferList;
 		this.fWallTexturePixelsList;
@@ -198,7 +200,7 @@ export default class Engine {
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
-		this.lightingVersionNum = 1;
+		this.lightingVersionNum = 2;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -245,8 +247,8 @@ export default class Engine {
 			xEnd = ~~(xEnd + this.fPlayerX);
 			yEnd = ~~(yEnd + this.fPlayerY);
 
-			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd];
-			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
+			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd] || this.minBrightness;
+			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
 			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
 			// 	case 'floor':
 			// 		brightnessLevel /= 1.3;
@@ -297,8 +299,8 @@ export default class Engine {
 			yEnd = ~~(yEnd + this.fPlayerY);
 
 			// const brightnessLevel = 120 / actualDistance;
-			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd];
-			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
+			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd] || this.minBrightness;
+			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
 			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
 			// 	case 'ceiling':
 			// 		brightnessLevel /= 1.3;
@@ -641,9 +643,9 @@ export default class Engine {
 
 			let brightnessLevel =
 				this.currentLightValues?.[~~this.tileCollisionsY[i] * this.mapWidth + ~~this.tileCollisionsX[i]];
-			if (brightnessLevel > 1.3) brightnessLevel = 1.3;
-			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel *= 0.85;
+			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
 			if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
+			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel *= 0.85;
 
 			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
 
@@ -719,10 +721,10 @@ export default class Engine {
 					} else if (this.isItemRay[i][j]) this.items[this.objectRefs[i][j]].inReticle = false;
 
 					let objBrightnessLevel =
-						this.currentLightValues[
+						this.currentLightValues?.[
 							~~this.objectCollisionsY[i][j] * this.mapWidth + ~~this.objectCollisionsX[i][j]
-						];
-					if (objBrightnessLevel > 1.3) objBrightnessLevel = 1.3;
+						] || this.minBrightness;
+					if (objBrightnessLevel > this.maxBrightness) objBrightnessLevel = this.maxBrightness;
 
 					this.drawObjectStrip(
 						i,
@@ -743,10 +745,10 @@ export default class Engine {
 
 			if (thinWallDist) {
 				let thinWallBrightnessLevel =
-					this.currentLightValues[
+					this.currentLightValues?.[
 						~~this.thinWallCollisionsY[i] * this.mapWidth + ~~this.thinWallCollisionsX[i]
-					];
-				if (thinWallBrightnessLevel > 1.3) thinWallBrightnessLevel = 1.3;
+					] || this.minBrightness;
+				if (thinWallBrightnessLevel > this.maxBrightness) thinWallBrightnessLevel = this.maxBrightness;
 
 				const thinWallRatio = this.fPlayerDistanceToProjectionPlane / thinWallDist;
 				const thinWallScale = (this.fPlayerDistanceToProjectionPlane * this.WALL_HEIGHT) / thinWallDist;
@@ -1727,9 +1729,9 @@ export default class Engine {
 						const getRequest = objectStore.get(i);
 
 						getRequest.onsuccess = () => {
-							this.mapLightValues[i] = getRequest.result.mapLightValues;
-							this.mapLightRefs[i] = getRequest.result.mapLightRefs;
-							this.mapLightSides[i] = getRequest.result.mapLightSides;
+							this.mapLightValues[i] = getRequest.result?.mapLightValues || null;
+							this.mapLightRefs[i] = getRequest.result?.mapLightRefs || null;
+							this.mapLightSides[i] = getRequest.result?.mapLightSides || null;
 							console.log(`Lighting for map ${i} has been retrieved`);
 							mapsCompleted++;
 							if (mapsCompleted === maps.length) resolve();
@@ -1954,9 +1956,12 @@ export default class Engine {
 
 															const d =
 																Math.sqrt((x - lightX) * (x - lightX) + (y - lightY) * (y - lightY)) || 0.001;
-															this.mapLightValues[i][y * mapWidth + x] += (5 / Math.sqrt(d)) * light.strenth;
-															if (this.mapLightValues[i][y * mapWidth + x] > 3)
-																this.mapLightValues[i][y * mapWidth + x] = 3;
+															let s = d / light.strength / 1500;
+															if (s > 1) s = 1;
+															const maxIntensity = 1;
+															const falloffRate = 40;
+															this.mapLightValues[i][y * mapWidth + x] +=
+																maxIntensity * (((1 - s * s) * (1 - s * s)) / (1 + falloffRate * (s * s)));
 															this.mapLightRefs[i][y * mapWidth + x] = j;
 														}
 													}
