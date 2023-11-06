@@ -1,4 +1,5 @@
 import { convertDeg0To360, degToRad, radToDeg } from '../utils/calc.js';
+import { maps } from './maps.js';
 
 export default class Sound {
 	constructor(db) {
@@ -16,6 +17,7 @@ export default class Sound {
 			'./src/audio/itemPickup.mp3',
 			'./src/audio/doorOpen.mp3',
 			'./src/audio/knocking.mp3',
+			'./src/audio/lightHum.mp3',
 		];
 		this.sounds = {};
 		this.soundsPlaying = [];
@@ -54,53 +56,38 @@ export default class Sound {
 		}
 	}
 
-	playSound(name, x, y, hasPanning) {
-		this.sounds[name].play();
+	playSound(name, x, y, hasPanning, i = '') {
+		this.sounds[name + i].play();
 		this.soundsPlaying.push({
-			name,
+			name: name + i,
 			x,
 			y,
 			hasPanning,
 		});
 	}
 
-	init() {
-		for (let i = 0; i < this.soundPaths.length; i++) {
-			const name = this.soundPaths[i].split('/').pop()?.split('.')[0];
+	init(i = 0) {
+		Howler.unload();
+		this.sounds = {};
+		this.soundsPlaying = [];
+		for (let j = 0; j < this.soundPaths.length; j++) {
+			const name = this.soundPaths[j].split('/').pop()?.split('.')[0];
 			let rate = 1;
 			let html5 = false;
 			let autoplay = false;
 			let volume = 1;
 			let loop = false;
-			switch (name) {
-				case 'slidingDoorOpen':
-					rate = 1.7;
-					break;
-				case 'slidingDoorClose':
-					rate = 1.7;
-					break;
-				case 'song':
-					loop = true;
-					volume = 0.5;
-					break;
-				case 'doorOpen':
-					volume = 0.5;
-					break;
-				case 'itemPickup':
-					volume = 0.4;
-					break;
-				case 'knocking':
-					loop = true;
-					break;
-				default:
-					break;
-			}
+
 			if (name.includes('footstep')) {
 				volume = 1.1;
-			}
+			} else if (name.includes('itemPickup')) {
+				volume = 0.4;
+			} else if (name.includes('doorOpen')) {
+				volume = 0.5;
+			} else continue;
 
 			this.sounds[name] = new Howl({
-				src: [this.soundPaths[i]],
+				src: this.soundPaths[j],
 				preload: true,
 				html5: html5,
 				autoplay: autoplay,
@@ -109,18 +96,91 @@ export default class Sound {
 				rate: rate,
 				maxDistance: 1000000,
 				onend: () => {
-					for (let i = 0; i < this.soundsPlaying.length; i++) {
-						if (!loop && this.soundsPlaying[i].name === name) this.soundsPlaying.splice(i, 1);
+					for (let k = 0; k < this.soundsPlaying.length; k++) {
+						if (!loop && this.soundsPlaying[k].name === name) this.soundsPlaying.splice(k, 1);
 					}
 				},
 			});
-
 			this.sounds[name].pannerAttr({
 				...this.sounds[name].pannerAttr(),
 				distanceModel: 'exponential',
 				rolloffFactor: 2,
 				refDistance: 200,
 			});
+		}
+
+		for (
+			let j = 0;
+			j < maps[i]?.objects.length + maps[i]?.thinWalls.length + maps[i]?.lightSources.length;
+			j++
+		) {
+			let obj;
+			let index;
+			if (j < maps[i].objects.length) {
+				index = j;
+				obj = maps[i].objects[index];
+			} else if (j < maps[i].objects.length + maps[i].thinWalls.length) {
+				index = j - maps[i]?.objects.length;
+				obj = maps[i].thinWalls[index];
+			} else {
+				index = j - maps[i]?.objects.length - maps[i]?.thinWalls.length;
+				obj = maps[i].lightSources[index];
+			}
+
+			if (obj?.sounds) {
+				obj.sounds.forEach(fileName => {
+					const name = fileName + index;
+					let rate = 1;
+					let html5 = false;
+					let autoplay = false;
+					let volume = 1;
+					let loop = false;
+
+					switch (fileName) {
+						case 'slidingDoorOpen':
+							rate = 1.7;
+							break;
+						case 'slidingDoorClose':
+							rate = 1.7;
+							break;
+						case 'song':
+							loop = true;
+							volume = 0.5;
+							break;
+						case 'knocking':
+							loop = true;
+							break;
+						case 'lightHum':
+							loop = true;
+							volume = 0.1;
+							break;
+						default:
+							break;
+					}
+
+					this.sounds[name] = new Howl({
+						src: `./src/audio/${fileName}.mp3`,
+						preload: true,
+						html5: html5,
+						autoplay: autoplay,
+						loop: loop,
+						volume: volume,
+						rate: rate,
+						maxDistance: 1000000,
+						onend: () => {
+							for (let k = 0; k < this.soundsPlaying.length; k++) {
+								if (!loop && this.soundsPlaying[k].name === name) this.soundsPlaying.splice(k, 1);
+							}
+						},
+					});
+					this.sounds[name].pannerAttr({
+						...this.sounds[name].pannerAttr(),
+						distanceModel: 'exponential',
+						rolloffFactor: 2,
+						refDistance: 200,
+					});
+				});
+			}
 		}
 	}
 }

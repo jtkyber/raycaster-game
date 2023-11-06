@@ -293,8 +293,8 @@ export default class Actions {
 						2;
 
 				if (this.engine.thinWalls[thinWallData.index].isOpen) {
-					this.audio.playSound(this.engine.thinWalls[thinWallData.index].sounds.close, x, y, true);
-				} else this.audio.playSound(this.engine.thinWalls[thinWallData.index].sounds.open, x, y, true);
+					this.audio.playSound('slidingDoorClose', x, y, true, thinWallData.index);
+				} else this.audio.playSound('slidingDoorOpen', x, y, true, thinWallData.index);
 				break;
 			case 'grabItem':
 				this.findSpotForItem(itemData.index);

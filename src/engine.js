@@ -198,7 +198,7 @@ export default class Engine {
 		this.timeOfLastFootstep = 10000;
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = false;
+		this.preventPageReloadDialog = true;
 		this.consoleValues = [];
 		this.lightingVersionNum = 2;
 	}
@@ -1588,6 +1588,7 @@ export default class Engine {
 	}
 
 	setNewMapData(i = this.mapNum) {
+		this.audio.init(i);
 		this.currentLightValues = this.mapLightValues[i];
 		this.currentLightRefs = this.mapLightRefs[i];
 
@@ -1696,14 +1697,26 @@ export default class Engine {
 			this.debugCanvas.style.aspectRatio = this.debugCanvasWidth / this.debugCanvasHeight;
 		}
 
-		if (this.audio.sounds?.['song']) {
-			if (i > 0) this.audio.sounds['song'].mute(true);
-			else this.audio.sounds['song'].mute(false);
+		for (let j = 0; j < this.objects.length; j++) {
+			const obj = this.objects[j];
+			if (obj?.sounds?.length) {
+				obj.sounds.forEach(sound => {
+					if (this.audio.sounds[sound + j]?.loop()) {
+						this.audio.playSound(sound, obj.x, obj.y, true, j);
+					}
+				});
+			}
 		}
 
-		if (this.audio.sounds?.['knocking']) {
-			if (i === 1) this.audio.playSound('knocking', 1042, 86, true);
-			else this.audio.stopSound('knocking');
+		for (let j = 0; j < this.lightSources.length; j++) {
+			const light = this.lightSources[j];
+			if (light?.sounds?.length) {
+				light.sounds.forEach(sound => {
+					if (this.audio.sounds[sound + j]?.loop()) {
+						this.audio.playSound(sound, light.x, light.y, true, j);
+					}
+				});
+			}
 		}
 	}
 

@@ -73,9 +73,7 @@ const setUp = async db => {
 	Promise.resolve(promise).then(() => {
 		document.querySelector('.loadingContainer').remove();
 		actions.init();
-		audio.init();
-
-		audio.playSound('song', 850, 1360, true);
+		// audio.init();
 
 		hud.frameRate = 0;
 

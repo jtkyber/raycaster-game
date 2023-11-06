@@ -69,10 +69,7 @@ export const maps = [
                 colEnd: 15,
                 isOpen: false,
                 function: 'door',
-                sounds: {
-                    open: 'slidingDoorOpen',
-                    close: 'slidingDoorClose'
-                },
+                sounds: ['slidingDoorOpen', 'slidingDoorClose'],
                 transparent: true
             },
             {
@@ -83,10 +80,7 @@ export const maps = [
                 colEnd: 15,
                 isOpen: false,
                 function: 'door',
-                sounds: {
-                    open: 'slidingDoorOpen',
-                    close: 'slidingDoorClose'
-                },
+                sounds: ['slidingDoorOpen', 'slidingDoorClose'],
                 transparent: true
             }
         ],
@@ -169,37 +163,43 @@ export const maps = [
                 name: 'barrel',
                 x: 1420,
                 y: 100,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: []
             },
             {
                 name: 'barrel',
                 x: 1420,
                 y: 280,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: []
             },
             {
                 name: 'table',
                 x: 1370,
                 y: 640,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: []
             },
             {
                 name: 'table',
                 x: 1370,
                 y: 900,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: []
             },
             {
                 name: 'table',
                 x: 1370,
                 y: 1160,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: []
             },
             {
                 name: 'radio',
                 x: 800,
                 y: 1350,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: ['song']
             },
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen', 'wall3'],
@@ -337,10 +337,7 @@ export const maps = [
                 colEnd: 20,
                 isOpen: false,
                 function: 'door',
-                sounds: {
-                    open: 'slidingDoorOpen',
-                    close: 'slidingDoorClose'
-                },
+                sounds: ['slidingDoorOpen', 'slidingDoorClose'],
                 transparent: true
             }
         ],
@@ -349,7 +346,8 @@ export const maps = [
                 name: 'elmo',
                 x: 1042,
                 y: 86,
-                hFromGround: 0
+                hFromGround: 0,
+                sounds: ['knocking']
             }
         ],
         wallTextures: ['wall1', 'doubleDoorClosed', 'doubleDoorOpen'],
@@ -453,7 +451,8 @@ export const maps = [
                 row: 8,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strength: 0.8
+                strength: 0.8,
+                sounds: ['lightHum']
             },
             {
                 surface: 'ceiling',
@@ -462,8 +461,12 @@ export const maps = [
                 row: 15,
                 side: null,
                 lightOffsetFromTexture: 10,
-                strength: 0.8
+                strength: 0.8,
+                sounds: ['lightHum']
             }
+        ],
+        thinWalls: [
+
         ],
         items: [
 
