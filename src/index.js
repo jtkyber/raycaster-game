@@ -33,7 +33,6 @@ const drawOntoCanvas = () => {
 };
 
 const gameLoop = () => {
-	animationFrameId = requestAnimationFrame(gameLoop);
 	timestamp = Date.now();
 
 	if (engine.isCrouching) engine.fPlayerMoveSpeed *= 0.5;
@@ -53,6 +52,8 @@ const gameLoop = () => {
 
 	engine.fGameSpeed = (deltaTime / fpsInterval) * 2.5;
 	engine.fPlayerMoveSpeed = (deltaTime / fpsInterval) * 4;
+
+	animationFrameId = requestAnimationFrame(gameLoop);
 };
 
 const beginLoop = () => {

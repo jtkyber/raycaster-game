@@ -198,7 +198,7 @@ export default class Engine {
 		this.timeOfLastFootstep = 10000;
 
 		this.DEBUG = false;
-		this.preventPageReloadDialog = true;
+		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
 		this.lightingVersionNum = 2;
 	}
