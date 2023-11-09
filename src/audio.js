@@ -5,19 +5,20 @@ export default class Sound {
 	constructor(db) {
 		this.db = db;
 		this.soundPaths = [
-			'./src/audio/song.mp3',
-			'./src/audio/test.mp3',
-			'./src/audio/slidingDoorOpen.mp3',
-			'./src/audio/slidingDoorClose.mp3',
-			'./src/audio/footstep1.mp3',
-			'./src/audio/footstep2.mp3',
-			'./src/audio/footstep3.mp3',
-			'./src/audio/footstep4.mp3',
-			'./src/audio/footstep5.mp3',
-			'./src/audio/itemPickup.mp3',
-			'./src/audio/doorOpen.mp3',
-			'./src/audio/knocking.mp3',
-			'./src/audio/lightHum.mp3',
+			// './src/audio/song.mp3',
+			'./src/audio/song',
+			'./src/audio/test',
+			'./src/audio/slidingDoorOpen',
+			'./src/audio/slidingDoorClose',
+			'./src/audio/footstep1',
+			'./src/audio/footstep2',
+			'./src/audio/footstep3',
+			'./src/audio/footstep4',
+			'./src/audio/footstep5',
+			'./src/audio/itemPickup',
+			'./src/audio/doorOpen',
+			'./src/audio/knocking',
+			'./src/audio/lightHum',
 		];
 		this.sounds = {};
 		this.soundsPlaying = [];
@@ -37,13 +38,14 @@ export default class Sound {
 				let sourceAngle = radToDeg(Math.atan2(py - y, px - x)) + 180;
 
 				let angleDiff = ((sourceAngle - playerAng + 180 + 360) % 360) - 180;
+				const angleDiffAbs = Math.abs(angleDiff);
 
-				let newX = d * Math.cos(Math.PI / 2 - degToRad(Math.abs(angleDiff)));
+				let newX = d * Math.cos(Math.PI / 2 - degToRad(angleDiffAbs));
 				if (angleDiff < 0) newX *= -1;
 				newX;
 				let newY = -30;
 				let newZ = d;
-				if (Math.abs(angleDiff) > 90) newZ = newZ + (newZ * Math.abs(angleDiff)) / 500;
+				if (angleDiffAbs > 90) newZ = newZ + (newZ * angleDiffAbs) / 500;
 				this.sounds[name].pos(newX, newY, newZ);
 			}
 		}
@@ -87,7 +89,7 @@ export default class Sound {
 			} else continue;
 
 			this.sounds[name] = new Howl({
-				src: this.soundPaths[j],
+				src: [`${this.soundPaths[j]}.webm`, `${this.soundPaths[j]}.mp3`],
 				preload: true,
 				html5: html5,
 				autoplay: autoplay,

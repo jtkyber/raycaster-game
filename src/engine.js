@@ -298,19 +298,8 @@ export default class Engine {
 			xEnd = ~~(xEnd + this.fPlayerX);
 			yEnd = ~~(yEnd + this.fPlayerY);
 
-			// const brightnessLevel = 120 / actualDistance;
 			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd] || this.minBrightness;
 			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
-			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
-			// 	case 'ceiling':
-			// 		brightnessLevel /= 1.3;
-			// 		break;
-			// 	case 'wall':
-			// 		brightnessLevel /= 1.2;
-			// 		break;
-			// }
-
-			// if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 
 			let cellX = ~~(xEnd / this.TILE_SIZE);
 			let cellY = ~~(yEnd / this.TILE_SIZE);
@@ -517,11 +506,10 @@ export default class Engine {
 		while (true) {
 			yError += height;
 
-			const red = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness * this.redTint;
-			const green =
-				this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness * this.greenTint;
-			const blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness * this.blueTint;
-			const alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
+			let red = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex] * brightness * this.redTint;
+			let green = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 1] * brightness * this.greenTint;
+			let blue = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 2] * brightness * this.blueTint;
+			let alpha = this.fThinWallTexturePixelsList[thinWallRef][sourceIndex + 3];
 
 			while (yError >= this.fThinWallTextureBufferList[thinWallRef].height) {
 				yError -= this.fThinWallTextureBufferList[thinWallRef].height;
@@ -539,12 +527,12 @@ export default class Engine {
 							(alpha / 255) * green + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 1];
 						blueBlend =
 							(alpha / 255) * blue + (1 - alpha / 255) * this.offscreenCanvasPixels.data[targetIndex + 2];
-					}
 
-					this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
-					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
-					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blueBlend;
-					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+						this.offscreenCanvasPixels.data[targetIndex] = ~~redBlend;
+						this.offscreenCanvasPixels.data[targetIndex + 1] = ~~greenBlend;
+						this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blueBlend;
+						this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+					}
 				}
 
 				targetIndex += bytesPerPixel * this.canvasWidth;
