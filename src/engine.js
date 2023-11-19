@@ -45,6 +45,9 @@ export default class Engine {
 		this.fCeilingTextureBuffer;
 		this.fCeilingTexturePixels;
 
+		this.fSkyTextureBuffer;
+		this.fSkyTexturePixels;
+
 		this.fObjectTextureBufferList;
 		this.fObjectTexturePixelsList;
 
@@ -56,6 +59,8 @@ export default class Engine {
 
 		this.fLightTextureBufferList;
 		this.fLightTexturePixelList;
+
+		this.noCeilingIndeces;
 
 		this.items = [];
 		this.objects = [];
@@ -200,7 +205,7 @@ export default class Engine {
 		this.DEBUG = false;
 		this.preventPageReloadDialog = false;
 		this.consoleValues = [];
-		this.lightingVersionNum = 2;
+		this.lightingVersionNum = 3;
 	}
 
 	getSidesToCheck(quadrant) {
@@ -231,53 +236,68 @@ export default class Engine {
 		}
 	}
 
+	drawSky(x, angle) {
+		const xRatio = convertDeg0To360(radToDeg(angle)) / 360;
+		const sourceCol = ~~(this.fSkyTextureBuffer.width * xRatio);
+		let sourceIndex = ~~(
+			this.fSkyTextureBuffer.height * (this.fSkyTextureBuffer.width * this.bytesPerPixel) +
+			sourceCol * this.bytesPerPixel
+		);
+		for (let row = ~~this.fProjectionPlaneYCenter; row >= 0; row--) {
+			if (row <= this.canvasHeight) {
+				const targetIndex = row * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * x;
+				const red = this.fSkyTexturePixels[sourceIndex];
+				const green = this.fSkyTexturePixels[sourceIndex + 1];
+				const blue = this.fSkyTexturePixels[sourceIndex + 2];
+				this.offscreenCanvasPixels.data[targetIndex] = red;
+				this.offscreenCanvasPixels.data[targetIndex + 1] = green;
+				this.offscreenCanvasPixels.data[targetIndex + 2] = blue;
+				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+			}
+			sourceIndex -= this.bytesPerPixel * this.fSkyTextureBuffer.width;
+		}
+	}
+
 	drawCeiling(wallTop, castColumn, rayAng) {
 		let targetIndex = wallTop * (this.canvasWidth * this.bytesPerPixel) + this.bytesPerPixel * castColumn;
 
 		for (let row = wallTop; row >= 0; row--) {
 			const ratio = (this.WALL_HEIGHT - this.fPlayerHeight) / (this.fProjectionPlaneYCenter - row);
-
 			const diagDist = ~~(this.fPlayerDistanceToProjectionPlane * ratio * this.fFishTable[castColumn]);
 
-			// let brightnessLevel = 100 / diagDist;
-
-			let xEnd = diagDist * Math.cos(rayAng);
-			let yEnd = diagDist * Math.sin(rayAng);
-
-			xEnd = ~~(xEnd + this.fPlayerX);
-			yEnd = ~~(yEnd + this.fPlayerY);
+			const xEnd = ~~(diagDist * Math.cos(rayAng) + this.fPlayerX);
+			const yEnd = ~~(diagDist * Math.sin(rayAng) + this.fPlayerY);
 
 			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd] || this.minBrightness;
 			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
-			// switch (this.lightSources?.[this.currentLightRefs?.[yEnd * this.mapWidth + xEnd]]?.surface) {
-			// 	case 'floor':
-			// 		brightnessLevel /= 1.3;
-			// 		break;
-			// 	case 'wall':
-			// 		brightnessLevel /= 1.2;
-			// 		break;
-			// }
-			// if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 
 			const cellX = ~~(xEnd / this.TILE_SIZE);
 			const cellY = ~~(yEnd / this.TILE_SIZE);
+			const cellIndex = cellY * this.mapCols + cellX;
 
-			if (cellX < this.mapWidth && cellY < this.mapHeight && cellX >= 0 && cellY >= 0) {
-				const tileRow = xEnd & (this.TILE_SIZE - 1);
-				const tileCol = yEnd & (this.TILE_SIZE - 1);
+			if (
+				this.fCeilingTextureBuffer &&
+				cellX < this.mapCols &&
+				cellY < this.mapRows &&
+				cellX >= 0 &&
+				cellY >= 0
+			) {
+				if (!this.noCeilingIndeces.includes(cellIndex)) {
+					const tileRow = xEnd & (this.TILE_SIZE - 1);
+					const tileCol = yEnd & (this.TILE_SIZE - 1);
 
-				const sourceIndex =
-					tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
+					const sourceIndex =
+						tileRow * this.fCeilingTextureBuffer.width * this.bytesPerPixel + this.bytesPerPixel * tileCol;
 
-				const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel * this.redTint);
-				const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel * this.greenTint);
-				const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel * this.blueTint);
+					const red = this.fCeilingTexturePixels[sourceIndex] * (brightnessLevel * this.redTint);
+					const green = this.fCeilingTexturePixels[sourceIndex + 1] * (brightnessLevel * this.greenTint);
+					const blue = this.fCeilingTexturePixels[sourceIndex + 2] * (brightnessLevel * this.blueTint);
 
-				this.offscreenCanvasPixels.data[targetIndex] = ~~red;
-				this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
-				this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
-				this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
-
+					this.offscreenCanvasPixels.data[targetIndex] = ~~red;
+					this.offscreenCanvasPixels.data[targetIndex + 1] = ~~green;
+					this.offscreenCanvasPixels.data[targetIndex + 2] = ~~blue;
+					this.offscreenCanvasPixels.data[targetIndex + 3] = 255;
+				}
 				targetIndex -= this.bytesPerPixel * this.canvasWidth;
 			}
 		}
@@ -292,11 +312,8 @@ export default class Engine {
 
 			const diagDist = straightDistance * this.fFishTable[castColumn];
 
-			let xEnd = diagDist * Math.cos(rayAng);
-			let yEnd = diagDist * Math.sin(rayAng);
-
-			xEnd = ~~(xEnd + this.fPlayerX);
-			yEnd = ~~(yEnd + this.fPlayerY);
+			const xEnd = ~~(diagDist * Math.cos(rayAng) + this.fPlayerX);
+			const yEnd = ~~(diagDist * Math.sin(rayAng) + this.fPlayerY);
 
 			let brightnessLevel = this.currentLightValues?.[yEnd * this.mapWidth + xEnd] || this.minBrightness;
 			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
@@ -634,6 +651,8 @@ export default class Engine {
 			if (brightnessLevel > this.maxBrightness) brightnessLevel = this.maxBrightness;
 			if (!brightnessLevel || brightnessLevel < this.minBrightness) brightnessLevel = this.minBrightness;
 			if (this.tileSides?.[i] === 1 || this.tileSides?.[i] === 3) brightnessLevel *= 0.85;
+
+			if (this?.fSkyTextureBuffer) this.drawSky(i, adjustedAngle);
 
 			this.drawFloor(Math.floor(wallBottom), i, adjustedAngle);
 
@@ -1211,7 +1230,7 @@ export default class Engine {
 					const dy = this.fPlayerY - intersection[1];
 					const d = Math.sqrt(dx * dx + dy * dy);
 
-					if (d <= minDist) return;
+					if (d <= minDist && !(this.thinWalls[i].vaultable && this.isJumping)) return;
 				}
 			}
 
@@ -1291,6 +1310,17 @@ export default class Engine {
 			.getContext('2d', { alpha: false })
 			.getImageData(0, 0, this.fCeilingTextureBuffer.width, this.fCeilingTextureBuffer.height);
 		this.fCeilingTexturePixels = imgData.data;
+	}
+
+	onSkyTextureLoaded(imgName) {
+		const img = this.textures[imgName];
+		this.fSkyTextureBuffer = new OffscreenCanvas(img.width, img.height);
+		this.fSkyTextureBuffer.getContext('2d', { alpha: false }).drawImage(img, 0, 0);
+
+		const imgData = this.fSkyTextureBuffer
+			.getContext('2d', { alpha: false })
+			.getImageData(0, 0, this.fSkyTextureBuffer.width, this.fSkyTextureBuffer.height);
+		this.fSkyTexturePixels = imgData.data;
 	}
 
 	onFloorTextureLoaded(imgNames) {
@@ -1575,16 +1605,40 @@ export default class Engine {
 		}
 	}
 
+	resetTextures() {
+		this.fCeilingTextureBuffer = undefined;
+		this.fCeilingTexturePixels = undefined;
+		this.fFloorTextureBufferList = undefined;
+		this.fFloorTexturePixelsList = undefined;
+		this.fWallTextureBufferList = undefined;
+		this.fWallTexturePixelsList = undefined;
+		this.fSkyTextureBuffer = undefined;
+		this.fSkyTexturePixels = undefined;
+		this.fPaintingTextureBufferList = undefined;
+		this.fPaintingTexturePixelsList = undefined;
+		this.fThinWallTextureBufferList = undefined;
+		this.fThinWallTexturePixelsList = undefined;
+		this.fObjectTextureBufferList = undefined;
+		this.fObjectTexturePixelsList = undefined;
+		this.fItemTextureBufferList = [];
+		this.fItemTexturePixelsList = [];
+		this.fLightTextureBufferList = undefined;
+		this.fLightTexturePixelsList = undefined;
+	}
+
 	setNewMapData(i = this.mapNum) {
+		this.resetTextures();
 		this.audio.init(i);
 		this.currentLightValues = this.mapLightValues[i];
 		this.currentLightRefs = this.mapLightRefs[i];
+		this.noCeilingIndeces = maps[i].noCeilingIndeces;
 
 		this.onWallTextureLoaded(maps[i].wallTextures);
 		this.onPaintingTexturesLoaded(maps[i].paintings);
 		this.fPaintingDetails = maps[i].paintingDetails;
 
-		this.onCeilingTextureLoaded(maps[i].ceilingTexture);
+		if (maps[i].ceilingTexture) this.onCeilingTextureLoaded(maps[i].ceilingTexture);
+		if (maps[i].skyTexture) this.onSkyTextureLoaded(maps[i].skyTexture);
 		this.onFloorTextureLoaded(maps[i].floorTextures);
 
 		if (maps[i]?.lightSources?.length) {
@@ -1661,6 +1715,8 @@ export default class Engine {
 					isOpen: wall.isOpen,
 					sounds: wall.sounds,
 					function: wall.function,
+					transparent: wall.transparent,
+					vaultable: wall.vaultable,
 				};
 			});
 		} else this.thinWalls = [];

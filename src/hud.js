@@ -174,7 +174,7 @@ export default class Hud {
 
 			const img = this.engine.textures[this.engine.inventory[this.inventoryIndexSelected].name];
 			this.engine.fItemTextureBufferList.push(new OffscreenCanvas(img.width, img.height));
-			const lastIndex = this.engine.fItemTextureBufferList.length - 1;
+			let lastIndex = this.engine.fItemTextureBufferList.length - 1;
 			this.engine.fItemTextureBufferList[lastIndex].getContext('2d', { alpha: true }).drawImage(img, 0, 0);
 			const imgData = this.engine.fItemTextureBufferList[lastIndex]
 				.getContext('2d', { alpha: false })

@@ -7,6 +7,7 @@ export default class Sound {
 		this.soundPaths = [
 			// './src/audio/song.mp3',
 			'./src/audio/song',
+			'./src/audio/outside',
 			'./src/audio/test',
 			'./src/audio/slidingDoorOpen',
 			'./src/audio/slidingDoorClose',
@@ -111,6 +112,43 @@ export default class Sound {
 			});
 		}
 
+		for (let j = 0; j < maps[i].ambientAudio?.length; j++) {
+			const name = maps[i].ambientAudio[j].name;
+			let rate = 1;
+			let html5 = false;
+			let autoplay = true;
+			let volume = 1;
+			let loop = true;
+
+			switch (name) {
+				case 'outside':
+					volume = 0.2;
+					break;
+			}
+
+			this.sounds[name] = new Howl({
+				src: [`./src/audio/${name}.webm`, `./src/audio/${name}.mp3`],
+				preload: true,
+				html5: html5,
+				autoplay: autoplay,
+				loop: loop,
+				volume: volume,
+				rate: rate,
+				maxDistance: 1000000,
+				onend: () => {
+					for (let k = 0; k < this.soundsPlaying.length; k++) {
+						if (!loop && this.soundsPlaying[k].name === name) this.soundsPlaying.splice(k, 1);
+					}
+				},
+			});
+			this.sounds[name].pannerAttr({
+				...this.sounds[name].pannerAttr(),
+				distanceModel: 'exponential',
+				rolloffFactor: 2,
+				refDistance: 200,
+			});
+		}
+
 		for (
 			let j = 0;
 			j < maps[i]?.objects.length + maps[i]?.thinWalls.length + maps[i]?.lightSources.length;
@@ -149,6 +187,10 @@ export default class Sound {
 							loop = true;
 							volume = 0.5;
 							break;
+						case 'outside':
+							loop = true;
+							volume = 1;
+							break;
 						case 'knocking':
 							loop = true;
 							break;
@@ -161,7 +203,7 @@ export default class Sound {
 					}
 
 					this.sounds[name] = new Howl({
-						src: `./src/audio/${fileName}.mp3`,
+						src: [`./src/audio/${fileName}.webm`, `./src/audio/${fileName}.mp3`],
 						preload: true,
 						html5: html5,
 						autoplay: autoplay,

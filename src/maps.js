@@ -1,4 +1,5 @@
 // prettier-ignore
+
 // Walls: 0 - 5
 // Floors: 6 - 9
 // Closed Door --> 1
@@ -30,6 +31,12 @@ export const maps = [
             [3, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 3, 0, 7, 7, 7, 7, 7, 0, 7, 0],
             [3, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 3, 0, 7, 7, 7, 7, 7, 7, 7, 0],
             [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        noCeilingIndeces: [
+            40, 41, 42, 43, 44, 45, 46, 
+            64, 65, 66, 67, 68, 69, 70, 
+            88, 89, 90, 91, 92, 93, 94, 
+            112, 113, 114, 115, 116, 117, 118
         ],
         lightSources: [
             {
@@ -70,7 +77,8 @@ export const maps = [
                 isOpen: false,
                 function: 'door',
                 sounds: ['slidingDoorOpen', 'slidingDoorClose'],
-                transparent: true
+                transparent: true,
+                vaultable: false
             },
             {
                 texture: 'test',
@@ -81,7 +89,8 @@ export const maps = [
                 isOpen: false,
                 function: 'door',
                 sounds: ['slidingDoorOpen', 'slidingDoorClose'],
-                transparent: true
+                transparent: true,
+                vaultable: false
             }
         ],
         items: [
@@ -212,6 +221,7 @@ export const maps = [
         },
         floorTextures: ['floor1', 'floor3', 'floor4', 'floor5'],
         ceilingTexture: 'ceiling1',
+        skyTexture: 'sky2',
         paintings: ['painting3two', 'painting3one', 'painting1', 'painting4one', 'painting4two', 'painting2one', 'painting2two', 'painting5one', 'painting5two', 'painting6one', 'painting6two', 'painting7one', 'painting7two', 'shield', 'shield'],
         paintingDetails: [
             {
@@ -338,7 +348,8 @@ export const maps = [
                 isOpen: false,
                 function: 'door',
                 sounds: ['slidingDoorOpen', 'slidingDoorClose'],
-                transparent: true
+                transparent: true,
+                vaultable: false
             }
         ],
         objects: [
@@ -363,6 +374,7 @@ export const maps = [
                 side: 2
             }
         },
+        noCeilingIndeces: [],
         floorTextures: ['floor1'],
         ceilingTexture: 'ceiling1',
         paintings: ['painting1', 'painting8', 'painting9', 'painting10', 'painting11', 'painting12', 'painting13', 'painting14', 'painting15', 'bloodyHandprint'],
@@ -439,7 +451,7 @@ export const maps = [
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
-            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
+            [1, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
@@ -474,19 +486,149 @@ export const maps = [
         objects: [
 
         ],
+        noCeilingIndeces: [],
         wallTextures: ['wall2', 'doubleDoor2Closed', 'doubleDoor2Open'],
         doorMap: {
             1: {
                 mapTo: 1,
                 indexTo: 413,
                 side: 0
+            },
+            340: {
+                mapTo: 3,
+                indexTo: 79,
+                side: 3
             }
         },
         floorTextures: ['floor2'],
+        skyTexture: 'sky2',
         ceilingTexture: 'ceiling2',
         paintings: [],
         paintingDetails: []
-    }
+    },
+    {
+        // 20 x 5
+        map: [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0],
+            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0],
+            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1],
+            [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        lightSources: [
+            {
+                surface: 'wall',
+                texture: 'hangingLight',
+                col: 0,
+                row: 4,
+                side: 1,
+                lightOffsetFromTexture: 10,
+                strength: 1
+            },
+        ],
+        thinWalls: [
+            {
+                texture: 'fence',
+                rowStart: 2,
+                colStart: 1,
+                rowEnd: 2,
+                colEnd: 2,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+            {
+                texture: 'fence',
+                rowStart: 2,
+                colStart: 2,
+                rowEnd: 2,
+                colEnd: 3,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+            {
+                texture: 'fence',
+                rowStart: 2,
+                colStart: 3,
+                rowEnd: 2,
+                colEnd: 4,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+            {
+                texture: 'fence',
+                rowStart: 2,
+                colStart: 5,
+                rowEnd: 3,
+                colEnd: 5,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+            {
+                texture: 'fence',
+                rowStart: 3,
+                colStart: 5,
+                rowEnd: 4,
+                colEnd: 5,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+            {
+                texture: 'fence',
+                rowStart: 4,
+                colStart: 5,
+                rowEnd: 5,
+                colEnd: 5,
+                isOpen: false,
+                function: null,
+                sounds: [],
+                transparent: true,
+                vaultable: true
+            },
+        ],
+        items: [
+
+        ],
+        objects: [
+
+        ],
+        wallTextures: ['wall4', 'doubleDoorClosed', 'doubleDoorOpen'],
+        doorMap: {
+            79: {
+                mapTo: 2,
+                indexTo: 340,
+                side: 1
+            }
+        },
+        noCeilingIndeces: [],
+        floorTextures: ['floor6'],
+        skyTexture: 'sky2',
+        ceilingTexture: null,
+        paintings: [],
+        paintingDetails: [],
+        ambientAudio: [
+            {
+                name: 'outside',
+                x: null,
+                y: null,
+            }
+        ]
+    },
 ]
 
 export const texturePaths = [
@@ -494,6 +636,7 @@ export const texturePaths = [
 	'src/assets/walls/wall1.png',
 	'src/assets/walls/wall2.png',
 	'src/assets/walls/wall3.png',
+	'src/assets/walls/wall4.png',
 	'src/assets/walls/doubleDoorClosed.png',
 	'src/assets/walls/doubleDoorOpen.png',
 	'src/assets/walls/doubleDoor2Closed.png',
@@ -504,6 +647,7 @@ export const texturePaths = [
 	'src/assets/floors/floor3.png',
 	'src/assets/floors/floor4.png',
 	'src/assets/floors/floor5.png',
+	'src/assets/floors/floor6.png',
 	// Ceilings
 	'src/assets/ceilings/ceiling1.png',
 	'src/assets/ceilings/ceiling2.png',
@@ -541,6 +685,7 @@ export const texturePaths = [
 	'src/assets/thinWalls/test.png',
 	'src/assets/thinWalls/test2.png',
 	'src/assets/thinWalls/window.png',
+	'src/assets/thinWalls/fence.png',
 	// Items
 	'src/assets/items/apple.png',
 	'src/assets/items/pickaxe.png',
@@ -552,4 +697,6 @@ export const texturePaths = [
 	'src/assets/lightSources/hangingLight2.png',
 	'src/assets/lightSources/standingLight.png',
 	'src/assets/lightSources/chandelier.png',
+	// Skys
+	'src/assets/skyBoxes/sky2.jpg',
 ];

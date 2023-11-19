@@ -107,7 +107,7 @@ document.onmouseup = e => {
 };
 
 request.onerror = e => {
-	console.log(e);
+	console.log(e.target.error);
 };
 
 request.onupgradeneeded = e => {
