@@ -69,7 +69,7 @@ export const maps = [
         ],
         thinWalls: [
             {
-                texture: 'test',
+                texture: 'slidingDoor',
                 rowStart: 2,
                 colStart: 15,
                 rowEnd: 3,
@@ -81,7 +81,7 @@ export const maps = [
                 vaultable: false
             },
             {
-                texture: 'test',
+                texture: 'slidingDoor',
                 rowStart: 11,
                 colStart: 15,
                 rowEnd: 12,
@@ -221,7 +221,7 @@ export const maps = [
         },
         floorTextures: ['floor1', 'floor3', 'floor4', 'floor5'],
         ceilingTexture: 'ceiling1',
-        skyTexture: 'sky2',
+        skyTexture: 'sky',
         paintings: ['painting3two', 'painting3one', 'painting1', 'painting4one', 'painting4two', 'painting2one', 'painting2two', 'painting5one', 'painting5two', 'painting6one', 'painting6two', 'painting7one', 'painting7two', 'shield', 'shield'],
         paintingDetails: [
             {
@@ -340,7 +340,7 @@ export const maps = [
         ],
         thinWalls: [
             {
-                texture: 'test',
+                texture: 'slidingDoor',
                 rowStart: 9,
                 colStart: 20,
                 rowEnd: 10,
@@ -501,7 +501,7 @@ export const maps = [
             }
         },
         floorTextures: ['floor2'],
-        skyTexture: 'sky2',
+        skyTexture: 'sky',
         ceilingTexture: 'ceiling2',
         paintings: [],
         paintingDetails: []
@@ -617,7 +617,7 @@ export const maps = [
         },
         noCeilingIndeces: [],
         floorTextures: ['floor6'],
-        skyTexture: 'sky2',
+        skyTexture: 'sky',
         ceilingTexture: null,
         paintings: [],
         paintingDetails: [],
@@ -682,9 +682,7 @@ export const texturePaths = [
 	'src/assets/objects/table.png',
 	'src/assets/objects/radio.png',
 	// Thin Walls
-	'src/assets/thinWalls/test.png',
-	'src/assets/thinWalls/test2.png',
-	'src/assets/thinWalls/window.png',
+	'src/assets/thinWalls/slidingDoor.png',
 	'src/assets/thinWalls/fence.png',
 	// Items
 	'src/assets/items/apple.png',
@@ -698,5 +696,5 @@ export const texturePaths = [
 	'src/assets/lightSources/standingLight.png',
 	'src/assets/lightSources/chandelier.png',
 	// Skys
-	'src/assets/skyBoxes/sky2.jpg',
+	'src/assets/skyBoxes/sky.jpg',
 ];
