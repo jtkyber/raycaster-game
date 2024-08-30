@@ -116,7 +116,7 @@ export default class Engine {
 		this.fPlayerY = 100;
 		this.fPlayerAngle = 10;
 		this.fPlayerMoveDir = 0;
-		this.fPlayerFov = 60;
+		this.fPlayerFov = 70;
 		this.fPlayerHeight = this.TILE_SIZE / 2;
 		this.fGameSpeed = 0;
 		this.fPlayerMoveSpeed = 0;
